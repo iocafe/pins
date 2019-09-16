@@ -1,7 +1,8 @@
 # pins
 iocafe pins - interface to GPIO, ADC/DAC, PWM, etc. 
+==============
 
-COMPLETELY ON DRAFTING/PLANNING STAGE, NOT USEFUL.
+<b>COMPLETELY ON DRAFTING/PLANNING STAGE, NOT USEFUL.</b>
 
 Function of the "pins" is to:
 - Provide an application with hardware independent access to GPIO, analogs, PWM, timers, etc.
