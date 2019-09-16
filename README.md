@@ -1,6 +1,4 @@
-# pins
-iocafe pins - interface to GPIO, ADC/DAC, PWM, etc. 
-==============
+# iocafe pins - interface to GPIO, ADC/DAC, PWM, etc. 
 
 <b>COMPLETELY ON DRAFTING/PLANNING STAGE, NOT USEFUL.</b>
 
