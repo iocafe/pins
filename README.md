@@ -10,5 +10,5 @@ Function of the "pins" is to:
 
 Some ideas about implementation
 - Hardware speficic IO headers are not included in application (except when there is need to bypass "pins").
-- Hardware addressess, etc. need to be mapped to application at some point. This could be simplyy writeen as one C file. But we write it as JSON and then generate the C file automatically by Python script. This enable using the PIN information to automate documentation, IOCOM memory mapping, etc. 
+- Hardware addresses, etc. need to be mapped to application at some point. This could be simply written as one C file. But we write it as JSON and then generate the C file automatically by Python script. This enable using the PIN information to automate documentation, IOCOM memory mapping, etc. 
 
