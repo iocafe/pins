@@ -6,6 +6,8 @@
 # which can cause problems down the road since linked list order is may be used to
 # give pins addresses is iocom memory block.
 import json
+import os
+import sys
 
 pin_types = {
     "inputs" : "PIN_INPUT",
@@ -18,9 +20,9 @@ pin_types = {
 prm_type_list = {"speed": "PIN_SPEED", "delay": "PIN_DELAY"}
 
 def start_c_files():
-    global cfile, hfile
-    cfile = open("/coderoot/pins/examples/jane/pins/carol/jane.c", "w")
-    hfile = open("/coderoot/pins/examples/jane/pins/carol/jane.h", "w")
+    global cfile, hfile, cfilepath, hfilepath
+    cfile = open(cfilepath, "w")
+    hfile = open(hfilepath, "w")
 
 def finish_c_files():
     global cfile, hfile
@@ -47,7 +49,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     # If we have C attributes, write to C file
     c_prm_array_name = "OS_NULL"
     if c_prm_list is not "":
-        c_prm_array_name = block_name + "_prm_" + pin_name
+        c_prm_array_name = block_name + "_" + pin_name + "_prm"
         cfile.write("static os_short " + c_prm_array_name + "[]")
         cfile.write("= {" + c_prm_list + "};\n")
 
@@ -57,18 +59,13 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     cfile.write(pin_name + '", ' + pin_types[pin_type] + ", ")
 
     # Write pin address, merge addr and bank
-    bank = pin_attr.get("bank", None)
-    addr = pin_attr.get("addr", None)
-    if addr is None:
-        cfile.write("PIN_NO_ADDRESS")
-    else:
-        if bank is None:
-            cfile.write(str(addr) + "<<PIN_ASHIFT")
-        else:
-            cfile.write(str(bank) + "|(" + str(addr) + "<<PIN_ASHIFT)")
+    bank = pin_attr.get("bank", "0")
+    cfile.write(str(bank) + ", ")
+    addr = pin_attr.get("addr", "0")
+    cfile.write(str(addr) + ", ")
 
     # Write pointer to parameter array, if any
-    cfile.write(", " + c_prm_array_name + ", ")
+    cfile.write(c_prm_array_name + ", ")
     if c_prm_array_name is "OS_NULL":
         cfile.write("0, ")
     else:
@@ -107,9 +104,6 @@ def write_linked_list_heads():
         cfile.write("const Pin *" + varname + " = " + c_prev_pin_name + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
-
-# const Pin alice_LIGHT_SWITCH = {"LIGHT_SWITCH", PIN_BIN, 4|(2 << 8), alice_prm_LIGHT_SWITCH, sizeof(alice_prm_LIGHT_SWITCH)/sizeof(os_short));    
-
 def process_pin(pin_type, pin_name, pin_attr):
     global block_name
     write_pin_to_c_header(pin_name)
@@ -134,17 +128,54 @@ def process_pin_block(pin_block):
     write_linked_list_heads()
 
 def process_source_file(path):
-    with open("/coderoot/pins/examples/jane/pins/carol/jane.json", "r") as read_file:
+    read_file = open(path, "r")
+    if read_file:
         data = json.load(read_file)
-
         for pin_block_tag, pin_block in data.items():
             if pin_block_tag == "pins":
                 process_pin_block(pin_block)
+
+    else:
+        printf ("Opening file " + path + " failed")
             
 def mymain():
+    global cfilepath, hfilepath
+
+    # Get options
+    n = len(sys.argv)
+    sourcefiles = []
+    outpath = None
+    for i in range(1, n):
+        if sys.argv[i][0] is "-":
+            if sys.argv[i][1] is "o":
+                outpath = sys.argv[i+1]
+                i = i + 1
+                if i >=n:
+                    print("Output file name must follow -o");
+                    exit()
+
+            s = sys.argv[i]
+
+        else:
+            sourcefiles.append(sys.argv[i])
+
+    if len(sourcefiles) < 1:
+        print("No source files");
+        exit()
+    
+    if outpath is None:
+        outpath = sourcefiles[0]
+
+    filename, file_extension = os.path.splitext(outpath)
+    cfilepath = filename + '.c'
+    hfilepath = filename + '.h'
+
+    print("Writing files " + cfilepath + " and " + hfilepath)
+
     start_c_files()
 
-    process_source_file("/coderoot/pins/examples/jane/pins/carol/jane.json")
+    for path in sourcefiles:
+        process_source_file(path)
 
     finish_c_files()
 
