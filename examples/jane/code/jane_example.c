@@ -71,11 +71,11 @@ os_int osal_main(
 osalStatus osal_loop(
     void *app_context)
 {
-    if (os_elapsed(&t, 100))
+    if (os_elapsed(&t, 50))
     {
         os_get_timer(&t);
         state = !state;
-        pin_set(&jane_WORK_LIGHT, state);
+        pin_set(&jane_LED_BUILTIN, state);
     }
 
     return OSAL_SUCCESS;
@@ -100,3 +100,8 @@ void osal_main_cleanup(
     void *app_context)
 {
 }
+
+/* Here we include hardware specific IO code. The file name is always same for jane, but
+   pins/<hardware> is added compiler's include paths
+ */
+#include "jane-io.c"

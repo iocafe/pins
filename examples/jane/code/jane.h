@@ -22,6 +22,6 @@
 
 /* Include io definitions for "carol" hardware.
  */
-#include "../pins/carol/jane-io.h"
+#include "jane-io.h"
 
 #endif

@@ -1,11 +1,11 @@
-# eosal/build/arduino-library/CmakeLists.txt - Cmake build for eosal library.
+# pins/build/arduino-library/CmakeLists.txt - Cmake to pack pins library for arduino.
 cmake_minimum_required(VERSION 3.5)
 
 # Set some informative project name.
 project("arduino-library")
 
 # Set project name (name root) and operating system (here arduino for Arduino IDE).
-set(E_PROJECT "iocom")
+set(E_PROJECT "pins")
 set(ENV{E_OS} "arduino")
 if (NOT DEFINED ENV{E_ROOT})
   if(WIN32)
@@ -20,28 +20,21 @@ set (E_TARGET ${E_PROJECT}-master)
 
 # Set path to source files.
 set(BACKBONE "$ENV{E_ROOT}/${E_PROJECT}/code")
-set(EXTENSIONS "$ENV{E_ROOT}/${E_PROJECT}/extensions")
 
 # Add main headers.
-set(MAIN_HEADERS "${E_PROJECT}.h" "${E_PROJECT}x.h")
+set(MAIN_HEADERS "${E_PROJECT}.h")
 
 # Add source files common to all operating systems.
-file(GLOB BB_CM_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/*.c")
-file(GLOB BB_CM_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/*.h")
-# file(GLOB EX_CM_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${EXTENSIONS}/*/common/*.c")
-# file(GLOB EX_CM_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${EXTENSIONS}/*/common/*.h")
+file(GLOB BB_CM_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/common/*.c")
+file(GLOB BB_CM_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/*/common/*.h")
 
 # Add operating system specific files.
-# file(GLOB BB_OS_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/*/$ENV{E_OS}/*.c" "${BACKBONE}/*/$ENV{E_OS}/*.cpp")
-# file(GLOB BB_OS_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/*/$ENV{E_OS}/*.h")
-# file(GLOB EX_OS_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${EXTENSIONS}/*/$ENV{E_OS}/*.c" "${EXTENSIONS}/*/$ENV{E_OS}/*.cpp")
-# file(GLOB EX_OS_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${EXTENSIONS}/*/$ENV{E_OS}/*.h")
+file(GLOB BB_OS_SOURCES RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/$ENV{E_OS}/*.c" "${BACKBONE}/$ENV{E_OS}/*.cpp")
+file(GLOB BB_OS_HEADERS RELATIVE $ENV{E_ROOT}/${E_PROJECT} "${BACKBONE}/$ENV{E_OS}/*.h")
 
 # Generate file lists with relative paths.
-set (E_FILE_LIST ${BB_CM_SOURCES})
-set (E_HDR_FILE_LIST ${MAIN_HEADERS} ${BB_CM_HEADERS})
-# set (E_FILE_LIST ${BB_CM_SOURCES} ${BB_OS_SOURCES} ${EX_CM_SOURCES} ${EX_OS_SOURCES})
-# set (E_HDR_FILE_LIST ${MAIN_HEADERS} ${BB_CM_HEADERS} ${EX_CM_HEADERS})
+set (E_FILE_LIST ${BB_CM_SOURCES} ${BB_OS_SOURCES})
+set (E_HDR_FILE_LIST ${MAIN_HEADERS} ${BB_CM_HEADERS} ${BB_OS_HEADERS})
 
 # Generate file list with absolute paths.
 set(E_ABS_FILE_LIST)

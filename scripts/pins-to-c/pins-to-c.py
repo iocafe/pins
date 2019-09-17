@@ -24,9 +24,11 @@ def start_c_files():
     cfile = open(cfilepath, "w")
     hfile = open(hfilepath, "w")
     cfile.write('#include "pins.h"\n')
+    hfile.write('OSAL_C_HEADER_BEGINS\n')
 
 def finish_c_files():
     global cfile, hfile
+    hfile.write('OSAL_C_HEADER_ENDS\n')
     cfile.close()
     hfile.close()
 
