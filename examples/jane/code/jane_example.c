@@ -21,6 +21,11 @@
 
 #include "jane.h"
 
+/* Here we include hardware specific IO code. The file name is always same for jane, but
+   pins/<hardware> is added compiler's include paths
+ */
+#include "jane-io.c"
+
 os_timer t;
 os_boolean state;
 
@@ -100,8 +105,3 @@ void osal_main_cleanup(
     void *app_context)
 {
 }
-
-/* Here we include hardware specific IO code. The file name is always same for jane, but
-   pins/<hardware> is added compiler's include paths
- */
-#include "jane-io.c"
