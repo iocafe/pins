@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/coderoot/pins/build",
+  "command": "/bin/x86_64-linux-gnu-gcc-6 -DE_OSVER_linux -DE_OS_linux -I/coderoot/eosal -I../   -Wall -g   -o CMakeFiles/pinsd.dir/code/simulation/pins_basics.c.o   -c /coderoot/pins/code/simulation/pins_basics.c",
+  "file": "/coderoot/pins/code/simulation/pins_basics.c"
+}
+]

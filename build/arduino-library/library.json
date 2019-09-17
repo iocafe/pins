@@ -1,0 +1,17 @@
+{
+  "name": "pins",
+  "version": "1.0.0",
+  "keywords": "pins, io, teensy, stm32, esp32",
+  "description": "Interface to hardware specific IO",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/iocafe/pins.git"
+  },
+  "frameworks": "arduino",
+  "platforms": [
+    "teensy", 
+    "stm32",
+    "esp32"
+  ]
+}

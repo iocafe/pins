@@ -1,9 +1,7 @@
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
 #include <eosalx.h>
 
 /*
-  simple_client_visualstudiocode.ino
+  jane_visualstudiocode.ino
   Example to build simple client app with Visual Studio Code + Platform IO + Arduino libraries. 
   The setup routine runs once when the device starts.
  */
@@ -13,7 +11,7 @@ void setup()
      */
     Serial.begin(115200);
     while (!Serial);
-    Serial.println("Simple client starting (Arduino IDE mode)...");
+    Serial.println("Jane starting (Arduino mode)...");
 
     /* Initialize eosal library and start the simple client.
      */
