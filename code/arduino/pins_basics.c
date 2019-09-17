@@ -37,6 +37,7 @@ void pins_setup(
 
     for (pin = pin_list; pin; pin = pin->board_next)
     {
+        if (pin->addr < 0) continue;
         switch (pin->type)
         {
             case PIN_INPUT:
@@ -72,6 +73,7 @@ void pin_set(
     const Pin *pin,
     os_int state)
 {
+    if (pin->addr < 0) return;
     digitalWrite(pin->addr, state);
 }
 
@@ -90,5 +92,6 @@ void pin_set(
 os_int pin_bin_get(
     const Pin *pin)
 {
-    return 0;
+    if (pin->addr < 0) return 0;
+    return digitalRead(pin->addr);
 }
