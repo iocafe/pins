@@ -1,0 +1,17 @@
+{
+  "pins": {
+    "name": "jane",
+    "title": "IO pin setup for 'jane' application on 'carol' hardware",
+    "inputs": {
+	  "LIGHT_SWITCH": {"bank": 4, "addr": 2, "speed": 3},
+	  "GARAGE_DOOR_SWITCH": {"bank": 1, "addr": 5}
+    },
+    "outputs": {
+	  "WORK_LIGHT": {"bank": 1, "addr": 3, "group": "MYLIGHTS"},
+	  "NIGHT_LIGHT": {"bank": 1, "addr": 5, "group": "MYLIGHTS"}
+    },
+    "analog_inputs": {
+	  "TEMPERATURE_SENSOR": {"bank": 2, "addr": 2, "speed": 3, "delay": 11}
+    }
+  }
+}
