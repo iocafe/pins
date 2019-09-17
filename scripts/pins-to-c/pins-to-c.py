@@ -23,6 +23,7 @@ def start_c_files():
     global cfile, hfile, cfilepath, hfilepath
     cfile = open(cfilepath, "w")
     hfile = open(hfilepath, "w")
+    cfile.write('#include "pins.h"\n')
 
 def finish_c_files():
     global cfile, hfile
@@ -83,12 +84,13 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
         else:
             known_groups[group] = full_pin_name
+            g = "&" + g;
             
         cfile.write(g)
 
     # Setup linked list for all pins in this definition block
     cfile.write(", " + c_prev_pin_name)
-    c_prev_pin_name = full_pin_name
+    c_prev_pin_name = "&" + full_pin_name
     cfile.write("};\n")
 
 def write_linked_list_heads():
@@ -96,7 +98,7 @@ def write_linked_list_heads():
 
     for g, value in known_groups.items():
         varname = block_name + "_" + g + "_group";
-        cfile.write("const Pin *" + varname + " = " + value + ";\n")
+        cfile.write("const Pin *" + varname + " = &" + value + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
     if c_prev_pin_name is not "OS_NULL":
