@@ -17,7 +17,7 @@
 #define PINS_BASICS_INCLUDED
 #include "eosal.h"
 
-/* Enumeration of possible parameters for the pin.
+/* Enumeration of pin types.
  */
 typedef enum
 {
@@ -65,7 +65,7 @@ typedef struct Pin
     os_short *prm;
 
     /* Number of items in parameter array. Number of set parameters is this divided by
-       two, since each 16 bit number is parameter number amd parameter value/
+       two, since each 16 bit number is parameter number amd parameter value.
      */
     os_char prm_n;
 
