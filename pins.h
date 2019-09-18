@@ -20,6 +20,11 @@
  */
 #include "eosalx.h"
 
+/* If C++ compilation, all functions, etc. from this point on in this header file are
+   plain C and must be left undecorated.
+ */
+OSAL_C_HEADER_BEGINS
+
 /* Include target operating system specific defines.
  */
 #ifndef PINS_TARGET_HDRS_INCLUDED
@@ -50,14 +55,10 @@
 #endif
 #endif
 
-/* If C++ compilation, all functions, etc. from this point on in this header file are
-   plain C and must be left undecorated.
- */
-OSAL_C_HEADER_BEGINS
-
 /* Include generic pins library headers.
  */
 #include "code/common/pins_basics.h"
+#include "code/common/pins_parameters.h"
 
 /* If C++ compilation, end the undecorated code.
  */

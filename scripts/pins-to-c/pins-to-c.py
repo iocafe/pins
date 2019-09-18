@@ -17,7 +17,14 @@ pin_types = {
     "pwm" : "PIN_PWM", 
     "timers" : "PIN_TIMER"}
 
-prm_type_list = {"speed": "PIN_SPEED", "delay": "PIN_DELAY"}
+prm_type_list = {
+    "pull-up": "PIN_PULL_UP", 
+    "touch": "PIN_TOUCH", 
+    "frequency": "PIN_FREQENCY",
+    "resolution": "PIN_RESOLUTION",
+    "init": "PIN_INIT",
+    "speed": "PIN_SPEED", 
+    "delay": "PIN_DELAY"}
 
 def start_c_files():
     global cfile, hfile, cfilepath, hfilepath

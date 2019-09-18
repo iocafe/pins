@@ -28,6 +28,7 @@
 
 os_timer t;
 os_boolean state;
+os_int dip3, dip4, touch, dimmer, dimmer_dir, potentiometer;
 
 /**
 ****************************************************************************************************
@@ -51,6 +52,10 @@ os_int osal_main(
 
     os_get_timer(&t);
     state = OS_FALSE;
+    dip3 = dip4 = touch = -1;
+    dimmer = 0;
+    dimmer_dir = 1;
+    potentiometer = -4095;
 
     /* When emulating micro-controller on PC, run loop. Just save context pointer on
        real micro-controller.
@@ -76,12 +81,64 @@ os_int osal_main(
 osalStatus osal_loop(
     void *app_context)
 {
+    os_int x, delta;
+    os_char buf[32];
+
+    /* Digital output */
     if (os_elapsed(&t, 50))
     {
         os_get_timer(&t);
         state = !state;
         pin_set(&jane_LED_BUILTIN, state);
     }
+
+    /* Digital input */
+    x = pin_get(&jane_DIP_SWITCH_3);
+    if (x != dip3)
+    {
+        dip3 = x;
+        osal_console_write(dip3 ? "DIP switch 3 turned ON\n" : "DIP switch 3 turned OFF\n");
+    }
+    x = pin_get(&jane_DIP_SWITCH_4);
+    if (x != dip4)
+    {
+        dip4 = x;
+        osal_console_write(dip4 ? "DIP switch 4 turned ON\n" : "DIP switch 4 turned OFF\n");
+    }
+
+    /* Touch sensor */
+    x = pin_get(&jane_TOUCH_SENSOR);
+    delta = touch - x;
+    if (delta < 0) delta = -delta;
+    if (delta > 20)
+    {
+        touch = x;
+        if (touch)
+        {
+          osal_console_write("TOUCH_SENSOR: ");
+          osal_int_to_string(buf, sizeof(buf), touch);
+          osal_console_write(buf);
+          osal_console_write("\n");
+        }
+    }
+
+    /* Analog input */
+    x = pin_get(&jane_POTENTIOMETER);
+    delta = potentiometer - x;
+    if (delta < 0) delta = -delta;
+    if (delta > 100)
+    {
+        potentiometer = x;
+        osal_console_write("POTENTIOMETER: ");
+        osal_int_to_string(buf, sizeof(buf), potentiometer);
+        osal_console_write(buf);
+        osal_console_write("\n");
+    }
+
+    /* PWM */
+    dimmer += dimmer_dir;
+    if (dimmer > 4095 || dimmer < 0) dimmer_dir = -dimmer_dir;
+    pin_set(&jane_DIMMER_LED, dimmer);
 
     return OSAL_SUCCESS;
 }

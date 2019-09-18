@@ -21,13 +21,13 @@
  */
 void pin_set_prm(
     const Pin *pin,
-    pinPrmEnum prm,
+    pinPrm prm,
     os_int value);
 
 /* Get value of IO pin parmeter.
  */
 os_int pin_get_prm(
     const Pin *pin,
-    pinPrmEnum prm);
+    pinPrm prm);
 
 #endif

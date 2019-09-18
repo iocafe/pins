@@ -34,8 +34,15 @@ pinType;
  */
 typedef enum
 {
-    PIN_SPEED,
-    PIN_DELAY
+    PIN_PULL_UP,
+    PIN_TOUCH,
+    PIN_FREQENCY,
+    PIN_RESOLUTION,
+    PIN_INIT,
+    PIN_SPEED, /* not used */
+    PIN_DELAY, /* not used */
+    PIN_MIN,   /* Minimum value for signal */
+    PIN_MAX    /* Maximum value for signal, 0 if not set */
 }
 pinPrm;
 
@@ -96,7 +103,7 @@ void pin_set(
 
 /* Get pin state.
  */
-os_int pin_bin_get(
+os_int pin_get(
     const Pin *pin);
 
 #endif
