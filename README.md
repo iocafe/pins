@@ -7,3 +7,4 @@ Function of the "pins" is to:
 - Provide stubs to forward "pins" library calls to hardware dependent IO library.
 - Specify hardware pin configuration so that it is written once, and is then available from C, iocom memory maps and in documentation. 
 
+https://github.com/iocafe/pins/blob/master/doc/190916-pins-library/190916-pins-library.pdf
