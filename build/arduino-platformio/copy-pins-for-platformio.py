@@ -1,6 +1,6 @@
 # copy-pins-for-platformio.py 22.10.2019/pekka
 # Copies pins library files needed for PlatformIO Arduino build
-# into /coderoot/lib/arduino-platformio/eosal directory. 
+# into /coderoot/lib/arduino-platformio/pins directory. 
 # To make this look like Arduino library all .c and .cpp
 # files are copied to target root folder, and all header
 # files info subfolders.
@@ -36,6 +36,13 @@ def copy_level_2(sourcedir,roottargetdir,targetdir):
             if f == 'common' or f == 'arduino':
                 copy_level_3(sourcedir + '/' + f, roottargetdir, targetdir + '/' + f)
 
+def copy_info(f,sourcedir,targetdir):
+    infodir = sourcedir + '/build/arduino-library'
+    p = join(infodir, f)
+    t = join(targetdir, f)
+    if exists(p):
+        copyfile(p, t)
+
 def copy_level_1(sourcedir,targetdir):
     mymakedir(targetdir)
     files = listdir(sourcedir)
@@ -52,5 +59,8 @@ def copy_level_1(sourcedir,targetdir):
     # Copy code and extensions folders
     copy_level_2(sourcedir + '/code', targetdir, targetdir + '/code')
 
+    # Copy informative arduino files
+    copy_info('library.json', sourcedir, targetdir)
+    copy_info('library.properties', sourcedir, targetdir)
 
 copy_level_1("/coderoot/pins", "/coderoot/lib/arduino-platformio/pins")
