@@ -1,8 +1,6 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <EEPROM.h>
 #include <eosalx.h>
+#include <pins.h>
 
 /*
   jane_visualstudiocode.ino

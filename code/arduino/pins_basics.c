@@ -93,8 +93,7 @@ void pin_set(
     const Pin *pin,
     os_int state)
 {
-    if (pin->addr < 0) return;
-    switch (pin->type)
+    if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_OUTPUT:
             digitalWrite(pin->addr, state);
@@ -132,8 +131,7 @@ void pin_set(
 os_int pin_get(
     const Pin *pin)
 {
-    if (pin->addr < 0) return 0;
-    switch (pin->type)
+    if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_INPUT:
             /* Touch sensor
@@ -157,4 +155,6 @@ os_int pin_get(
         case PIN_TIMER:
             break;
     }
+
+    return 0;
 }
