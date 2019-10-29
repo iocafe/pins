@@ -44,7 +44,7 @@ os_int dip3, dip4, touch, dimmer, dimmer_dir, potentiometer;
 
 ****************************************************************************************************
 */
-os_int osal_main(
+osalStatus osal_main(
     os_int argc,
     os_char *argv[])
 {
