@@ -121,50 +121,27 @@ def process_pin(pin_type, pin_attr):
     write_pin_to_c_header(pin_name)
     write_pin_to_c_source(pin_type, pin_name, pin_attr)
 
-def xxxxprocess_pin_type(pin_type, pins):
-    print(pins.items())
-    for pin_tag, pin_attr in pins.items():
-##    for pin_tag, pin_attr in pins:
-        if pin_tag == "pin":
-            pin_name = pin_attr.get("name", "iopin")
-            print(pin_name)
-#            process_pin(pin_type, pin_name, pin_attr)
-
 def process_group_block(group):
-    global block_name, pin_types, c_prev_pin_name, known_groups
+    global pin_types
     pin_type = group.get("name", None);
     pins = group.get("pins", None);
-    c_prev_pin_name = "OS_NULL"
-    known_groups = {}
 
     for pin in pins:
         process_pin(pin_type, pin)
 
-#    for my_tag, my_item in pin_block.items():
-#        if my_tag == "group":
-#            pin_type = my_item.get("name", "iopin");
-
-#    for my_tag, my_item in pin_block.items():
-#        if my_tag == "group":
-#            pin_type = my_item.get("name", "iopin");
-#            process_pin_type(pin_type, my_item)
-
-#    for pin_type in pin_types:
-#        pins = pin_block.get(pin_type, None)
-#        if pins is not None:
-#            process_pin_type(pin_type, pins)
-#            cfile.write("\n")
-#            hfile.write("\n")
-
-    write_linked_list_heads()
-
 def process_io_block(io):
-    global block_name
+    global block_name, c_prev_pin_name, known_groups
+
     block_name = io.get("name", "ioblock")
     groups = io.get("groups", None)
 
+    c_prev_pin_name = "OS_NULL"
+    known_groups = {}
+
     for group in groups:
         process_group_block(group)
+
+    write_linked_list_heads()
 
 def process_source_file(path):
     read_file = open(path, "r")
@@ -177,10 +154,6 @@ def process_source_file(path):
 
         for io in ioroot:
             process_io_block(io)
-
-#        for pin_block_tag, pin_block in data.items():
-#            if pin_block_tag == "pins":
-#                process_pin_block(pin_block)
 
     else:
         printf ("Opening file " + path + " failed")
