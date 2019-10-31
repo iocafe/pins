@@ -22,7 +22,7 @@ set(E_SOURCE_PATH "$ENV{E_ROOT}/pins/examples/${E_PROJECT}/code")
 include_directories("$ENV{E_ROOT}/pins")
 
 # Set path to HW specific source files. ************
-include_directories("$ENV{E_ROOT}/pins/examples/${E_PROJECT}/pins/carol")
+include_directories("$ENV{E_ROOT}/pins/examples/${E_PROJECT}/config/pins/carol")
 
 # Add header files, the file(GLOB_RECURSE...) allows for wildcards and recurses subdirs.
 file(GLOB_RECURSE HEADERS "${E_SOURCE_PATH}/*.h")

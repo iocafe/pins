@@ -1,0 +1,35 @@
+{
+  "io": [{
+    "name": "jane",
+    "title": "IO pin setup for 'jane' application on 'carol' hardware",
+    "groups": [
+      {
+        "name": "inputs",
+  	    "pins": [
+          {"name": "DIP_SWITCH_3", "addr": 34, "pull-up": 1},
+	      {"name": "DIP_SWITCH_4", "addr": 35},
+	      {"name": "TOUCH_SENSOR", "addr": 4, "touch": 1}
+        ]
+      },
+      {
+	    "name": "outputs",
+	    "pins": [
+          {"name": "LED_BUILTIN", "addr": 2}
+        ]
+      },
+      {
+	    "name": "analog_inputs",
+	    "pins": [
+          {"name": "POTENTIOMETER", "addr": 25, "speed": 3, "delay": 11, "max": 4095}
+        ]
+      },
+      {
+	    "name": "pwm",
+	    "pins": [
+          {"name": "SERVO", "bank": 0, "addr": 32, "frequency": 50, "resolution": 12, "init": 2048, "max": 4095},
+	      {"name": "DIMMER_LED", "bank": 1, "addr": 33, "frequency": 5000, "resolution": 12, "init": 0, "max": 4095}
+        ]
+      }
+    ]
+  }]
+}
