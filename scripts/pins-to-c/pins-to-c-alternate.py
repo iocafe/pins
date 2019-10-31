@@ -181,9 +181,7 @@ def mymain():
 
     if len(sourcefiles) < 1:
         print("No source files")
-#        exit()
-
-    sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/jane-io-alternate.json')
+        exit()
 
     if outpath is None:
         outpath = sourcefiles[0]
