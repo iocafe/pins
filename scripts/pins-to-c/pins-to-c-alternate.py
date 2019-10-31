@@ -115,31 +115,26 @@ def write_linked_list_heads():
         cfile.write("const Pin *" + varname + " = " + c_prev_pin_name + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
-def process_pin(pin_type, pin_attr):
+def process_pin(pin_type, pin_name, pin_attr):
     global block_name
-    pin_name = pin_attr.get("name", None)
     write_pin_to_c_header(pin_name)
     write_pin_to_c_source(pin_type, pin_name, pin_attr)
 
-def process_group_block(group):
-    global pin_types
-    pin_type = group.get("name", None);
-    pins = group.get("pins", None);
+def process_pin_type(pin_type, pins):
+    for pin_name, pin_attr in pins.items():
+        process_pin(pin_type, pin_name, pin_attr)
 
-    for pin in pins:
-        process_pin(pin_type, pin)
-
-def process_io_block(io):
-    global block_name, c_prev_pin_name, known_groups
-
-    block_name = io.get("name", "ioblock")
-    groups = io.get("groups", None)
-
+def process_pin_block(pin_block):
+    global block_name, pin_types, c_prev_pin_name, known_groups
+    block_name = pin_block.get("name", "iopin");
     c_prev_pin_name = "OS_NULL"
     known_groups = {}
-
-    for group in groups:
-        process_group_block(group)
+    for pin_type in pin_types:
+        pins = pin_block.get(pin_type, None)
+        if pins is not None:
+            process_pin_type(pin_type, pins)
+            cfile.write("\n")
+            hfile.write("\n")
 
     write_linked_list_heads()
 
@@ -147,13 +142,9 @@ def process_source_file(path):
     read_file = open(path, "r")
     if read_file:
         data = json.load(read_file)
-        ioroot = data.get("io", None)
-        if ioroot == None:
-            print("'io' object not found")
-            exit()
-
-        for io in ioroot:
-            process_io_block(io)
+        for pin_block_tag, pin_block in data.items():
+            if pin_block_tag == "pins":
+                process_pin_block(pin_block)
 
     else:
         printf ("Opening file " + path + " failed")
@@ -171,7 +162,7 @@ def mymain():
                 outpath = sys.argv[i+1]
                 i = i + 1
                 if i >=n:
-                    print("Output file name must follow -o")
+                    print("Output file name must follow -o");
                     exit()
 
             s = sys.argv[i]
@@ -180,9 +171,9 @@ def mymain():
             sourcefiles.append(sys.argv[i])
 
     if len(sourcefiles) < 1:
-        print("No source files")
+        print("No source files");
         exit()
-
+    
     if outpath is None:
         outpath = sourcefiles[0]
 
