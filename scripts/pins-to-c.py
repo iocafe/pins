@@ -1,10 +1,5 @@
 # pins-to-c.py 16.9.2019/pekka
-# Converts hardware IO specification(s) written in JSON to C code source and
-# header files. 
-# WARNING: Python 3.6 or newer is needed to preserve dictionary order.
-# If run with older versions, IO pins in C are not in same order as in this C file,
-# which can cause problems down the road since linked list order is may be used to
-# give pins addresses is iocom memory block.
+# Converts hardware IO specification(s) written in JSON to C source and header files. 
 import json
 import os
 import sys
@@ -30,7 +25,9 @@ def start_c_files():
     global cfile, hfile, cfilepath, hfilepath
     cfile = open(cfilepath, "w")
     hfile = open(hfilepath, "w")
+    cfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
     cfile.write('#include "pins.h"\n')
+    hfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
     hfile.write('OSAL_C_HEADER_BEGINS\n')
 
 def finish_c_files():
