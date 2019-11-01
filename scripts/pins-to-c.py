@@ -37,11 +37,11 @@ def finish_c_files():
     hfile.close()
 
 def write_pin_to_c_header(pin_name):
-    global block_name
-    hfile.write("extern const Pin " + block_name + "_" + pin_name + ";\n")
+    global prefix
+    hfile.write("extern const Pin " + prefix + pin_name + ";\n")
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
-    global block_name, c_prev_pin_name, known_groups
+    global c_prev_pin_name, known_groups, prefix
 
     # Generate C parameter list for the pin
     c_prm_list = ""
@@ -56,12 +56,12 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     # If we have C attributes, write to C file
     c_prm_array_name = "OS_NULL"
     if c_prm_list is not "":
-        c_prm_array_name = block_name + "_" + pin_name + "_prm"
+        c_prm_array_name = prefix + pin_name + "_prm"
         cfile.write("static os_short " + c_prm_array_name + "[]")
         cfile.write("= {" + c_prm_list + "};\n")
 
     # Write pin name and type
-    full_pin_name = block_name + "_" + pin_name
+    full_pin_name = prefix + pin_name
     cfile.write("const Pin " + full_pin_name + ' = {"')
     cfile.write(pin_name + '", ' + pin_types[pin_type] + ", ")
 
@@ -100,15 +100,15 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     cfile.write("};\n")
 
 def write_linked_list_heads():
-    global block_name, c_prev_pin_name, known_groups
+    global prefix, c_prev_pin_name, known_groups
 
     for g, value in known_groups.items():
-        varname = block_name + "_" + g + "_group";
+        varname = prefix + g + "_group";
         cfile.write("const Pin *" + varname + " = &" + value + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
     if c_prev_pin_name is not "OS_NULL":
-        varname = block_name + "_pins";
+        varname = prefix + "pins";
         cfile.write("const Pin *" + varname + " = " + c_prev_pin_name + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
@@ -136,10 +136,12 @@ def process_group_block(group):
         process_pin(pin_type, pin)
 
 def process_io_block(io):
-    global block_name, c_prev_pin_name, known_groups
+    global block_name, c_prev_pin_name, known_groups, prefix
 
     block_name = io.get("name", "ioblock")
     groups = io.get("groups", None)
+    prefix = io.get('prefix', 'io_')
+
     if groups == None:
         print("'groups' not found for " + block_name)
         exit()
@@ -191,6 +193,8 @@ def mymain():
     if len(sourcefiles) < 1:
         print("No source files")
         exit()
+
+#    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
 
     if outpath is None:
         outpath = sourcefiles[0]
