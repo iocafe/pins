@@ -176,19 +176,18 @@ def mymain():
     n = len(sys.argv)
     sourcefiles = []
     outpath = None
+    expectpath = True
     for i in range(1, n):
         if sys.argv[i][0] is "-":
             if sys.argv[i][1] is "o":
                 outpath = sys.argv[i+1]
-                i = i + 1
-                if i >=n:
-                    print("Output file name must follow -o")
-                    exit()
-
-            s = sys.argv[i]
+                expectpath = False
 
         else:
-            sourcefiles.append(sys.argv[i])
+            if expectpath:
+                sourcefiles.append(sys.argv[i])
+
+            expectpath = True
 
     if len(sourcefiles) < 1:
         print("No source files")
