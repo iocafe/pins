@@ -26,22 +26,22 @@ def start_c_files():
     cfile = open(cfilepath, "w")
     hfile = open(hfilepath, "w")
     cfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
-    cfile.write('#include "pins.h"\n\n')
+    cfile.write('#include "pins.h"\n')
     hfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
-    hfile.write('OSAL_C_HEADER_BEGINS\n\n')
+    hfile.write('OSAL_C_HEADER_BEGINS\n')
 
 def finish_c_files():
     global cfile, hfile
-    hfile.write('\nOSAL_C_HEADER_ENDS\n')
+    hfile.write('OSAL_C_HEADER_ENDS\n')
     cfile.close()
     hfile.close()
 
 def write_pin_to_c_header(pin_name):
-    hfile.write("    Pin " + pin_name + ";\n")
+    global prefix
+    hfile.write("extern const Pin " + prefix + pin_name + ";\n")
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
-    global known_groups, device_prefix, ccontent
-    global nro_pins, pin_nr
+    global c_prev_pin_name, known_groups, prefix
 
     # Generate C parameter list for the pin
     c_prm_list = ""
@@ -51,37 +51,37 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             if c_prm_list is not "":
                 c_prm_list = c_prm_list + ", "    
                             
-            c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
+            c_prm_list = c_prm_list + c_attr_name + ", " + str(value);
 
     # If we have C attributes, write to C file
     c_prm_array_name = "OS_NULL"
     if c_prm_list is not "":
-        c_prm_array_name = device_prefix + "_" + pin_type + "_" + pin_name + "_prm"
+        c_prm_array_name = prefix + pin_name + "_prm"
         cfile.write("static os_short " + c_prm_array_name + "[]")
         cfile.write("= {" + c_prm_list + "};\n")
 
-    full_pin_name = device_prefix + '.' + pin_type + '.' + pin_name
-
     # Write pin name and type
-    ccontent += '    {"' + pin_name + '", ' + pin_types[pin_type] + ", "
+    full_pin_name = prefix + pin_name
+    cfile.write("const Pin " + full_pin_name + ' = {"')
+    cfile.write(pin_name + '", ' + pin_types[pin_type] + ", ")
 
     # Write pin address, merge addr and bank
     bank = pin_attr.get("bank", "0")
-    ccontent += str(bank) + ", "
+    cfile.write(str(bank) + ", ")
     addr = pin_attr.get("addr", "0")
-    ccontent += str(addr) + ", "
+    cfile.write(str(addr) + ", ")
 
     # Write pointer to parameter array, if any
-    ccontent += c_prm_array_name + ", "
+    cfile.write(c_prm_array_name + ", ")
     if c_prm_array_name is "OS_NULL":
-        ccontent += "0, "
+        cfile.write("0, ")
     else:
-        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_short), "
+        cfile.write("sizeof(" + c_prm_array_name + ")/sizeof(os_short), ")
 
     # If IO pin belongs to group, setup linked list
     group = pin_attr.get("group", None)
     if group is None:
-        ccontent += "OS_NULL"
+        cfile.write("OS_NULL")
     else:
         g = known_groups.get(group, None)
         if g is None:
@@ -90,132 +90,67 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
         else:
             known_groups[group] = full_pin_name
-            g = "&" + g
+            g = "&" + g;
             
-        ccontent += g
+        cfile.write(g)
 
-    ccontent += "}"
-    if pin_nr <= nro_pins:
-        ccontent += ","
-    ccontent += "\n"
+    # Setup linked list for all pins in this definition block
+    cfile.write(", " + c_prev_pin_name)
+    c_prev_pin_name = "&" + full_pin_name
+    cfile.write("};\n")
 
 def write_linked_list_heads():
-    global device_prefix, known_groups, pin_type
+    global prefix, c_prev_pin_name, known_groups
 
     for g, value in known_groups.items():
-        varname = device_prefix + "_" +  g + "_group"
+        varname = prefix + g + "_group";
         cfile.write("const Pin *" + varname + " = &" + value + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
-def process_pin(pin_type, pin_attr):
-    global device_name, ccontent
-    global nro_pins, pin_nr
+    if c_prev_pin_name is not "OS_NULL":
+        varname = prefix + "pins";
+        cfile.write("const Pin *" + varname + " = " + c_prev_pin_name + ";\n")
+        hfile.write("extern const Pin *" + varname + ";\n")
 
+def process_pin(pin_type, pin_attr):
+    global block_name
     pin_name = pin_attr.get("name", None)
     if pin_name == None:
-        print("'name' not found for pin in " + device_name + " " + pin_type)
+        print("'name' not found for pin in " + block_name + " " + pin_type)
         exit()
-
-    if pin_nr == 1:        
-        ccontent += ', &' + device_prefix + '.' + pin_type + '.' + pin_name + '},\n'
-    pin_nr = pin_nr + 1        
-
     write_pin_to_c_header(pin_name)
     write_pin_to_c_source(pin_type, pin_name, pin_attr)
 
-def count_pins(pins):
-    count = 0
-    for pin in pins:
-        count = count + 1
-    return count        
-
 def process_group_block(group):
     global pin_types
-    global nro_groups, group_nr, ccontent
-    global nro_pins, pin_nr, pin_group_list
-
-    hfile.write('\n  struct\n  {\n')
-    hfile.write('    PinGroupHdr hdr;\n')
-
-    pin_type = group.get("name", None)
+    pin_type = group.get("name", None);
     if pin_type == None:
-        print("'name' not found for group in " + device_name)
+        print("'name' not found for group in " + block_name)
         exit()
-
-    pins = group.get("pins", None)
+    pins = group.get("pins", None);
     if pins == None:
-        print("'pins' not found for " + device_name + " " + pin_type)
+        print("'pins' not found for " + block_name + " " + pin_type)
         exit()
-
-    group_nr = group_nr + 1
-
-    pin_group_list.append(device_prefix + '.' + pin_type)
-
-    nro_pins = count_pins(pins)
-    pin_nr = 1
-
-    ccontent += '\n  {{' + str(nro_pins)
 
     for pin in pins:
         process_pin(pin_type, pin)
 
-    ccontent += '  }'
-    if group_nr <= nro_groups:
-        ccontent += ','
-    ccontent += '\n'
+def process_io_block(io):
+    global block_name, c_prev_pin_name, known_groups, prefix
 
-    hfile.write('  }\n  ' + pin_type + ';\n')
-
-def count_groups(groups):
-    count = 0
-    for group in groups:
-        count = count + 1
-    return count        
-
-def process_io_device(io):
-    global device_name, known_groups, device_prefix
-    global nro_groups, group_nr, ccontent, pin_group_list
-
-    device_name = io.get("name", "ioblock")
+    block_name = io.get("name", "ioblock")
     groups = io.get("groups", None)
-    device_prefix = io.get("prefix", "pins")
-    pin_group_list = []
-
-    hfile.write('typedef struct\n{')
+    prefix = io.get('prefix', 'io_')
 
     if groups == None:
-        print("'groups' not found for " + device_name)
+        print("'groups' not found for " + block_name)
         exit()
 
-    nro_groups = count_groups(groups)
-    group_nr = 1;
-
-    ccontent = '\nconst ' + device_prefix + '_t ' + device_prefix + ' =\n{'
-
+    c_prev_pin_name = "OS_NULL"
     known_groups = {}
 
     for group in groups:
         process_group_block(group)
-
-    ccontent += '};\n\n'
-    cfile.write(ccontent)        
-
-    list_name = device_prefix + "_group_list[]"
-    cfile.write('static const PinGroupHdr *' + list_name + ' =\n{\n  ')
-    isfirst = True
-    for p in pin_group_list:
-        if not isfirst:
-            cfile.write(',\n  ')
-        isfirst = False
-        cfile.write('&' + p)
-    cfile.write('\n};\n\n')
-
-    cfile.write('const IoDeviceHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr)};\n')
-
-    hfile.write('}\n' + device_prefix + '_t;\n\n')
-
-    hfile.write('extern const IoDeviceHdr ' + device_prefix + '_' + 'hdr;\n')
-    hfile.write('extern const ' + device_prefix + '_t ' + device_prefix + ';\n')
 
     write_linked_list_heads()
 
@@ -229,7 +164,7 @@ def process_source_file(path):
             exit()
 
         for io in ioroot:
-            process_io_device(io)
+            process_io_block(io)
 
     else:
         printf ("Opening file " + path + " failed")
@@ -259,7 +194,6 @@ def mymain():
         exit()
 
 #    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
-#    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
 
     if outpath is None:
         outpath = sourcefiles[0]

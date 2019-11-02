@@ -84,15 +84,15 @@ typedef struct Pin
     /* Next pin in linked list of pins belonging to the same io configuration. OS_NULL
        to indicate that this pin is end of list of not in group.
      */
-    const struct Pin *board_next;
+    // NO LONGER NEEDED const struct Pin *board_next;
 }
 Pin;
 
 
-/* Initialize Hardware IO block.
+/* Setup hardware IO for a device.
  */
 void pins_setup(
-    const Pin *pin_list,
+    const IoDeviceHdr *pin_def,
     os_int flags);
 
 /* Set IO pin state.
