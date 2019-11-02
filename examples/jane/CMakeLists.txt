@@ -18,11 +18,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $ENV{E_BIN})
 # Set path to source files.
 set(E_SOURCE_PATH "$ENV{E_ROOT}/pins/examples/${E_PROJECT}/code")
 
-# Add iocom to include path.
+# Add pins to include path.
 include_directories("$ENV{E_ROOT}/pins")
 
 # Set path to HW specific source files. ************
-include_directories("$ENV{E_ROOT}/pins/examples/${E_PROJECT}/config/pins/carol")
+include_directories("$ENV{E_ROOT}/pins/examples/${E_PROJECT}/config/include/carol")
 
 # Add header files, the file(GLOB_RECURSE...) allows for wildcards and recurses subdirs.
 file(GLOB_RECURSE HEADERS "${E_SOURCE_PATH}/*.h")
