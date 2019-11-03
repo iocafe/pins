@@ -23,14 +23,35 @@
   @anchor pins_setup
 
   The pins_setup() function...
+  @param   pins_hdr Top level pins IO configuration structure.
+  @param   flags Reserved for future, set 0 for now.
   @return  None.
 
 ****************************************************************************************************
 */
 void pins_setup(
-    const Pin *pin_list,
+    const IoPinsHdr *pins_hdr,
     os_int flags)
 {
+    const PinGroupHdr *group;
+    const Pin *pin;
+    os_short gcount, pcount;
+
+    gcount = pins_hdr->n_groups;
+    group = *pins_hdr->group;
+    while (gcount--)
+    {
+        pcount = group->n_pins;
+        pin = group->pin;
+        while (pcount--)
+        {
+
+            pin++;
+        }
+
+
+        group++;
+    }
 }
 
 

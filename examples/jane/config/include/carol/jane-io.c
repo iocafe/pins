@@ -4,8 +4,8 @@
 static os_short pins_inputs_dip_switch_3_prm[]= {PIN_PULL_UP, 1};
 static os_short pins_inputs_touch_sensor_prm[]= {PIN_TOUCH, 1};
 static os_short pins_analog_inputs_potentiometer_prm[]= {PIN_SPEED, 3, PIN_DELAY, 11};
-static os_short pins_pwm_servo_prm[]= {PIN_INIT, 2048, PIN_FREQENCY, 50, PIN_RESOLUTION, 12};
-static os_short pins_pwm_dimmer_led_prm[]= {PIN_INIT, 0, PIN_FREQENCY, 5000, PIN_RESOLUTION, 12};
+static os_short pins_pwm_servo_prm[]= {PIN_RESOLUTION, 12, PIN_FREQENCY, 50, PIN_INIT, 2048};
+static os_short pins_pwm_dimmer_led_prm[]= {PIN_RESOLUTION, 12, PIN_FREQENCY, 5000, PIN_INIT, 0};
 
 const pins_t pins =
 {
@@ -31,10 +31,10 @@ const pins_t pins =
 
 static const PinGroupHdr *pins_group_list[] =
 {
-  &pins.inputs,
-  &pins.outputs,
-  &pins.analog_inputs,
-  &pins.pwm
+  &pins.inputs.hdr,
+  &pins.outputs.hdr,
+  &pins.analog_inputs.hdr,
+  &pins.pwm.hdr
 };
 
 const IoPinsHdr pins_hdr = {pins_group_list, sizeof(pins_group_list)/sizeof(PinGroupHdr*)};

@@ -25,55 +25,72 @@
   @anchor pins_setup
 
   The pins_setup() function...
+  @param   pins_hdr Top level pins IO configuration structure.
+  @param   flags Reserved for future, set 0 for now.
   @return  None.
 
 ****************************************************************************************************
 */
 void pins_setup(
-    const Pin *pin_list,
+    const IoPinsHdr *pins_hdr,
     os_int flags)
 {
+    const PinGroupHdr *group;
     const Pin *pin;
+    os_short gcount, pcount;
+
     os_int
         is_touch_sensor,
         frequency_hz,
         resolution_bits,
         initial_state;
 
-    for (pin = pin_list; pin; pin = pin->board_next)
+    gcount = pins_hdr->n_groups;
+    group = *pins_hdr->group;
+
+    while (gcount--)
     {
-        if (pin->addr < 0) continue;
-        switch (pin->type)
+        pcount = group->n_pins;
+        pin = group->pin;
+        while (pcount--)
         {
-            case PIN_INPUT:
-                is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
+            if (pin->addr >=  0) switch (pin->type)
+            {
+                case PIN_INPUT:
+                    is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
 
-                if (!is_touch_sensor)
-                {
-                    pinMode(pin->addr, pin_get_prm(pin, PIN_PULL_UP) ? INPUT_PULLUP : INPUT);
-                }
-                break;
+                    if (!is_touch_sensor)
+                    {
+                        pinMode(pin->addr, pin_get_prm(pin, PIN_PULL_UP) ? INPUT_PULLUP : INPUT);
+                    }
+                    break;
 
-            case PIN_OUTPUT:
-                pinMode(pin->addr, OUTPUT);
-                break;
+                case PIN_OUTPUT:
+                    pinMode(pin->addr, OUTPUT);
+                    break;
 
-            case PIN_PWM:
-                frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
-                if (!frequency_hz) frequency_hz = 50; /* Default servo frequency */
-                resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
-                if (!resolution_bits) resolution_bits = 12;
-                initial_state  = pin_get_prm(pin, PIN_INIT);
-                ledcSetup(pin->bank, frequency_hz, resolution_bits);
-                ledcAttachPin(pin->addr, pin->bank);
-                ledcWrite(pin->bank, initial_state);
-                break;
+                case PIN_PWM:
+                    frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
+                    if (!frequency_hz) frequency_hz = 50; /* Default servo frequency */
+                    resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
+                    if (!resolution_bits) resolution_bits = 12;
+                    initial_state  = pin_get_prm(pin, PIN_INIT);
+                    ledcSetup(pin->bank, frequency_hz, resolution_bits);
+                    ledcAttachPin(pin->addr, pin->bank);
+                    ledcWrite(pin->bank, initial_state);
+                    break;
 
-            case PIN_ANALOG_INPUT:
-            case PIN_ANALOG_OUTPUT:
-            case PIN_TIMER:
-                break;
+                case PIN_ANALOG_INPUT:
+                case PIN_ANALOG_OUTPUT:
+                case PIN_TIMER:
+                    break;
+            }
+
+            pin++;
         }
+
+
+        group++;
     }
 }
 

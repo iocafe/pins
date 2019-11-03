@@ -46,6 +46,23 @@ typedef enum
 }
 pinPrm;
 
+struct Pin;
+
+typedef struct
+{
+    os_short n_pins;
+    const struct Pin *pin;
+}
+PinGroupHdr;
+
+typedef struct
+{
+    const PinGroupHdr **group;
+    os_short n_groups;
+}
+IoPinsHdr;
+
+
 /* Structure to set up static information about one IO pin or other IO item.
  */
 typedef struct Pin
@@ -92,7 +109,7 @@ Pin;
 /* Setup hardware IO for a device.
  */
 void pins_setup(
-    const IoDeviceHdr *pin_def,
+    const IoPinsHdr *pins_hdr,
     os_int flags);
 
 /* Set IO pin state.

@@ -48,7 +48,7 @@ osalStatus osal_main(
     os_int argc,
     os_char *argv[])
 {
-    pins_setup(io_pins, 0);
+    pins_setup(&pins_hdr, 0);
 
     os_get_timer(&t);
     state = OS_FALSE;
@@ -89,17 +89,17 @@ osalStatus osal_loop(
     {
         os_get_timer(&t);
         state = !state;
-        pin_set(&io_LED_BUILTIN, state);
+        pin_set(&pins.outputs.led_builtin, state);
     }
 
     /* Digital input */
-    x = pin_get(&io_DIP_SWITCH_3);
+    x = pin_get(&pins.inputs.dip_switch_3);
     if (x != dip3)
     {
         dip3 = x;
         osal_console_write(dip3 ? "DIP switch 3 turned ON\n" : "DIP switch 3 turned OFF\n");
     }
-    x = pin_get(&io_DIP_SWITCH_4);
+    x = pin_get(&pins.inputs.dip_switch_4);
     if (x != dip4)
     {
         dip4 = x;
@@ -107,7 +107,7 @@ osalStatus osal_loop(
     }
 
     /* Touch sensor */
-    x = pin_get(&io_TOUCH_SENSOR);
+    x = pin_get(&pins.inputs.touch_sensor);
     delta = touch - x;
     if (delta < 0) delta = -delta;
     if (delta > 20)
@@ -123,7 +123,7 @@ osalStatus osal_loop(
     }
 
     /* Analog input */
-    x = pin_get(&io_POTENTIOMETER);
+    x = pin_get(&pins.analog_inputs.potentiometer);
     delta = potentiometer - x;
     if (delta < 0) delta = -delta;
     if (delta > 100)
@@ -138,7 +138,7 @@ osalStatus osal_loop(
     /* PWM */
     dimmer += dimmer_dir;
     if (dimmer > 4095 || dimmer < 0) dimmer_dir = -dimmer_dir;
-    pin_set(&io_DIMMER_LED, dimmer);
+    pin_set(&pins.pwm.dimmer_led, dimmer);
 
     return OSAL_SUCCESS;
 }

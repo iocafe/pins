@@ -206,7 +206,7 @@ def process_io_device(io):
         if not isfirst:
             cfile.write(',\n  ')
         isfirst = False
-        cfile.write('&' + p)
+        cfile.write('&' + p + '.hdr')
     cfile.write('\n};\n\n')
 
     cfile.write('const IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
