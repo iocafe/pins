@@ -40,7 +40,7 @@ def write_pin_to_c_header(pin_name):
     hfile.write("    Pin " + pin_name + ";\n")
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
-    global known_groups, device_prefix, ccontent
+    global known_groups, prefix, ccontent
     global nro_pins, pin_nr
 
     # Generate C parameter list for the pin
@@ -56,11 +56,11 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     # If we have C attributes, write to C file
     c_prm_array_name = "OS_NULL"
     if c_prm_list is not "":
-        c_prm_array_name = device_prefix + "_" + pin_type + "_" + pin_name + "_prm"
+        c_prm_array_name = prefix + "_" + pin_type + "_" + pin_name + "_prm"
         cfile.write("static os_short " + c_prm_array_name + "[]")
         cfile.write("= {" + c_prm_list + "};\n")
 
-    full_pin_name = device_prefix + '.' + pin_type + '.' + pin_name
+    full_pin_name = prefix + '.' + pin_type + '.' + pin_name
 
     # Write pin name and type
     ccontent += '    {"' + pin_name + '", ' + pin_types[pin_type] + ", "
@@ -100,16 +100,16 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     ccontent += "\n"
 
 def write_linked_list_heads():
-    global device_prefix, known_groups, pin_type
+    global prefix, known_groups
 
     for g, value in known_groups.items():
-        varname = device_prefix + "_" +  g + "_group"
+        varname = prefix + "_" +  g + "_group"
         cfile.write("const Pin *" + varname + " = &" + value + ";\n")
         hfile.write("extern const Pin *" + varname + ";\n")
 
 def process_pin(pin_type, pin_attr):
     global device_name, ccontent
-    global nro_pins, pin_nr
+    global pin_nr
 
     pin_name = pin_attr.get("name", None)
     if pin_name == None:
@@ -117,7 +117,7 @@ def process_pin(pin_type, pin_attr):
         exit()
 
     if pin_nr == 1:        
-        ccontent += ', &' + device_prefix + '.' + pin_type + '.' + pin_name + '},\n'
+        ccontent += ', &' + prefix + '.' + pin_type + '.' + pin_name + '},\n'
     pin_nr = pin_nr + 1        
 
     write_pin_to_c_header(pin_name)
@@ -130,7 +130,6 @@ def count_pins(pins):
     return count        
 
 def process_group_block(group):
-    global pin_types
     global nro_groups, group_nr, ccontent
     global nro_pins, pin_nr, pin_group_list
 
@@ -149,7 +148,7 @@ def process_group_block(group):
 
     group_nr = group_nr + 1
 
-    pin_group_list.append(device_prefix + '.' + pin_type)
+    pin_group_list.append(prefix + '.' + pin_type)
 
     nro_pins = count_pins(pins)
     pin_nr = 1
@@ -173,12 +172,12 @@ def count_groups(groups):
     return count        
 
 def process_io_device(io):
-    global device_name, known_groups, device_prefix
+    global device_name, known_groups, prefix
     global nro_groups, group_nr, ccontent, pin_group_list
 
     device_name = io.get("name", "ioblock")
     groups = io.get("groups", None)
-    device_prefix = io.get("prefix", "pins")
+    prefix = io.get("prefix", "pins")
     pin_group_list = []
 
     hfile.write('typedef struct\n{')
@@ -190,7 +189,7 @@ def process_io_device(io):
     nro_groups = count_groups(groups)
     group_nr = 1;
 
-    ccontent = '\nconst ' + device_prefix + '_t ' + device_prefix + ' =\n{'
+    ccontent = '\nconst ' + prefix + '_t ' + prefix + ' =\n{'
 
     known_groups = {}
 
@@ -200,8 +199,8 @@ def process_io_device(io):
     ccontent += '};\n\n'
     cfile.write(ccontent)        
 
-    list_name = device_prefix + "_group_list[]"
-    cfile.write('static const PinGroupHdr *' + list_name + ' =\n{\n  ')
+    list_name = prefix + "_group_list"
+    cfile.write('static const PinGroupHdr *' + list_name + '[] =\n{\n  ')
     isfirst = True
     for p in pin_group_list:
         if not isfirst:
@@ -210,12 +209,12 @@ def process_io_device(io):
         cfile.write('&' + p)
     cfile.write('\n};\n\n')
 
-    cfile.write('const IoDeviceHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr)};\n')
+    cfile.write('const IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
 
-    hfile.write('}\n' + device_prefix + '_t;\n\n')
+    hfile.write('}\n' + prefix + '_t;\n\n')
 
-    hfile.write('extern const IoDeviceHdr ' + device_prefix + '_' + 'hdr;\n')
-    hfile.write('extern const ' + device_prefix + '_t ' + device_prefix + ';\n')
+    hfile.write('extern const IoPinsHdr ' + prefix + '_' + 'hdr;\n')
+    hfile.write('extern const ' + prefix + '_t ' + prefix + ';\n')
 
     write_linked_list_heads()
 

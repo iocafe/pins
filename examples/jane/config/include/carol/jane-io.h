@@ -1,11 +1,42 @@
 /* This file is gerated by pins-to-c.py script, do not modify. */
 OSAL_C_HEADER_BEGINS
-extern const Pin io_DIP_SWITCH_3;
-extern const Pin io_DIP_SWITCH_4;
-extern const Pin io_TOUCH_SENSOR;
-extern const Pin io_LED_BUILTIN;
-extern const Pin io_POTENTIOMETER;
-extern const Pin io_SERVO;
-extern const Pin io_DIMMER_LED;
-extern const Pin *io_pins;
+
+typedef struct
+{
+  struct
+  {
+    PinGroupHdr hdr;
+    Pin dip_switch_3;
+    Pin dip_switch_4;
+    Pin touch_sensor;
+  }
+  inputs;
+
+  struct
+  {
+    PinGroupHdr hdr;
+    Pin led_builtin;
+  }
+  outputs;
+
+  struct
+  {
+    PinGroupHdr hdr;
+    Pin potentiometer;
+  }
+  analog_inputs;
+
+  struct
+  {
+    PinGroupHdr hdr;
+    Pin servo;
+    Pin dimmer_led;
+  }
+  pwm;
+}
+pins_t;
+
+extern const IoPinsHdr pins_hdr;
+extern const pins_t pins;
+
 OSAL_C_HEADER_ENDS
