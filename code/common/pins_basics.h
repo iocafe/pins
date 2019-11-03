@@ -96,12 +96,7 @@ typedef struct Pin
     /* Next pin in linked list of pins belonging to same group as this one. OS_NULL
        to indicate that this pin is end of list of not in group.
      */
-    const struct Pin *congroup_next;
-
-    /* Next pin in linked list of pins belonging to the same io configuration. OS_NULL
-       to indicate that this pin is end of list of not in group.
-     */
-    // NO LONGER NEEDED const struct Pin *board_next;
+    const struct Pin *next;
 }
 Pin;
 

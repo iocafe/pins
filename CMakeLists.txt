@@ -15,11 +15,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $ENV{E_LIB})
 # Set path to source files.
 set(BACKBONE "$ENV{E_ROOT}/${E_PROJECT}/code")
 
-# Add iocom to include path.
+# Add iocom and pins library include paths.
+include_directories("$ENV{E_ROOT}/iocom")
 include_directories("$ENV{E_ROOT}/${E_PROJECT}")
 
 # Add main headers.
-set(MAIN_HEADERS "$ENV{E_ROOT}/${E_PROJECT}/${E_PROJECT}.h")
+set(MAIN_HEADERS "$ENV{E_ROOT}/${E_PROJECT}/${E_PROJECT}.h" "$ENV{E_ROOT}/${E_PROJECT}/${E_PROJECT}x.h")
 
 # Add source files common to all operating systems.
 file(GLOB BB_CM_SOURCES "${BACKBONE}/common/*.c")
