@@ -94,6 +94,11 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             
         ccontent += g
 
+    if pin_name in signallist:
+        ccontent += ', ' + signallist[pin_name]
+    else:
+        ccontent += ', OS_NULL'
+
     ccontent += "}"
     if pin_nr <= nro_pins:
         ccontent += ","
@@ -171,14 +176,49 @@ def count_groups(groups):
         count = count + 1
     return count        
 
+def list_signals_in_mblk(mblk, device_name):
+    global signallist
+    groups = mblk.get("groups", None)
+    mblk_name = mblk.get("name", None);
+
+    for group in groups:
+        signals  = group.get("signals", None);
+        if signals != None:
+            for signal in signals:
+                signal_name = signal.get('name', None)
+                if signal_name is not None:
+                    signallist.update({signal_name : '&' + device_name + '.' + mblk_name + '.' + signal_name})
+
+def list_signals_in_file(path):
+    signals_file = open(path, "r")
+    if signals_file:
+        data = json.load(signals_file)
+        device_name = data.get("name", None)
+        if device_name == None:
+            print("device 'name' not found in " + path)
+            return
+        mblks = data.get("mblk", None)
+        if mblks == None:
+            print("'mblk' not found in "  + path)
+            return
+
+        for mblk in mblks:
+            list_signals_in_mblk(mblk, device_name)
+
+    else:
+        printf ("Opening file " + path + " failed")
+
 def process_io_device(io):
-    global device_name, known_groups, prefix
+    global device_name, known_groups, prefix, signallist
     global nro_groups, group_nr, ccontent, pin_group_list
 
     device_name = io.get("name", "ioblock")
     groups = io.get("groups", None)
     prefix = io.get("prefix", "pins")
     pin_group_list = []
+
+    signallist = {}
+    list_signals_in_file(signalspath)
 
     hfile.write('typedef struct\n{')
 
@@ -234,7 +274,7 @@ def process_source_file(path):
         printf ("Opening file " + path + " failed")
             
 def mymain():
-    global cfilepath, hfilepath
+    global cfilepath, hfilepath, signalspath
 
     # Get options
     n = len(sys.argv)
@@ -245,6 +285,10 @@ def mymain():
         if sys.argv[i][0] is "-":
             if sys.argv[i][1] is "o":
                 outpath = sys.argv[i+1]
+                expectpath = False
+
+            if sys.argv[i][1] is "s":
+                signalspath = sys.argv[i+1]
                 expectpath = False
 
         else:
@@ -259,6 +303,7 @@ def mymain():
 
 #    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
 #    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
+#    signalspath = '/coderoot/iocom/examples/gina/config/signals/gina-signals.json'
 
     if outpath is None:
         outpath = sourcefiles[0]

@@ -62,6 +62,8 @@ typedef struct
 }
 IoPinsHdr;
 
+struct iocSignal;
+
 
 /* Structure to set up static information about one IO pin or other IO item.
  */
@@ -97,6 +99,10 @@ typedef struct Pin
        to indicate that this pin is end of list of not in group.
      */
     const struct Pin *next;
+
+    /* Pointer to IO signal, if this pin is mapped to one.
+     */
+    struct iocSignal *signal;
 }
 Pin;
 

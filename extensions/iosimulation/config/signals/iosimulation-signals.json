@@ -1,0 +1,54 @@
+{
+  "name": "gina",
+  "mblk": [
+  {
+    "name": "up",
+    "handle": "&ioboard_UP",
+    "title": "Exported by 'gina' IO device",
+    "groups": [
+      {
+        "name": "inputs",
+         "signals": [
+           {"name": "dip_switch_3", "addr": 30, "type": "boolean"},
+           {"name": "dip_switch_4"},
+           {"name": "touch_sensor"}
+         ]
+       },
+       {
+         "name": "analog_inputs",
+         "signals": [
+           {"name": "potentiometer"}
+         ]
+       }
+    ]
+  },
+
+  {
+    "name": "down",
+    "handle": "&ioboard_DOWN",
+    "title": "Imported by 'gina' IO device",
+    "groups": [
+      {
+        "name": "pwm",
+        "signals": [
+          {"name": "servo", "type": "short"},
+          {"name": "dimmer_led"}
+        ]
+      },
+      {
+        "name": "outputs",
+        "signals": [
+          {"name": "led_builtin", "type": "boolean"}
+        ]
+      },
+      {
+        "name": "controls",
+        "signals": [
+           {"name": "seven_segment", "type": "boolean", "array": 8}
+         ]
+      }
+    ]
+  }
+  ]
+}
+
