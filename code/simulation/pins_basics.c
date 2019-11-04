@@ -19,17 +19,17 @@
 /**
 ****************************************************************************************************
 
-  @brief Initialize Hardware IO block.
-  @anchor pins_setup
+  @brief Initialize Hardware IO.
+  @anchor pins_ll_setup
 
-  The pins_setup() function...
+  The pins_ll_setup() function...
   @param   pins_hdr Top level pins IO configuration structure.
   @param   flags Reserved for future, set 0 for now.
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_setup(
+void pins_ll_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags)
 {
@@ -59,14 +59,14 @@ void pins_setup(
 ****************************************************************************************************
 
   @brief Set IO pin state.
-  @anchor pin_set
+  @anchor pin_ll_set
 
-  The pin_set() function...
+  The pin_ll_set() function...
   @return  None.
 
 ****************************************************************************************************
 */
-void pin_set(
+void pin_ll_set(
     const Pin *pin,
     os_int state)
 {
@@ -77,14 +77,14 @@ void pin_set(
 ****************************************************************************************************
 
   @brief Get IO pin state.
-  @anchor pin_get
+  @anchor pin_ll_get
 
-  The pin_get() function...
+  The pin_ll_get() function...
   @return  None.
 
 ****************************************************************************************************
 */
-os_int pin_get(
+os_int pin_ll_get(
     const Pin *pin)
 {
     return 0;

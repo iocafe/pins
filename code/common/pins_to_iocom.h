@@ -16,6 +16,12 @@
 #ifndef PINS_TO_IOCOM_INCLUDED
 #define PINS_TO_IOCOM_INCLUDED
 
+
+/* Flags. Reserved for future expansion.
+   For now: always set PINS_DEFAULT (0).
+ */
+#define PINS_DEFAULT 0
+
 struct iocHandle *handle;
 
 /* Forward signal change to IO.

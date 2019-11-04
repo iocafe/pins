@@ -64,14 +64,13 @@ IoPinsHdr;
 
 struct iocSignal;
 
-
 /* Structure to set up static information about one IO pin or other IO item.
  */
 typedef struct Pin
 {
     /* Pint type, like PIN_INPUT, PIN_OUTPUT... See pinType enumeration.
      */
-    pinType type;
+    os_char type;
 
     /* Hardware bank number for the pin, if applies.
      */
@@ -102,21 +101,21 @@ typedef struct Pin
 Pin;
 
 
-/* Setup hardware IO for a device.
+/* Setup IO hardware for a device.
  */
-void pins_setup(
+void pins_ll_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags);
 
 /* Set IO pin state.
  */
-void pin_set(
+void pin_ll_set(
     const Pin *pin,
     os_int state);
 
 /* Get pin state.
  */
-os_int pin_get(
+os_int pin_ll_get(
     const Pin *pin);
 
 #endif
