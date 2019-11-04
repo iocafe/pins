@@ -69,11 +69,6 @@ struct iocSignal;
  */
 typedef struct Pin
 {
-    /* Pointer to pin name string. This may be OS_NULL in future if someone strips out strings
-       to save memory.
-     */
-    os_char *name;
-
     /* Pint type, like PIN_INPUT, PIN_OUTPUT... See pinType enumeration.
      */
     pinType type;
