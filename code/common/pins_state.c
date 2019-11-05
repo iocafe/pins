@@ -40,8 +40,21 @@ void pins_setup(
     pins_ll_setup(pins_hdr, flags);
 }
 
-/* Set IO pin state.
- */
+
+/**
+****************************************************************************************************
+
+  @brief Set IO pin state.
+  @anchor pin_set
+
+  The pin_set() function writes pin value to IO hardware, stores it for the Pin structure and,
+  if appropriate, writes pin value as IOCOM signal.
+
+  @param   pin Pointer to pin configuration structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 void pin_set(
     const Pin *pin,
     os_int x)
@@ -54,13 +67,26 @@ void pin_set(
         if (pin_to_iocom_func &&
             pin->signal)
         {
-            pin_to_iocom_func(pin, x);
+            pin_to_iocom_func(pin);
         }
     }
 }
 
-/* Get pin state.
- */
+
+/**
+****************************************************************************************************
+
+  @brief Get pin state.
+  @anchor pin_get
+
+  The pin_get() function reads pin value to IO hardware, stores it for the Pin structure and,
+  if appropriate, writes the pin value as IOCOM signal.
+
+  @param   pin Pointer to pin configuration structure.
+  @return  Pin value from IO hardware.
+
+****************************************************************************************************
+*/
 os_int pin_get(
     const Pin *pin)
 {
@@ -74,14 +100,30 @@ os_int pin_get(
         if (pin_to_iocom_func &&
             pin->signal)
         {
-            pin_to_iocom_func(pin, x);
+            pin_to_iocom_func(pin);
         }
     }
     return x;
 }
 
-/* Get pin state from memory.
- */
+
+/**
+****************************************************************************************************
+
+  @brief Get pin state stored for the Pin structure.
+  @anchor pin_get
+
+  The pin_value() function returns pin value, which is stored for the Pin structure. It doesn't
+  read hardware IO, nor deal with IOCOM.
+
+  This function is useful if IO device reads all it's inputs ar beginning of loop() function,
+  and values which are already in pin structure need to be accessed.
+
+  @param   pin Pointer to pin configuration structure.
+  @return  Memorized pin value.
+
+****************************************************************************************************
+*/
 os_int pin_value(
     const Pin *pin)
 {
@@ -89,8 +131,24 @@ os_int pin_value(
 }
 
 
-/* Read all inputs of the IO device into global Pin structurees
- */
+/**
+****************************************************************************************************
+
+  @brief Read all inputs of the IO device into global Pin structures
+  @anchor pins_read_all
+
+  The pins_read_all() can be called at beginning of loop() function to read all hardware IO
+  pins to memory and forward these as IO com signals as appropriate.
+
+  The function is also used to set up initial state when connecting PINS library to IOCOM library.
+
+  @param   hdr Pointer to IO hardware configuration structure.
+  @param   PINS_DEFAULT to read all inputs in loop() function. PINS_RESET_IOCOM to set up
+           initial state when connecting PINS library to IOCOM library.
+  @return  None.
+
+****************************************************************************************************
+*/
 void pins_read_all(
     const IoPinsHdr *hdr,
     os_ushort flags)
@@ -120,22 +178,33 @@ void pins_read_all(
 
         for (j = 0; j < n_pins; j++, pin++)
         {
-            x = pin_get(pin);
-            if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
+            if (type == PIN_INPUT ||
+                type == PIN_ANALOG_INPUT)
             {
-                *(os_int*)pin->prm = x;
+                x = pin_get(pin);
+                if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
+                {
+                    *(os_int*)pin->prm = x;
 
-                /* If this is PINS library is connected to IOCOM library
-                   and this pin is mapped to IOCOM signal, then forward
-                   the change to IOCOM.
-                 */
+                    /* If this is PINS library is connected to IOCOM library
+                       and this pin is mapped to IOCOM signal, then forward
+                       the change to IOCOM.
+                     */
+                    if (pin_to_iocom_func &&
+                        pin->signal)
+                    {
+                        pin_to_iocom_func(pin);
+                    }
+                }
+            }
+            else
+            {
                 if (pin_to_iocom_func &&
                     pin->signal)
                 {
-                    pin_to_iocom_func(pin, x);
+                    pin_to_iocom_func(pin);
                 }
             }
         }
     }
 }
-

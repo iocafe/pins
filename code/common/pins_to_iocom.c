@@ -17,15 +17,24 @@
 #include "iocom.h"
 
 static void pin_to_iocom(
-    const Pin *pin,
-    os_int x);
+    const Pin *pin);
 
 
-/* Connect PINS library to IOCOM library
- */
+/**
+****************************************************************************************************
+
+  @brief Connect PINS library to IOCOM library
+
+  The pins_connect_iocom_library function can be called by ioboard_fc_callback()
+  to  function...
+
+  @param   hdr  Static PINS configuration header structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 void pins_connect_iocom_library(
-    const IoPinsHdr *hdr,
-    struct iocRoot *iocroot)
+    const IoPinsHdr *hdr)
 {
     /* Set function pointer to forward changes.
      */
@@ -35,11 +44,24 @@ void pins_connect_iocom_library(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Write pin value as IOCOM signal.
+
+  The pin_to_iocom function stores pin value as IOCOM signal...
+
+  @param   pin Pin configuration structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void pin_to_iocom(
-    const Pin *pin,
-    os_int x)
+    const Pin *pin)
 {
     iocSignal *s;
+    os_int x;
+
     s = pin->signal;
 
     /* We cannot write to communication target memory nor change signals for it.
@@ -49,6 +71,7 @@ static void pin_to_iocom(
     /* Set the signal.
      */
     // s->state_bits = OSAL_STATE_CONNECTED;
+    x = *(os_int*)pin->prm;
     ioc_sets_int(s, x);
 }
 

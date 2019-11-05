@@ -24,8 +24,7 @@
 /* Function type to forward changes to iocom
  */
 typedef void pin_to_iocom_t(
-    const Pin *pin,
-    os_int x);
+    const Pin *pin);
 
 /* Function pointer to move a pin value to iocom. OS_NULL if not connected to IOCOM.
  */

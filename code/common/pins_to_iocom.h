@@ -28,8 +28,7 @@ struct iocHandle *handle;
 /* Connect pins to IOCOM library
  */
 void pins_connect_iocom_library(
-    const IoPinsHdr *pins_hdr,
-    struct iocRoot *iocroot);
+    const IoPinsHdr *pins_hdr);
 
 /* Forward signal change to IO.
  */
