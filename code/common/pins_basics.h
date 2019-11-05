@@ -17,7 +17,7 @@
 #define PINS_BASICS_INCLUDED
 #include "eosal.h"
 
-/* Enumeration of pin types.
+/** Enumeration of pin types.
  */
 typedef enum
 {
@@ -30,21 +30,26 @@ typedef enum
 }
 pinType;
 
-/* Enumeration of possible parameters for the pin.
+/** Enumeration of possible parameters for the pin.
  */
 typedef enum
 {
+    PIN_RV,        /* Reserved for value */
     PIN_PULL_UP,
     PIN_TOUCH,
     PIN_FREQENCY,
     PIN_RESOLUTION,
     PIN_INIT,
-    PIN_SPEED, /* not used */
-    PIN_DELAY, /* not used */
-    PIN_MIN,   /* Minimum value for signal */
-    PIN_MAX    /* Maximum value for signal, 0 if not set */
+    PIN_SPEED,     /* Not used */
+    PIN_DELAY,     /* Not used */
+    PIN_MIN,       /* Minimum value for signal */
+    PIN_MAX        /* Maximum value for signal, 0 if not set */
 }
 pinPrm;
+
+/** Number of elements in beginning prm array reserved for value
+ */
+#define PINS_N_RESERVED 2
 
 struct Pin;
 
@@ -64,37 +69,38 @@ IoPinsHdr;
 
 struct iocSignal;
 
-/* Structure to set up static information about one IO pin or other IO item.
+/** Structure to set up static information about one IO pin or other IO item.
  */
 typedef struct Pin
 {
-    /* Pint type, like PIN_INPUT, PIN_OUTPUT... See pinType enumeration.
+    /** Pint type, like PIN_INPUT, PIN_OUTPUT... See pinType enumeration.
      */
     os_char type;
 
-    /* Hardware bank number for the pin, if applies.
+    /** Hardware bank number for the pin, if applies.
      */
     os_short bank;
 
-    /* Hardware address for the pin.
+    /** Hardware address for the pin.
      */
     os_short addr;
 
-    /* Pointer to parameter array, OS_NULL if none.
+    /** Pointer to parameter array, two first os_shorts are reserved for storing value
+        as os_int.
      */
     os_short *prm;
 
-    /* Number of items in parameter array. Number of set parameters is this divided by
-       two, since each 16 bit number is parameter number amd parameter value.
+    /** Number of items in parameter array. Number of set parameters is this divided by
+        two, since each 16 bit number is parameter number amd parameter value.
      */
     os_char prm_n;
 
-    /* Next pin in linked list of pins belonging to same group as this one. OS_NULL
-       to indicate that this pin is end of list of not in group.
+    /** Next pin in linked list of pins belonging to same group as this one. OS_NULL
+        to indicate that this pin is end of list of not in group.
      */
     const struct Pin *next;
 
-    /* Pointer to IO signal, if this pin is mapped to one.
+    /** Pointer to IO signal, if this pin is mapped to one.
      */
     struct iocSignal *signal;
 }

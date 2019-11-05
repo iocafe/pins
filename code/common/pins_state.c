@@ -15,6 +15,11 @@
 */
 #include "pinsx.h"
 
+/* Function pointer to move a pin value to iocom. OS_NULL if not connected to IOCOM.
+ */
+pin_to_iocom_t *pin_to_iocom_func = OS_NULL;
+
+
 /**
 ****************************************************************************************************
 
@@ -39,18 +44,40 @@ void pins_setup(
  */
 void pin_set(
     const Pin *pin,
-    os_int state)
+    os_int x)
 {
-    pin_ll_set(pin, state);
-}
+    pin_ll_set(pin, x);
+    if (x != *(os_int*)pin->prm)
+    {
+        *(os_int*)pin->prm = x;
 
+        if (pin_to_iocom_func &&
+            pin->signal)
+        {
+            pin_to_iocom_func(pin, x);
+        }
+    }
+}
 
 /* Get pin state.
  */
 os_int pin_get(
     const Pin *pin)
 {
-    return pin_ll_get(pin);
+    os_int x;
+
+    x = pin_ll_get(pin);
+    if (x != *(os_int*)pin->prm)
+    {
+        *(os_int*)pin->prm = x;
+
+        if (pin_to_iocom_func &&
+            pin->signal)
+        {
+            pin_to_iocom_func(pin, x);
+        }
+    }
+    return x;
 }
 
 /* Get pin state from memory.
@@ -58,17 +85,19 @@ os_int pin_get(
 os_int pin_value(
     const Pin *pin)
 {
-    return 0;
+    return *(os_int*)pin->prm;
 }
 
 
 /* Read all inputs of the IO device into global Pin structurees
  */
 void pins_read_all(
-    const IoPinsHdr *hdr)
+    const IoPinsHdr *hdr,
+    os_ushort flags)
 {
     const PinGroupHdr *group;
     const Pin *pin;
+    os_int x;
     os_short n_groups, n_pins, i, j;
     os_char type;
 
@@ -81,13 +110,31 @@ void pins_read_all(
         type = pin->type;
 
         if (type != PIN_INPUT &&
-            type != PIN_ANALOG_INPUT) continue;
+            type != PIN_ANALOG_INPUT &&
+            (flags & PINS_RESET_IOCOM) == 0)
+        {
+            continue;
+        }
 
         n_pins = group->n_pins;
 
         for (j = 0; j < n_pins; j++, pin++)
         {
-            pin_get(pin);
+            x = pin_get(pin);
+            if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
+            {
+                *(os_int*)pin->prm = x;
+
+                /* If this is PINS library is connected to IOCOM library
+                   and this pin is mapped to IOCOM signal, then forward
+                   the change to IOCOM.
+                 */
+                if (pin_to_iocom_func &&
+                    pin->signal)
+                {
+                    pin_to_iocom_func(pin, x);
+                }
+            }
         }
     }
 }

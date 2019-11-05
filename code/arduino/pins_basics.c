@@ -89,7 +89,6 @@ void pins_ll_setup(
             pin++;
         }
 
-
         group++;
     }
 }
@@ -108,21 +107,21 @@ void pins_ll_setup(
 */
 void pin_ll_set(
     const Pin *pin,
-    os_int state)
+    os_int x)
 {
     if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_OUTPUT:
-            digitalWrite(pin->addr, state);
+            digitalWrite(pin->addr, x);
             break;
 
         case PIN_PWM:
-            ledcWrite(pin->bank, state);
+            ledcWrite(pin->bank, x);
             break;
 
     case PIN_ANALOG_OUTPUT:
 #ifdef ESP_PLATFORM
-            dacWrite(pin->bank, state);
+            dacWrite(pin->bank, x);
             break;
 #endif
 

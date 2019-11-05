@@ -40,8 +40,8 @@ void pin_set_prm(
     os_short *p;
     os_char count;
 
-    p = pin->prm;
-    count = pin->prm_n / 2;
+    p = pin->prm + PINS_N_RESERVED;
+    count = (pin->prm_n - PINS_N_RESERVED) / 2;
     while (count-- > 0)
     {
         if (p[0] == prm)
@@ -78,8 +78,8 @@ os_int pin_get_prm(
     os_short *p;
     os_char count;
 
-    p = pin->prm;
-    count = pin->prm_n / 2;
+    p = pin->prm + PINS_N_RESERVED;
+    count = (pin->prm_n - PINS_N_RESERVED) / 2;
     while (count-- > 0)
     {
         if (p[0] == prm)

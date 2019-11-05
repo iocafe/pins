@@ -22,7 +22,14 @@
  */
 #define PINS_DEFAULT 0
 
+struct iocRoot;
 struct iocHandle *handle;
+
+/* Connect pins to IOCOM library
+ */
+void pins_connect_iocom_library(
+    const IoPinsHdr *pins_hdr,
+    struct iocRoot *iocroot);
 
 /* Forward signal change to IO.
  */

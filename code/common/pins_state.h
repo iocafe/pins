@@ -16,6 +16,21 @@
 #ifndef PINS_STATE
 #define PINS_STATE
 
+/* Flags for functions.
+ */
+#define PINS_DEFAULT 0
+#define PINS_RESET_IOCOM 1
+
+/* Function type to forward changes to iocom
+ */
+typedef void pin_to_iocom_t(
+    const Pin *pin,
+    os_int x);
+
+/* Function pointer to move a pin value to iocom. OS_NULL if not connected to IOCOM.
+ */
+extern pin_to_iocom_t *pin_to_iocom_func;
+
 /* Setup IO hardware for a device.
  */
 void pins_setup(
@@ -26,7 +41,7 @@ void pins_setup(
  */
 void pin_set(
     const Pin *pin,
-    os_int state);
+    os_int x);
 
 /* Get pin state.
  */
@@ -41,7 +56,8 @@ os_int pin_value(
 /* Read all inputs of the IO device into global Pin structurees
  */
 void pins_read_all(
-    const IoPinsHdr *hdr);
+    const IoPinsHdr *hdr,
+    os_ushort flags);
 
 
 #endif
