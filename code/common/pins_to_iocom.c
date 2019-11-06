@@ -97,6 +97,7 @@ void forward_signal_change_to_io_pins(
 {
     const iocDeviceHdr *device_hdr;
     const iocMblkSignalHdr **mblk_signal_hdrs, *mblk_signal_hdr;
+    const Pin *pin;
     iocSignal *xsignals, *signal;
     os_int n_signals, j, x;
     os_short n_mblk_hdrs, i;
@@ -130,7 +131,9 @@ void forward_signal_change_to_io_pins(
 
             /* If not bound to a pin.
              */
-            if (signal->pin == OS_NULL) continue;
+            pin = OS_NULL;
+            if (signal->flags & IOC_PIN_PTR) pin = (const Pin *)signal->ptr;
+            if (pin == OS_NULL) continue;
 
             if (ioc_is_my_address(signal, start_addr, end_addr))
             {
@@ -139,8 +142,8 @@ void forward_signal_change_to_io_pins(
                 if (signal->state_bits & OSAL_STATE_CONNECTED)
                 {
                     x = signal->value.i;
-                    pin_ll_set(signal->pin, x);
-                    *(os_int*)signal->pin->prm = x;
+                    pin_ll_set(pin, x);
+                    *(os_int*)pin->prm = x;
                 }
             }
         }
