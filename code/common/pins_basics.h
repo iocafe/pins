@@ -102,7 +102,7 @@ typedef struct Pin
 
     /** Pointer to IO signal, if this pin is mapped to one.
      */
-    struct iocSignal *signal;
+    const struct iocSignal *signal;
 }
 Pin;
 

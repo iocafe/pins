@@ -59,7 +59,7 @@ void pins_connect_iocom_library(
 static void pin_to_iocom(
     const Pin *pin)
 {
-    iocSignal *s;
+    const iocSignal *s;
     os_int x;
 
     s = pin->signal;
@@ -72,7 +72,7 @@ static void pin_to_iocom(
      */
     // s->state_bits = OSAL_STATE_CONNECTED;
     x = *(os_int*)pin->prm;
-    ioc_sets_int(s, x);
+    ioc_sets_int(s, x, OSAL_STATE_CONNECTED);
 }
 
 
@@ -98,9 +98,10 @@ void forward_signal_change_to_io_pins(
     const iocDeviceHdr *device_hdr;
     const iocMblkSignalHdr **mblk_signal_hdrs, *mblk_signal_hdr;
     const Pin *pin;
-    iocSignal *xsignals, *signal;
+    const iocSignal *xsignals, *signal;
     os_int n_signals, j, x;
     os_short n_mblk_hdrs, i;
+    os_char state_bits;
 
     /* If this memory block is not written by communication, no need to do anything.
      */
@@ -137,11 +138,9 @@ void forward_signal_change_to_io_pins(
 
             if (ioc_is_my_address(signal, start_addr, end_addr))
             {
-                ioc_get_signal(signal);
-
-                if (signal->state_bits & OSAL_STATE_CONNECTED)
+                x = ioc_gets_int(signal, &state_bits);
+                if (state_bits & OSAL_STATE_CONNECTED)
                 {
-                    x = signal->value.i;
                     pin_ll_set(pin, x);
                     *(os_int*)pin->prm = x;
                 }
