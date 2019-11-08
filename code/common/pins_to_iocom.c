@@ -96,7 +96,8 @@ void forward_signal_change_to_io_pins(
     os_ushort flags)
 {
     const iocDeviceHdr *device_hdr;
-    const iocMblkSignalHdr **mblk_signal_hdrs, *mblk_signal_hdr;
+    const iocMblkSignalHdr *mblk_signal_hdr;
+    iocMblkSignalHdr **mblk_signal_hdrs;
     const Pin *pin;
     const iocSignal *xsignals, *signal;
     os_int n_signals, j, x;
