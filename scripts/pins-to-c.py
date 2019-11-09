@@ -235,7 +235,8 @@ def process_io_device(io):
     define_list = []
 
     signallist = {}
-    list_signals_in_file(signalspath)
+    if signalspath != None:
+        list_signals_in_file(signalspath)
 
     hfile.write("/* " + device_name.upper() + " IO configuration structure */\n")
     hfile.write('typedef struct\n{')
@@ -308,6 +309,7 @@ def mymain():
     n = len(sys.argv)
     sourcefiles = []
     outpath = None
+    signalspath = None
     expectpath = True
     for i in range(1, n):
         if sys.argv[i][0] == "-":
@@ -329,9 +331,11 @@ def mymain():
         print("No source files")
         exit()
 
-#    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
-#    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
-#    signalspath = '/coderoot/iocom/examples/gina/config/signals/gina-signals.json'
+    sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/jane-io.json')
+    outpath = '/coderoot/pins/examples/jane/config/include/carol/jane-io.c'
+    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
+    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
+    signalspath = '/coderoot/iocom/examples/gina/config/signals/gina-signals.json'
 
     if outpath is None:
         outpath = sourcefiles[0]
