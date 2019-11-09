@@ -35,7 +35,7 @@ void pins_ll_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags)
 {
-    const PinGroupHdr *group;
+    const PinGroupHdr **group;
     const Pin *pin;
     os_short gcount, pcount;
 
@@ -46,12 +46,12 @@ void pins_ll_setup(
         initial_state;
 
     gcount = pins_hdr->n_groups;
-    group = *pins_hdr->group;
+    group =  pins_hdr->group;
 
     while (gcount--)
     {
-        pcount = group->n_pins;
-        pin = group->pin;
+        pcount = (*group)->n_pins;
+        pin = (*group)->pin;
         while (pcount--)
         {
             if (pin->addr >=  0) switch (pin->type)
