@@ -48,15 +48,15 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     c_prm_list = "PIN_RV, PIN_RV"
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
-        if c_attr_name != "":
-            if c_prm_list != "":
+        if c_attr_name is not "":
+            if c_prm_list is not "":
                 c_prm_list = c_prm_list + ", "    
                             
             c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
 
     # If we have C parameters, write to C file
     c_prm_array_name = "OS_NULL"
-    if c_prm_list != "":
+    if c_prm_list is not "":
         if c_prm_comment_written == False:
             cfile.write("\n/* Parameters for " + pin_type + " */\n")
             c_prm_comment_written = True
@@ -80,7 +80,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
     # Write pointer to parameter array, if any
     ccontent += c_prm_array_name + ", "
-    if c_prm_array_name == "OS_NULL":
+    if c_prm_array_name is "OS_NULL":
         ccontent += "0, "
     else:
         ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_short), "
@@ -310,12 +310,12 @@ def mymain():
     outpath = None
     expectpath = True
     for i in range(1, n):
-        if sys.argv[i][0] == "-":
-            if sys.argv[i][1] == "o":
+        if sys.argv[i][0] is "-":
+            if sys.argv[i][1] is "o":
                 outpath = sys.argv[i+1]
                 expectpath = False
 
-            if sys.argv[i][1] == "s":
+            if sys.argv[i][1] is "s":
                 signalspath = sys.argv[i+1]
                 expectpath = False
 
