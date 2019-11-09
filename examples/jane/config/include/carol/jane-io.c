@@ -13,8 +13,8 @@ static os_short pins_outputs_led_builtin_prm[]= {PIN_RV, PIN_RV};
 static os_short pins_analog_inputs_potentiometer_prm[]= {PIN_RV, PIN_RV, PIN_SPEED, 3, PIN_DELAY, 11};
 
 /* Parameters for pwm */
-static os_short pins_pwm_servo_prm[]= {PIN_RV, PIN_RV, PIN_FREQENCY, 50, PIN_RESOLUTION, 12, PIN_INIT, 2048};
-static os_short pins_pwm_dimmer_led_prm[]= {PIN_RV, PIN_RV, PIN_FREQENCY, 5000, PIN_RESOLUTION, 12, PIN_INIT, 0};
+static os_short pins_pwm_servo_prm[]= {PIN_RV, PIN_RV, PIN_FREQENCY, 50, PIN_INIT, 2048, PIN_RESOLUTION, 12};
+static os_short pins_pwm_dimmer_led_prm[]= {PIN_RV, PIN_RV, PIN_FREQENCY, 5000, PIN_INIT, 0, PIN_RESOLUTION, 12};
 
 /* JANE IO configuration structure */
 const pins_t pins =
