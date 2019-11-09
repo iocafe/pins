@@ -85,6 +85,9 @@ static void pin_to_iocom(
   to  function...
 
   @param   handle Memory block handle.
+  @param   flags IOC_MBLK_CALLBACK_WRITE indicates change by local write,
+           IOC_MBLK_CALLBACK_RECEIVE change by data received. Typically flags of communication
+           callback function are passed here.
   @return  None.
 
 ****************************************************************************************************
@@ -106,7 +109,8 @@ void forward_signal_change_to_io_pins(
 
     /* If this memory block is not written by communication, no need to do anything.
      */
-    if ((handle->flags & IOC_TARGET) == 0) return;
+    if ((handle->flags & IOC_TARGET) == 0 ||
+         (flags & IOC_MBLK_CALLBACK_RECEIVE) == 0) return;
 
     device_hdr = handle->root->device_signal_hdr;
 
