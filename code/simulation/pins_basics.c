@@ -90,5 +90,5 @@ void pin_ll_set(
 os_int pin_ll_get(
     const Pin *pin)
 {
-    return 0;
+    return rand();
 }
