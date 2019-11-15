@@ -94,8 +94,8 @@ static void pin_to_iocom(
 */
 void forward_signal_change_to_io_pins(
     struct iocHandle *handle,
-    int start_addr,
-    int end_addr,
+    os_int start_addr,
+    os_int end_addr,
     os_ushort flags)
 {
     const iocDeviceHdr *device_hdr;
