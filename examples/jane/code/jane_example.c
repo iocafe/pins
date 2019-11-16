@@ -116,7 +116,7 @@ osalStatus osal_loop(
         if (touch)
         {
           osal_console_write("TOUCH_SENSOR: ");
-          osal_int_to_string(buf, sizeof(buf), touch);
+          osal_int_to_str(buf, sizeof(buf), touch);
           osal_console_write(buf);
           osal_console_write("\n");
         }
@@ -130,7 +130,7 @@ osalStatus osal_loop(
     {
         potentiometer = x;
         osal_console_write("POTENTIOMETER: ");
-        osal_int_to_string(buf, sizeof(buf), potentiometer);
+        osal_int_to_str(buf, sizeof(buf), potentiometer);
         osal_console_write(buf);
         osal_console_write("\n");
     }
