@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#include <stdlib.h> /* for rand() */
 
 
 /**
@@ -49,7 +50,6 @@ void pins_ll_setup(
             pin++;
         }
 
-
         group++;
     }
 }
@@ -70,7 +70,6 @@ void pin_ll_set(
     const Pin *pin,
     os_int x)
 {
-
     osal_trace_int("~Setting pin addr ", pin->addr);
     osal_trace_int(" to value ", x);
 }

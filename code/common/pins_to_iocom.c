@@ -70,7 +70,6 @@ static void pin_to_iocom(
 
     /* Set the signal.
      */
-    // s->state_bits = OSAL_STATE_CONNECTED;
     x = *(os_int*)pin->prm;
     ioc_sets_int(s, x, OSAL_STATE_CONNECTED);
 }
