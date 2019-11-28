@@ -66,7 +66,7 @@ static void pin_to_iocom(
 
     /* We cannot write to communication target memory nor change signals for it.
      */
-    if (s->handle->flags & IOC_TARGET) return;
+    if (s->handle->flags & IOC_MBLK_DOWN) return;
 
     /* Set the signal.
      */
@@ -108,7 +108,7 @@ void forward_signal_change_to_io_pins(
 
     /* If this memory block is not written by communication, no need to do anything.
      */
-    if ((handle->flags & IOC_TARGET) == 0 ||
+    if ((handle->flags & IOC_MBLK_DOWN) == 0 ||
          (flags & IOC_MBLK_CALLBACK_RECEIVE) == 0) return;
 
     device_hdr = handle->root->device_signal_hdr;
