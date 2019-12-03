@@ -142,7 +142,7 @@ void forward_signal_change_to_io_pins(
 
             if (ioc_is_my_address(signal, start_addr, end_addr))
             {
-                x = ioc_gets_int(signal, &state_bits);
+                x = (os_int)ioc_gets_int(signal, &state_bits);
                 if (state_bits & OSAL_STATE_CONNECTED)
                 {
                     pin_ll_set(pin, x);
