@@ -89,5 +89,12 @@ void pin_ll_set(
 os_int pin_ll_get(
     const Pin *pin)
 {
-    return rand();
+    switch (pin->type)
+    {
+        case PIN_INPUT:
+            return osal_rand(0, 1);
+
+        default:
+            return osal_rand(0, 65535);
+    }
 }

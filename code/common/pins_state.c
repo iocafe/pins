@@ -181,7 +181,7 @@ void pins_read_all(
             if (type == PIN_INPUT ||
                 type == PIN_ANALOG_INPUT)
             {
-                x = pin_get(pin);
+                x = pin_ll_get(pin);
                 if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
                 {
                     *(os_int*)pin->prm = x;
