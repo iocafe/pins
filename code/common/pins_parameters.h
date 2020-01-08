@@ -13,9 +13,6 @@
 
 ****************************************************************************************************
 */
-#ifndef PINS_PARAMETERS_INCLUDED
-#define PINS_PARAMETERS_INCLUDED
-#include "eosal.h"
 
 /* Modify IO pin parameter.
  */
@@ -29,5 +26,3 @@ void pin_set_prm(
 os_int pin_get_prm(
     const Pin *pin,
     pinPrm prm);
-
-#endif

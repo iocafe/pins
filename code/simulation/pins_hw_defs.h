@@ -16,6 +16,4 @@
 #ifndef PINS_HW_DEFS_INCLUDED
 #define PINS_HW_DEFS_INCLUDED
 
-
-
 #endif

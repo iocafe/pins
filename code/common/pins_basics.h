@@ -13,9 +13,6 @@
 
 ****************************************************************************************************
 */
-#ifndef PINS_BASICS_INCLUDED
-#define PINS_BASICS_INCLUDED
-#include "eosal.h"
 
 /** Enumeration of pin types.
  */
@@ -124,4 +121,3 @@ void pin_ll_set(
 os_int pin_ll_get(
     const Pin *pin);
 
-#endif

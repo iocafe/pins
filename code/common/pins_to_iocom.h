@@ -13,9 +13,6 @@
 
 ****************************************************************************************************
 */
-#ifndef PINS_TO_IOCOM_INCLUDED
-#define PINS_TO_IOCOM_INCLUDED
-
 
 /* Flags. Reserved for future expansion.
    For now: always set PINS_DEFAULT (0).
@@ -37,5 +34,3 @@ void forward_signal_change_to_io_pins(
     os_int start_addr,
     os_int end_addr,
     os_ushort flags);
-
-#endif
