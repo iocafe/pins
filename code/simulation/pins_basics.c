@@ -92,9 +92,9 @@ os_int pin_ll_get(
     switch (pin->type)
     {
         case PIN_INPUT:
-            return osal_rand(0, 1);
+            return (os_int)osal_rand(0, 1);
 
         default:
-            return osal_rand(0, 65535);
+            return (os_int)osal_rand(0, 65535);
     }
 }
