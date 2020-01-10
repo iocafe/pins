@@ -1,4 +1,4 @@
-# pins-to-c.py 16.9.2019/pekka
+# pins-to-c.py 8.1.2020/pekka
 # Converts hardware IO specification(s) written in JSON to C source and header files. 
 import json
 import os

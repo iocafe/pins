@@ -1,4 +1,4 @@
-copy-pins-for-platformio.py 22.10.2019/pekka
+copy-pins-for-platformio.py 8.1.2020/pekka
 
 Copies pins library files needed for PlatformIO Arduino build
 into /coderoot/lib/arduino-platformio/pins directory. 
