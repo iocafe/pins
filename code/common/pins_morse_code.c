@@ -42,6 +42,7 @@ void morse_code_setup(
     os_memclear(morse, sizeof(MorseCode));
     morse->pin = pin;
     morse->code = -1;
+    morse->led_on = OS_TRUE;
     set_morse_code(morse, 0);
 }
 
@@ -150,6 +151,7 @@ void blink_morse_code(
     {
         morse->led_on = !morse->led_on;
         pin_set(morse->pin, morse->led_on);
+        morse->timer = *timer;
         if (++pos >= morse->running.n)
         {
             os_lock();
