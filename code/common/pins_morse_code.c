@@ -31,18 +31,21 @@
 
   @param   morse Morse code structure.
   @param   pin Pointer to pin configuration structure.
+  @param   flags Zero for default operation, MORSE_LED_INVERTED to invert led output.
+
   @return  None.
 
 ****************************************************************************************************
 */
 void morse_code_setup(
     MorseCode *morse,
-    const Pin *pin)
+    const Pin *pin,
+    os_boolean flags)
 {
     os_memclear(morse, sizeof(MorseCode));
     morse->pin = pin;
     morse->code = -1;
-    morse->led_on = OS_TRUE;
+    morse->led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
     set_morse_code(morse, 0);
 }
 
@@ -76,7 +79,7 @@ void set_morse_code(
     os_memclear(&morse->recipe, sizeof(MorseRecipe));
     n = 0;
 
-    if (code == 0)
+    if (code <= 0)
     {
         morse->recipe.time_ms[n++] = 100;
         morse->recipe.time_ms[n++] = 2000;
@@ -87,28 +90,29 @@ void set_morse_code(
         for (i = 0; i < code; i++)
         {
             morse->recipe.time_ms[n++] = 200;
-            morse->recipe.time_ms[n++] = 200;
+            morse->recipe.time_ms[n++] = 300;
         }
+        morse->recipe.time_ms[n-1] = 600;
         for (i = code; i < 5; i++)
         {
-            morse->recipe.time_ms[n++] = 600;
-            morse->recipe.time_ms[n++] = 200;
+            morse->recipe.time_ms[n++] = 800;
+            morse->recipe.time_ms[n++] = 400;
         }
-        morse->recipe.time_ms[n-1] = 1000;
+        morse->recipe.time_ms[n-1] = 3000;
     }
     else if (code <= 10)
     {
         for (i = 5; i < code; i++)
         {
-            morse->recipe.time_ms[n++] = 600;
-            morse->recipe.time_ms[n++] = 200;
+            morse->recipe.time_ms[n++] = 800;
+            morse->recipe.time_ms[n++] = 400;
         }
         for (i = code; i < 10; i++)
         {
             morse->recipe.time_ms[n++] = 200;
-            morse->recipe.time_ms[n++] = 200;
+            morse->recipe.time_ms[n++] = 300;
         }
-        morse->recipe.time_ms[n-1] = 1000;
+        morse->recipe.time_ms[n-1] = 3000;
     }
     morse->recipe.n = n;
     os_unlock();

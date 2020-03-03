@@ -45,12 +45,17 @@ typedef struct MorseCode
 }
 MorseCode;
 
+/* Flags for morse_code_setup()
+ */
+#define MORSE_LED_INVERTED 1
+
 
 /* Setup an LED output to blink by more code.
  */
 void morse_code_setup(
     MorseCode *morse,
-    const Pin *pin);
+    const Pin *pin,
+    os_boolean flags);
 
 /* Set morse code to indicate by blinking the led.
  */
