@@ -126,7 +126,8 @@ void set_morse_code(
   loop.
 
   @param   morse Morse code structure.
-  @param   timer Pointer to timer to save function call, or OS_NULL to get timer by this function.
+  @param   timer Pointer to timer to a save function call, or OS_NULL to get timer by
+           this function.
   @return  None.
 
 ****************************************************************************************************
@@ -136,9 +137,15 @@ void blink_morse_code(
     os_timer *timer)
 {
     os_int pos;
+    os_timer localtimer;
+
+    if (timer == OS_NULL)
+    {
+        os_get_timer(&localtimer);
+        timer = &localtimer;
+    }
 
     pos = morse->pos;
-
     if (os_elapsed2(&morse->timer, timer, morse->running.time_ms[pos]))
     {
         morse->led_on = !morse->led_on;
