@@ -20,6 +20,18 @@
 
 #define NRO_MORSE_STEPS 10
 
+/* Morse code state structure.
+ */
+typedef enum NetworkStateMorseCode
+{
+    MORSE_RUNNING = 0,
+    MORSE_NO_WIFI
+
+
+}
+NetworkStateMorseCode;
+
+
 /* Receipe how to bling the LED OFF and ON, contains ms timer values.
  */
 typedef struct MorseRecipe
@@ -45,10 +57,11 @@ typedef struct MorseCode
 }
 MorseCode;
 
+
 /* Flags for morse_code_setup()
  */
 #define MORSE_LED_INVERTED 1
-
+#define MORSE_HANDLE_NET_STATE_NOTIFICATIONS 2
 
 /* Setup an LED output to blink by more code.
  */

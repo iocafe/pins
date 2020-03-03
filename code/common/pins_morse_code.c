@@ -20,6 +20,13 @@
 #include "pins.h"
 
 
+/** Forward referred static functions.
+ */
+static void morse_net_state_notification_handler(
+    struct osalNetworkState *net_state,
+    void *context);
+
+
 /**
 ****************************************************************************************************
 
@@ -47,6 +54,11 @@ void morse_code_setup(
     morse->code = -1;
     morse->led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
     set_morse_code(morse, 0);
+
+    if (flags & MORSE_HANDLE_NET_STATE_NOTIFICATIONS)
+    {
+        osal_add_network_state_notification_handler(morse_net_state_notification_handler, morse, 0);
+    }
 }
 
 
@@ -165,4 +177,47 @@ void blink_morse_code(
         }
         morse->pos = pos;
     }
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Handle network state change notifications.
+  @anchor morse_net_state_notification_handler
+
+  The morse_net_state_notification_handler() function is callback function when network state
+  changes. Determines from network state if all is ok or something is wrong, and sets morse code
+  accordingly.
+
+  @param   net_state Network state structure.
+  @param   context Morse code structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void morse_net_state_notification_handler(
+    struct osalNetworkState *net_state,
+    void *context)
+{
+    NetworkStateMorseCode code;
+    MorseCode *morse;
+    morse = (MorseCode*)context;
+
+    /* If we do not have widi
+     */
+    if (net_state->wifi_used && !net_state->wifi_connected)
+    {
+        code = MORSE_NO_WIFI;
+        goto setit;
+    }
+
+    /* All running fine.
+     */
+    code = MORSE_RUNNING;
+
+setit:
+    /* Set morse code to indicate network state.
+     */
+    set_morse_code(morse, code);
 }
