@@ -201,14 +201,26 @@ static void morse_net_state_notification_handler(
     void *context)
 {
     NetworkStateMorseCode code;
+    osaLightHouseClientState lighthouse_state;
     MorseCode *morse;
     morse = (MorseCode*)context;
 
     /* If we do not have widi
      */
-    if (net_state->wifi_used && !net_state->wifi_connected)
+    if (net_state->network_used && !net_state->network_connected)
     {
-        code = MORSE_NO_WIFI;
+        code = MORSE_NETWORK_NOT_CONNECTED;
+        goto setit;
+    }
+
+    /* Check for light house.
+     */
+    lighthouse_state = net_state->lighthouse_state;
+    if (lighthouse_state != OSAL_LIGHTHOUSE_NOT_USED &&
+        lighthouse_state != OSAL_LIGHTHOUSE_OK)
+    {
+        code = (lighthouse_state == OSAL_LIGHTHOUSE_NOT_VISIBLE)
+            ? MORSE_LIGHTHOUSE_NOT_VISIBLE : MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK;
         goto setit;
     }
 
