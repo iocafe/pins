@@ -205,9 +205,10 @@ static void morse_net_state_notification_handler(
     MorseCode *morse;
     morse = (MorseCode*)context;
 
-    /* If we do not have widi
+    /* If WiFi is not connected?
      */
-    if (net_state->network_used && !net_state->network_connected)
+    if (osal_get_network_state_int(OSAL_NS_NETWORK_USED, 0) &&
+        !osal_get_network_state_int(OSAL_NS_NETWORK_CONNECTED, 0))
     {
         code = MORSE_NETWORK_NOT_CONNECTED;
         goto setit;
@@ -215,7 +216,8 @@ static void morse_net_state_notification_handler(
 
     /* Check for light house.
      */
-    lighthouse_state = net_state->lighthouse_state;
+    lighthouse_state
+        = (osaLightHouseClientState)osal_get_network_state_int(OSAL_NS_LIGHTHOUSE_STATE, 0);
     if (lighthouse_state != OSAL_LIGHTHOUSE_NOT_USED &&
         lighthouse_state != OSAL_LIGHTHOUSE_OK)
     {
