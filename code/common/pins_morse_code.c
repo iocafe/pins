@@ -51,9 +51,8 @@ void morse_code_setup(
 {
     os_memclear(morse, sizeof(MorseCode));
     morse->pin = pin;
-    morse->code = -1;
-    morse->led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
-    set_morse_code(morse, 0);
+    morse->prev_code = -1;
+    morse->start_led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
 
     if (flags & MORSE_HANDLE_NET_STATE_NOTIFICATIONS)
     {
@@ -82,12 +81,34 @@ void set_morse_code(
     struct MorseCode *morse,
     os_int code)
 {
-    os_int i, n;
+if (morse->code != code) osal_debug_error_int("HERE MORSE SET", code)    ;
 
-    if (code == morse->code) return;
     morse->code = code;
+}
 
-    os_lock();
+
+/**
+****************************************************************************************************
+
+  @brief Set morse code to indicate by blinking the led.
+  @anchor set_morse_code
+
+  The set_morse_code() function stores the error code to indicate within the MorseCode structure.
+
+  Receipe is pair number of OFF, ON times
+
+  @param   morse Morse code structure.
+  @param   code Error number 1 - 9 to blink or 0 if all is fine.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void make_morse_recipe(
+    struct MorseCode *morse)
+{
+    os_int i, n, code;
+
+    code = morse->code;
     os_memclear(&morse->recipe, sizeof(MorseRecipe));
     n = 0;
 
@@ -127,7 +148,6 @@ void set_morse_code(
         morse->recipe.time_ms[n-1] = 3000;
     }
     morse->recipe.n = n;
-    os_unlock();
 
     osal_debug_assert(n <= NRO_MORSE_STEPS);
 }
@@ -156,6 +176,17 @@ void blink_morse_code(
     os_int pos;
     os_timer localtimer;
 
+    if (morse->code != morse->prev_code)\
+    {
+osal_debug_error_int("HERE MAKING RECIPE SET", morse->code)    ;
+        make_morse_recipe(morse);
+        morse->prev_code = morse->code;
+        morse->pos = 0;
+        morse->led_on = morse->start_led_on;
+        pin_set(morse->pin, morse->led_on);
+        os_get_timer(&localtimer);
+    }
+
     if (timer == OS_NULL)
     {
         os_get_timer(&localtimer);
@@ -163,16 +194,13 @@ void blink_morse_code(
     }
 
     pos = morse->pos;
-    if (os_elapsed2(&morse->timer, timer, morse->running.time_ms[pos]))
+    if (os_elapsed2(&morse->timer, timer, morse->recipe.time_ms[pos]))
     {
         morse->led_on = !morse->led_on;
         pin_set(morse->pin, morse->led_on);
         morse->timer = *timer;
-        if (++pos >= morse->running.n)
+        if (++pos >= morse->recipe.n)
         {
-            os_lock();
-            morse->running = morse->recipe;
-            os_unlock();
             pos = 0;
         }
         morse->pos = pos;

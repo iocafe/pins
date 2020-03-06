@@ -49,11 +49,12 @@ typedef struct MorseCode
     const Pin *pin;
     os_timer timer;
     os_int code;
+    os_int prev_code;
     os_int pos;
+    os_boolean start_led_on;
     os_boolean led_on;
 
     MorseRecipe recipe;
-    MorseRecipe running;
 }
 MorseCode;
 
