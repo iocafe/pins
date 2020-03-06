@@ -81,8 +81,6 @@ void set_morse_code(
     struct MorseCode *morse,
     os_int code)
 {
-if (morse->code != code) osal_debug_error_int("HERE MORSE SET", code)    ;
-
     morse->code = code;
 }
 
@@ -178,7 +176,6 @@ void blink_morse_code(
 
     if (morse->code != morse->prev_code)\
     {
-osal_debug_error_int("HERE MAKING RECIPE SET", morse->code)    ;
         make_morse_recipe(morse);
         morse->prev_code = morse->code;
         morse->pos = 0;
