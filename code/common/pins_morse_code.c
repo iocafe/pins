@@ -253,7 +253,7 @@ static void morse_net_state_notification_handler(
 
     /* Certificates/keys not loaded.
      */
-    if (osal_get_network_state_int(OSAL_NS_SECURITY_CONF_ERROR, 0) ||
+    if (/* osal_get_network_state_int(OSAL_NS_SECURITY_CONF_ERROR, 0) || */
         osal_get_network_state_int(OSAL_NS_NO_CERT_CHAIN, 0))
     {
         code = MORSE_SECURITY_CONF_ERROR;
