@@ -20,7 +20,7 @@
       {
         "name": "analog_inputs",
         "pins": [
-          {"name": "potentiometer", "addr": 25, "speed": 3, "delay": 11, "max": 4095}
+          {"name": "potentiometer", "addr": 36, "speed": 3, "delay": 11, "max": 4095}
         ]
       },
       {
