@@ -85,7 +85,7 @@ osalStatus osal_loop(
     os_char buf[32];
 
     /* Digital output */
-    if (os_elapsed(&t, 50))
+    if (os_has_elapsed(&t, 50))
     {
         os_get_timer(&t);
         state = !state;

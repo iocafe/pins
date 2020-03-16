@@ -191,7 +191,7 @@ void blink_morse_code(
     }
 
     pos = morse->pos;
-    if (os_elapsed2(&morse->timer, timer, morse->recipe.time_ms[pos]))
+    if (os_has_elapsed_since(&morse->timer, timer, morse->recipe.time_ms[pos]))
     {
         morse->led_on = !morse->led_on;
         pin_set(morse->pin, morse->led_on);
