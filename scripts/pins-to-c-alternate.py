@@ -17,6 +17,7 @@ prm_type_list = {
     "touch": "PIN_TOUCH", 
     "frequency": "PIN_FREQENCY",
     "resolution": "PIN_RESOLUTION",
+    "interrupt": "PIN_INTERRUPT",
     "init": "PIN_INIT",
     "speed": "PIN_SPEED", 
     "delay": "PIN_DELAY"}

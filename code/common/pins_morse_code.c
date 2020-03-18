@@ -31,9 +31,9 @@ static void morse_net_state_notification_handler(
 ****************************************************************************************************
 
   @brief Setup an LED output to blink by more code.
-  @anchor morse_code_setup
+  @anchor initialize_morse_code
 
-  The morse_code_setup() function initializes MorseCode structure, the pin is stored pointer
+  The initialize_morse_code() function initializes MorseCode structure, the pin is stored pointer
   within the structure.
 
   @param   morse Morse code structure.
@@ -44,7 +44,7 @@ static void morse_net_state_notification_handler(
 
 ****************************************************************************************************
 */
-void morse_code_setup(
+void initialize_morse_code(
     MorseCode *morse,
     const Pin *pin,
     os_boolean flags)

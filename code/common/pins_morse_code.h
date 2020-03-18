@@ -60,14 +60,14 @@ typedef struct MorseCode
 MorseCode;
 
 
-/* Flags for morse_code_setup()
+/* Flags for initialize_morse_code()
  */
 #define MORSE_LED_INVERTED 1
 #define MORSE_HANDLE_NET_STATE_NOTIFICATIONS 2
 
 /* Setup an LED output to blink by more code.
  */
-void morse_code_setup(
+void initialize_morse_code(
     MorseCode *morse,
     const Pin *pin,
     os_boolean flags);

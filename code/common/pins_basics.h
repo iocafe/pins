@@ -37,6 +37,7 @@ typedef enum
     PIN_FREQENCY,
     PIN_RESOLUTION,
     PIN_INIT,
+    PIN_INTERRUPT, /* Can specify interrup channel, etc */
     PIN_SPEED,     /* Not used */
     PIN_DELAY,     /* Not used */
     PIN_MIN,       /* Minimum value for signal */
@@ -49,6 +50,7 @@ pinPrm;
 #define PINS_N_RESERVED 2
 
 struct Pin;
+struct PinInterruptConf;
 
 typedef struct
 {
@@ -100,6 +102,21 @@ typedef struct Pin
     /** Pointer to IO signal, if this pin is mapped to one.
      */
     const struct iocSignal *signal;
+
+#if PINS_SIMULATED_INTERRUPTS
+    /* Pointer to interrupt configuration when working on simulated environment
+     */
+    struct PinInterruptConf *int_conf;
+    /** If we need to simulate HW interrupts, we store the handler function
+        pointer here.
+     */
+    pin_interrupt_handler *int_handler_func;
+
+    /* Flags to specify when interrupt is triggered.
+     */
+
+
+#endif
 }
 Pin;
 
