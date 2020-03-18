@@ -195,6 +195,13 @@ void pins_read_all(
                     {
                         pin_to_iocom_func(pin);
                     }
+
+#if PINS_SIMULATED_INTERRUPTS
+                    if (pin->int_conf)
+                    {
+                        pin_simulate_interrupt(pin, x);
+                    }
+#endif
                 }
             }
             else

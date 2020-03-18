@@ -25,6 +25,7 @@ struct Pin;
 #define PINS_INT_RISING	2
 #define PINS_INT_CHANGE	(PINS_INT_FALLING|PINS_INT_RISING)
 
+
 /* Interrupt handler function type.
  */
 #ifdef OSAL_ARDUINO
@@ -98,3 +99,11 @@ void pin_attach_interrupt(
  */
 void pin_detach_interrupt(
     const struct Pin *pin);
+
+#if PINS_SIMULATED_INTERRUPTS
+/* Trigger simulalated interrupt if flags match.
+ */
+void pin_simulate_interrupt(
+    const struct Pin *pin,
+    os_int x);
+#endif
