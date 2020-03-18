@@ -27,7 +27,7 @@
   @param  pin The GPIO pin, structure.
   @param  prm Parameter structure, contains pointer to interrupt handler functio that
           will be called every time the interrupt is triggered.
-  @param  flags Flags to specify how interrupt is triggered.
+  @param  flags Flags to specify when interrupt is triggered.
 
   There may be HW specific parameters and limitations for reserving interrupt channels, etc.
   The HW specific parameters are in JSON file for the hardware.
@@ -43,13 +43,19 @@ void pin_attach_interrupt(
     // osal_trace_int("~Setting pin addr ", pin->addr);
 
 #if PINS_SIMULATED_INTERRUPTS
+
+    if (pin->int_conf == OS_NULL)
+    {
+        osal_debug_error("pin_attach_interrupt: No \'interrupt\' attribute in JSON, etc");
+        return;
+    }
+
     /** Store the interrupt handler function pointer and flags (when to trigger interrupts)
         for simulation.
      */
-    pin->int_handler_func = prm->int_handler_func;
-    pin->int_flags = prm->flags;
+    pin->int_conf->int_handler_func = prm->int_handler_func;
+    pin->int_conf->flags = prm->flags;
 #endif
-
 }
 
 

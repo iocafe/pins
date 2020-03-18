@@ -61,7 +61,15 @@ PinInterruptConf;
 
 /* If we need to store interrupt and handler configuration by pin.
  */
- #if
+#if PINS_SIMULATED_INTERRUPTS
+#define PINS_INTCONF_STRUCT(name) static PinInterruptConf name;
+#define PINS_INTCONF_PTR(name) ,&name
+#define PINS_INTCONF_NULL ,OS_NULL
+#else
+#define PINS_INTCONF_STRUCT(name)
+#define PINS_INTCONF_PTR(name)
+#define PINS_INTCONF_NULL
+#endif
 
 
 /* Parameter structure for pin_attach_interrupt() function.

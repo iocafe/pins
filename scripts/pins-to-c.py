@@ -18,6 +18,7 @@ prm_type_list = {
     "frequency": "PIN_FREQENCY",
     "resolution": "PIN_RESOLUTION",
     "init": "PIN_INIT",
+    "interrupt": "PIN_INTERRUPT",
     "speed": "PIN_SPEED", 
     "delay": "PIN_DELAY"}
 
@@ -46,6 +47,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     # Generate C parameter list for the pin
     # c_prm_list = ""
     c_prm_list = "PIN_RV, PIN_RV"
+    c_prm_list_has_interrupt = False
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":
@@ -53,6 +55,9 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
                 c_prm_list = c_prm_list + ", "    
                             
             c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
+
+            if c_attr_name == 'PIN_INTERRUPT':
+                c_prm_list_has_interrupt = True
 
     # If we have C parameters, write to C file
     c_prm_array_name = "OS_NULL"
@@ -107,6 +112,17 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += ', ' + signallist[pin_name]
     else:
         ccontent += ', OS_NULL'
+
+    if c_prm_list_has_interrupt:
+        intconf_struct_name = "pin_" + pin_name + "_intconf"
+        cfile.write("PINS_INTCONF_STRUCT(")
+        cfile.write(intconf_struct_name)
+        cfile.write(")\n")
+        ccontent += ' PINS_INTCONF_PTR('
+        ccontent += intconf_struct_name
+        ccontent += ')'
+    else:
+        ccontent += ' PINS_INTCONF_NULL'
 
     ccontent += "}"
     if pin_nr <= nro_pins:
@@ -331,8 +347,8 @@ def mymain():
         print("No source files")
         exit()
 
-#    sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/jane-io.json')
-#    outpath = '/coderoot/pins/examples/jane/config/include/carol/jane-io.c'
+#    sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/pins-io.json')
+#    outpath = '/coderoot/pins/examples/jane/config/include/carol/pins-io.c'
 
 #    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
 #    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'

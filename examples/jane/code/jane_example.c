@@ -24,7 +24,7 @@
 /* Here we include hardware specific IO code. The file name is always same for jane, but
    pins/<hardware> is added compiler's include paths
  */
-#include "jane-io.c"
+#include "pins-io.c"
 
 os_timer t;
 os_boolean state;
