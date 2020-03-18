@@ -24,6 +24,7 @@
  */
 typedef enum NetworkStateMorseCode
 {
+    MORSE_CONFIGURING = -1,
     MORSE_RUNNING = 0,
     MORSE_NETWORK_NOT_CONNECTED, /* Not connected to WiFi or Ethernet network. */
     MORSE_LIGHTHOUSE_NOT_VISIBLE,

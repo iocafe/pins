@@ -110,7 +110,13 @@ static void make_morse_recipe(
     os_memclear(&morse->recipe, sizeof(MorseRecipe));
     n = 0;
 
-    if (code <= 0)
+    if (code == MORSE_CONFIGURING)
+    {
+        morse->recipe.time_ms[n++] = 3000;
+        morse->recipe.time_ms[n++] = 0;
+    }
+
+    else if (code <= 0)
     {
         morse->recipe.time_ms[n++] = 100;
         morse->recipe.time_ms[n++] = 2000;
@@ -229,6 +235,14 @@ static void morse_net_state_notification_handler(
     osaLightHouseClientState lighthouse_state;
     MorseCode *morse;
     morse = (MorseCode*)context;
+
+    /* If Gazerbeam configuration (WiFi with Android phone) is on?
+     */
+    if (osal_get_network_state_int(OSAL_NS_GAZERBEAM_CONNECTED, 0))
+    {
+        code = MORSE_CONFIGURING;
+        goto setit;
+    }
 
     /* If WiFi is not connected?
      */
