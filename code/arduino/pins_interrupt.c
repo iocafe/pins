@@ -1,6 +1,6 @@
 /**
 
-  @file    simulation/pins_interrupt.c
+  @file    arduino/pins_interrupt.c
   @brief   Interrups and handlers.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -39,20 +39,17 @@ void pin_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm)
 {
-#if PINS_SIMULATED_INTERRUPTS
+    int mode;
 
-    if (pin->int_conf == OS_NULL)
+    switch (prm->flags & PINS_INT_CHANGE)
     {
-        osal_debug_error("pin_attach_interrupt: No \'interrupt\' attribute in JSON, etc");
-        return;
+        case PINS_INT_FALLING: mode = FALLING; break;
+        case PINS_INT_RISING:  mode = RISING; break;
+        default:
+        case PINS_INT_CHANGE: mode = CHANGE; break;
     }
 
-    /** Store the interrupt handler function pointer and flags (when to trigger interrupts)
-        for simulation.
-     */
-    pin->int_conf->int_handler_func = prm->int_handler_func;
-    pin->int_conf->flags = prm->flags;
-#endif
+    attachInterrupt(pin->addr, prm->int_handler_func, mode);
 }
 
 
@@ -72,17 +69,5 @@ void pin_attach_interrupt(
 void pin_detach_interrupt(
     const struct Pin *pin)
 {
-    if (pin->int_conf == OS_NULL)
-    {
-        osal_debug_error("pin_detach_interrupt: No \'interrupt\' attribute in JSON, etc");
-        return;
-    }
-
-    if (pin->int_conf->int_handler_func == OS_NULL)
-    {
-        osal_debug_error("pin_detach_interrupt: Interrupt was not attached to pin?");
-        return;
-    }
-
-    pin->int_conf->int_handler_func = OS_NULL;
+    detachInterrupt(pin->addr);
 }

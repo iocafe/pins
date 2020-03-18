@@ -19,6 +19,15 @@
  */
 pin_to_iocom_t *pin_to_iocom_func = OS_NULL;
 
+/* Forward referred static functions.
+ */
+#if PINS_SIMULATED_INTERRUPTS
+static void pin_simulate_interrupt(
+    const struct Pin *pin,
+    os_int x);
+#endif
+
+
 
 /**
 ****************************************************************************************************
@@ -215,3 +224,50 @@ void pins_read_all(
         }
     }
 }
+
+
+#if PINS_SIMULATED_INTERRUPTS
+/**
+****************************************************************************************************
+
+  @brief Trigger simulalated interrupt if flags match.
+  @anchor pin_simulate_interrupt
+
+  The pin_simulate_interrupt function triggers a simulated interrupt if:
+  - x is zero and PINS_INT_FALLING flag is set (included in PINS_INT_CHANGE).
+  - x is nonzero and PINS_INT_RISING flag is set (included in PINS_INT_CHANGE).
+
+  @param   pin The GPIO pin structure.
+  @param   x New pin state.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void pin_simulate_interrupt(
+    const struct Pin *pin,
+    os_int x)
+{
+    os_short flags;
+
+    /* If pin is not configured for interrupts.
+     */
+    if (pin->int_conf == OS_NULL)
+    {
+        osal_debug_error("pin_simulate_interrupt: NULL int_conf pointer");
+        return;
+    }
+
+    /* If interrupt handler not set, just return.
+     */
+    if (pin->int_conf->int_handler_func == OS_NULL) return;
+
+    /* If new signal value matches rising/falling edge flag, call interrupt handler.
+     */
+    flags = pin->int_conf->flags;
+    if (((flags & PINS_INT_FALLING) && x == 0) ||
+        ((flags & PINS_INT_RISING) && x != 0))
+    {
+        pin->int_conf->int_handler_func();
+    }
+}
+#endif

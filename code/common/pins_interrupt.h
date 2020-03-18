@@ -28,7 +28,7 @@ struct Pin;
 
 /* Interrupt handler function type.
  */
-#ifdef OSAL_ARDUINO
+/* MOVED TO HW SPECIFIC #ifdef OSAL_ARDUINO
   #ifdef ESP_PLATFORM
     typedef void IRAM_ATTR pin_interrupt_handler(void);
     #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void IRAM_ATTR func_name() {
@@ -36,6 +36,7 @@ struct Pin;
     #define PINS_SIMULATED_INTERRUPTS 0
   #endif
 #endif
+*/
 
 /* Default function for testing in Windows/Linux.
  */
@@ -100,10 +101,3 @@ void pin_attach_interrupt(
 void pin_detach_interrupt(
     const struct Pin *pin);
 
-#if PINS_SIMULATED_INTERRUPTS
-/* Trigger simulalated interrupt if flags match.
- */
-void pin_simulate_interrupt(
-    const struct Pin *pin,
-    os_int x);
-#endif
