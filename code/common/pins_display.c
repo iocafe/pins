@@ -36,6 +36,7 @@ static void display_net_state_notification_handler(
   The initialize_display() function initializes the display state structure.
 
   @param   display The display state structure.
+  @param   root Pointer to iocom root object, OS_NULL if nome.
   @param   reserved Reserved for future, set OS_NULL for now.
   @return  None.
 
@@ -43,9 +44,11 @@ static void display_net_state_notification_handler(
 */
 void initialize_display(
     PinsDisplay *display,
+    iocRoot *root,
     void *reserved)
 {
     os_memclear(display, sizeof(PinsDisplay));
+    display->root = root;
     initialize_morse_code(&display->morse, OS_NULL, MORSE_DEFAULT);
     osal_add_network_state_notification_handler(display_net_state_notification_handler, display, 0);
 
@@ -143,6 +146,7 @@ static void display_net_state_notification_handler(
 
     code = network_state_to_morse_code(&display->morse, net_state);
     set_morse_code(&display->morse, code);
+    display->code = code;
 }
 
 #endif

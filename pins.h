@@ -18,7 +18,7 @@
 
 /* Include operating system abstraction layer.
  */
-#include "eosalx.h"
+#include "iocom.h"
 
 /* If C++ compilation, all functions, etc. from this point on in this header file are
    plain C and must be left undecorated.

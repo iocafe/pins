@@ -52,6 +52,9 @@ typedef struct PinsDisplay
     /* Display shows also morse code indicators.
      */
     MorseCode morse;
+    MorseCodeEnum code;
+
+    iocRoot *root;
 
     /* Text content set by application.
      */
@@ -59,7 +62,12 @@ typedef struct PinsDisplay
 
     os_boolean
         state_led_on,
-        state_led_touched;
+        state_led_touched,
+        title_touched,
+        show_network_name;
+
+    os_timer
+        title_timer;
 }
 PinsDisplay;
 
@@ -67,6 +75,7 @@ PinsDisplay;
  */
 void initialize_display(
     PinsDisplay *display,
+    iocRoot *root,
     void *reserved);
 
 /* Set text or picture to display.
