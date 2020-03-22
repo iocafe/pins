@@ -26,10 +26,12 @@ typedef enum MorseCodeEnum
 {
     MORSE_CONFIGURING = -1,
     MORSE_RUNNING = 0,
-    MORSE_NETWORK_NOT_CONNECTED, /* Not connected to WiFi or Ethernet network. */
-    MORSE_LIGHTHOUSE_NOT_VISIBLE,
-    MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK,
-    MORSE_SECURITY_CONF_ERROR
+    MORSE_NETWORK_NOT_CONNECTED = 1, /* Not connected to WiFi or Ethernet network. */
+    MORSE_LIGHTHOUSE_NOT_VISIBLE = 2,
+    MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK = 3,
+    MORSE_SECURITY_CONF_ERROR = 4,
+
+    MORSE_UNKNOWN = 100
 }
 MorseCodeEnum;
 
@@ -91,3 +93,8 @@ os_boolean blink_morse_code(
 MorseCodeEnum network_state_to_morse_code(
     struct MorseCode *morse,
     struct osalNetworkState *net_state);
+
+/* Get text describing a morse code.
+ */
+const os_char *morse_code_to_text(
+    MorseCodeEnum code);

@@ -64,10 +64,15 @@ typedef struct PinsDisplay
         state_led_on,
         state_led_touched,
         title_touched,
-        show_network_name;
+        show_network_name,
+        app_data_touched;
+
+    MorseCodeEnum displayed_code;
 
     os_timer
         title_timer;
+
+    os_short app_rect_top;
 }
 PinsDisplay;
 

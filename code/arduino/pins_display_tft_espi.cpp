@@ -48,6 +48,7 @@ void initialize_display_hw(
     tft.fillScreen(TFT_BLACK);
     display->title_touched = OS_TRUE;
     os_get_timer(&display->title_timer);
+    display->displayed_code = MORSE_UNKNOWN;
 }
 
 
@@ -70,8 +71,11 @@ void run_display_hw(
     PinsDisplay *display,
     os_timer *timer)
 {
-    uint16_t title_bgr_color, color;
+    uint16_t background, color, bgr_color;
+    MorseCodeEnum code;
     os_char buf[IOC_NETWORK_NAME_SZ], nbuf[OSAL_NBUF_SZ];
+    const os_char *text;
+    os_short x, y, r;
 
 #define DISPLAY_W 240
 #define DISPLAY_H 240
@@ -79,6 +83,7 @@ void run_display_hw(
 #define DISPLAY_SEPARATOR_H 3
 #define DISPLAY_LED_SZ 16
 #define DISPLAY_LED_SPC ((DISPLAY_TITLE_H - DISPLAY_LED_SZ) / 2)
+#define DISPLAY_WARN_BOX_SZ 70
 
     if (os_has_elapsed_since(&display->title_timer, timer, 3000))
     {
@@ -89,10 +94,10 @@ void run_display_hw(
 
     /* Draw title background.
      */
+    background = TFT_BLACK;
     if (display->title_touched)
     {
-        title_bgr_color = TFT_BLACK;
-        tft.fillRect(0, 0, DISPLAY_W, DISPLAY_TITLE_H, title_bgr_color);
+        tft.fillRect(0, 0, DISPLAY_W, DISPLAY_TITLE_H, background);
         tft.fillRect(0, DISPLAY_TITLE_H, DISPLAY_W, DISPLAY_SEPARATOR_H, TFT_PURPLE);
 
         if (display->root)
@@ -112,8 +117,7 @@ void run_display_hw(
             }
 
             tft.setTextDatum(CC_DATUM);
-            // tft.setCursor(DISPLAY_LED_SZ + DISPLAY_LED_SPC * 2, 8, 4);
-            tft.setTextColor(TFT_WHITE, title_bgr_color);
+            tft.setTextColor(TFT_WHITE, background);
             tft.drawString(buf, DISPLAY_W / 2, DISPLAY_TITLE_H / 2, 4);
         }
 
@@ -123,7 +127,7 @@ void run_display_hw(
 
     if (display->state_led_touched)
     {
-        color = title_bgr_color;
+        color = background;
         if (display->state_led_on) {
             switch (display->code)
             {
@@ -138,54 +142,61 @@ void run_display_hw(
         display->state_led_touched = OS_FALSE;
     }
 
-/*     if (display->state_led_on)
+    if (display->displayed_code != display->code)
     {
-          tft.invertDisplay( false ); // Where i is true or false
+        code = display->code;
+        display->app_rect_top = DISPLAY_TITLE_H + DISPLAY_SEPARATOR_H;
+        if (code != MORSE_RUNNING)
+        {
+            if (code != MORSE_RUNNING)
+            {
+                tft.fillRect(0, display->app_rect_top, DISPLAY_W, DISPLAY_WARN_BOX_SZ, background);
+                tft.fillRect(0, display->app_rect_top + DISPLAY_WARN_BOX_SZ, DISPLAY_W, DISPLAY_SEPARATOR_H, TFT_PURPLE);
 
-          tft.fillScreen(TFT_BLACK);
+                x = DISPLAY_W - DISPLAY_WARN_BOX_SZ/2;
+                y = display->app_rect_top + DISPLAY_WARN_BOX_SZ/2;
+                r = DISPLAY_WARN_BOX_SZ / 3;
+                if (code > 0)
+                {
+                    bgr_color = TFT_YELLOW;
+                    color = TFT_RED;
+                }
+                else
+                {
+                    bgr_color = TFT_SKYBLUE;
+                    color = TFT_BLUE;
+                }
 
-          tft.setCursor(0, 0, 4);
+                tft.fillCircle(x, y, r, bgr_color);
+                tft.drawCircle(x, y, r, color);
+                if (code > 0)
+                {
+                    osal_int_to_str(nbuf, sizeof(nbuf), code);
+                    tft.setTextDatum(CC_DATUM);
+                    tft.setTextColor(color, bgr_color);
+                    tft.drawString(nbuf, x, y, 4);
+                }
 
-          tft.setTextColor(TFT_WHITE, TFT_BLACK);
-          tft.println("Invert OFF\n");
+                text = morse_code_to_text(code);
 
-          tft.println("Kanootti");
+                tft.setCursor(0, display->app_rect_top + 8, 2);
+                tft.setTextColor(TFT_WHITE, TFT_BLACK);
+                tft.println(text);
 
-          tft.setTextColor(TFT_RED, TFT_BLACK);
-          tft.println("Urhea");
 
-          tft.setTextColor(TFT_GREEN, TFT_BLACK);
-          tft.println("Saapas");
+                display->app_rect_top += DISPLAY_WARN_BOX_SZ + DISPLAY_SEPARATOR_H;
+            }
+        }
 
-          tft.setTextColor(TFT_BLUE, TFT_BLACK);
-          tft.println("Blue text");
-
-osal_debug_error("HERE X")          ;
+        display->app_data_touched = OS_TRUE;
+        display->displayed_code = code;
     }
-    else
+
+    if (display->app_data_touched)
     {
-        // Binary inversion of colours
-        tft.invertDisplay( true ); // Where i is true or false
-
-        tft.fillScreen(TFT_BLACK);
-
-        tft.setCursor(0, 0, 4);
-
-        tft.setTextColor(TFT_WHITE, TFT_BLACK);
-        tft.println("Invert ON\n");
-
-        tft.println("Eika");
-
-        tft.setTextColor(TFT_RED, TFT_BLACK);
-        tft.println("ikina");
-
-        tft.setTextColor(TFT_GREEN, TFT_BLACK);
-        tft.println("uppoa");
-
-        tft.setTextColor(TFT_BLUE, TFT_BLACK);
-        tft.println("Blue text");
+        tft.fillRect(0, display->app_rect_top, DISPLAY_W, DISPLAY_H - display->app_rect_top, background);
+        display->app_data_touched = OS_FALSE;
     }
-   */
 }
 
 #endif
