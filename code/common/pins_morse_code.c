@@ -272,6 +272,14 @@ MorseCodeEnum network_state_to_morse_code(
         goto setit;
     }
 
+    /* If no connected sockets?
+     */
+    if (osal_get_network_state_int(OSAL_NRO_CONNECTED_SOCKETS, 0) == 0)
+    {
+        code = MORSE_NO_CONNECTED_SOCKETS;
+        goto setit;
+    }
+
     /* All running fine.
      */
     code = MORSE_RUNNING;

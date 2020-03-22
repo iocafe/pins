@@ -46,6 +46,7 @@ const os_char *morse_code_to_text(
         case MORSE_LIGHTHOUSE_NOT_VISIBLE: p = "server multicast\nnot received"; break;
         case MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK: p = "no server multicast\nfor requested network"; break;
         case MORSE_SECURITY_CONF_ERROR: p = "security\nconfiguration error"; break;
+        case MORSE_NO_CONNECTED_SOCKETS: p = "no connection\nto server"; break;
         default: p = "UNKNOWN"; break;
     }
 
