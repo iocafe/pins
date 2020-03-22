@@ -183,6 +183,30 @@ void run_display_hw(
                 tft.setTextColor(TFT_WHITE, TFT_BLACK);
                 tft.println(text);
 
+                switch (code)
+                {
+                    case MORSE_NETWORK_NOT_CONNECTED:
+                        osal_get_network_state_str(OSAL_NS_WIFI_NETWORK_NAME, 0, buf, sizeof(buf));
+                        if (buf[0] != '\0')
+                        {
+                            tft.print("wifi network: \"");
+                            tft.print(buf);
+                            tft.println("\"");
+                        }
+                        break;
+
+                    case MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK:
+                        if (display->root)
+                        {
+                            tft.print("IO network: \"");
+                            tft.print(display->root->network_name);
+                            tft.println("\"");
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
 
                 display->app_rect_top += DISPLAY_WARN_BOX_SZ + DISPLAY_SEPARATOR_H;
             }
