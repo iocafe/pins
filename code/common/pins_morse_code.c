@@ -30,7 +30,7 @@ static void morse_net_state_notification_handler(
 /**
 ****************************************************************************************************
 
-  @brief Setup an LED output to blink by more code.
+  @brief Setup an LED output to blink by morse code.
   @anchor initialize_morse_code
 
   The initialize_morse_code() function initializes MorseCode structure, the pin is stored pointer
@@ -167,13 +167,13 @@ static void make_morse_recipe(
   loop.
 
   @param   morse Morse code structure.
-  @param   timer Pointer to timer to a save function call, or OS_NULL to get timer by
+  @param   timer Pointer to current timer value, or OS_NULL to get timer by
            this function.
-  @return  None.
+  @return  LED on or off.
 
 ****************************************************************************************************
 */
-void blink_morse_code(
+os_boolean blink_morse_code(
     struct MorseCode *morse,
     os_timer *timer)
 {
@@ -186,8 +186,7 @@ void blink_morse_code(
         morse->prev_code = morse->code;
         morse->pos = 0;
         morse->led_on = morse->start_led_on;
-        pin_set(morse->pin, morse->led_on);
-        os_get_timer(&localtimer);
+        if (morse->pin) pin_set(morse->pin, morse->led_on);
     }
 
     if (timer == OS_NULL)
@@ -200,7 +199,7 @@ void blink_morse_code(
     if (os_has_elapsed_since(&morse->timer, timer, morse->recipe.time_ms[pos]))
     {
         morse->led_on = !morse->led_on;
-        pin_set(morse->pin, morse->led_on);
+        if (morse->pin) pin_set(morse->pin, morse->led_on);
         morse->timer = *timer;
         if (++pos >= morse->recipe.n)
         {
@@ -208,33 +207,32 @@ void blink_morse_code(
         }
         morse->pos = pos;
     }
+
+    return morse->led_on;
 }
 
 
 /**
 ****************************************************************************************************
 
-  @brief Handle network state change notifications.
-  @anchor morse_net_state_notification_handler
+  @brief Get morse code corresponding to network state.
+  @anchor network_state_to_morse_code
 
-  The morse_net_state_notification_handler() function is callback function when network state
-  changes. Determines from network state if all is ok or something is wrong, and sets morse code
-  accordingly.
+  The network_state_to_morse_code() function examines network state structure and selects which
+  morse code best describes it.
 
+  @param   morse Morse code structure.
   @param   net_state Network state structure.
-  @param   context Morse code structure.
-  @return  None.
+  @return  Morse code enumeration value.
 
 ****************************************************************************************************
 */
-static void morse_net_state_notification_handler(
-    struct osalNetworkState *net_state,
-    void *context)
+MorseCodeEnum network_state_to_morse_code(
+    struct MorseCode *morse,
+    struct osalNetworkState *net_state)
 {
-    NetworkStateMorseCode code;
+    MorseCodeEnum code;
     osaLightHouseClientState lighthouse_state;
-    MorseCode *morse;
-    morse = (MorseCode*)context;
 
     /* If Gazerbeam configuration (WiFi with Android phone) is on?
      */
@@ -279,7 +277,34 @@ static void morse_net_state_notification_handler(
     code = MORSE_RUNNING;
 
 setit:
-    /* Set morse code to indicate network state.
-     */
+    return code;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Handle network state change notifications.
+  @anchor morse_net_state_notification_handler
+
+  The morse_net_state_notification_handler() function is callback function when network state
+  changes. Determines from network state if all is ok or something is wrong, and sets morse code
+  accordingly.
+
+  @param   net_state Network state structure.
+  @param   context Morse code structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void morse_net_state_notification_handler(
+    struct osalNetworkState *net_state,
+    void *context)
+{
+    MorseCodeEnum code;
+    MorseCode *morse;
+    morse = (MorseCode*)context;
+
+    code = network_state_to_morse_code(morse, net_state);
     set_morse_code(morse, code);
 }

@@ -55,6 +55,7 @@ OSAL_C_HEADER_BEGINS
 #endif
 #endif
 
+
 /* Include generic pins library headers.
  */
 #include "code/common/pins_interrupt.h"
@@ -62,6 +63,7 @@ OSAL_C_HEADER_BEGINS
 #include "code/common/pins_state.h"
 #include "code/common/pins_parameters.h"
 #include "code/common/pins_morse_code.h"
+#include "code/common/pins_display.h"
 
 /* If C++ compilation, end the undecorated code.
  */

@@ -22,7 +22,7 @@
 
 /* Morse code state structure.
  */
-typedef enum NetworkStateMorseCode
+typedef enum MorseCodeEnum
 {
     MORSE_CONFIGURING = -1,
     MORSE_RUNNING = 0,
@@ -31,7 +31,7 @@ typedef enum NetworkStateMorseCode
     MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK,
     MORSE_SECURITY_CONF_ERROR
 }
-NetworkStateMorseCode;
+MorseCodeEnum;
 
 
 /* Receipe how to bling the LED OFF and ON, contains ms timer values.
@@ -63,10 +63,11 @@ MorseCode;
 
 /* Flags for initialize_morse_code()
  */
+#define MORSE_DEFAULT 0
 #define MORSE_LED_INVERTED 1
 #define MORSE_HANDLE_NET_STATE_NOTIFICATIONS 2
 
-/* Setup an LED output to blink by more code.
+/* Setup an LED output to blink by morse code.
  */
 void initialize_morse_code(
     MorseCode *morse,
@@ -81,6 +82,12 @@ void set_morse_code(
 
 /* Keep the morse code LED alive.
  */
-void blink_morse_code(
+os_boolean blink_morse_code(
     struct MorseCode *morse,
     os_timer *timer);
+
+/* Get morse code corresponding to network state.
+ */
+MorseCodeEnum network_state_to_morse_code(
+    struct MorseCode *morse,
+    struct osalNetworkState *net_state);
