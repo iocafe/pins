@@ -70,7 +70,8 @@ typedef struct PinsDisplay
     MorseCodeEnum displayed_code;
 
     os_timer
-        title_timer;
+        title_timer,
+        code_change_timer;
 
     os_short app_rect_top;
 }

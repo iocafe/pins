@@ -76,6 +76,7 @@ void run_display_hw(
     os_char buf[IOC_NETWORK_NAME_SZ], nbuf[OSAL_NBUF_SZ];
     const os_char *text;
     os_short x, y, r;
+    os_boolean delay_it;
 
 #define DISPLAY_W 240
 #define DISPLAY_H 240
@@ -90,6 +91,23 @@ void run_display_hw(
         display->title_touched = OS_TRUE;
         display->show_network_name = !display->show_network_name;
         display->title_timer = *timer;
+    }
+
+    /* Some error conditions may blink off when retrying, delay when OK if signaled.
+     */
+    code = display->code;
+    delay_it = OS_FALSE;
+    if (display->displayed_code == MORSE_NO_CONNECTED_SOCKETS) {
+         if (code == MORSE_RUNNING)
+         {
+            if (!os_has_elapsed_since(&display->code_change_timer, timer, 3000)) {
+                delay_it = OS_TRUE;
+            }
+         }
+         else
+         {
+             display->code_change_timer = *timer;
+         }
     }
 
     /* Draw title background.
@@ -142,9 +160,9 @@ void run_display_hw(
         display->state_led_touched = OS_FALSE;
     }
 
-    if (display->displayed_code != display->code)
+
+    if (display->displayed_code != display->code && !delay_it)
     {
-        code = display->code;
         display->app_rect_top = DISPLAY_TITLE_H + DISPLAY_SEPARATOR_H;
         if (code != MORSE_RUNNING)
         {
@@ -215,6 +233,7 @@ void run_display_hw(
         display->app_data_touched = OS_TRUE;
         display->displayed_code = code;
     }
+
 
     if (display->app_data_touched)
     {
