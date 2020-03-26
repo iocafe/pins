@@ -23,7 +23,9 @@ typedef enum
     PIN_ANALOG_INPUT,
     PIN_ANALOG_OUTPUT,
     PIN_PWM,
-    PIN_TIMER
+    PIN_SPI,
+    PIN_TIMER,
+    PIN_UART
 }
 pinType;
 
@@ -35,9 +37,18 @@ typedef enum
     PIN_PULL_UP,
     PIN_TOUCH,
     PIN_FREQENCY,
+    PIN_FREQENCY_KHZ,
     PIN_RESOLUTION,
     PIN_INIT,
     PIN_INTERRUPT, /* Can specify interrup channel, etc */
+    PIN_TIMER_SELECT,
+    PIN_MISO,
+    PIN_MOSI,
+    PIN_SCLK,
+    PIN_CS,
+    PIN_DC,
+    PIN_RX,
+    PIN_TX,
     PIN_SPEED,     /* Not used */
     PIN_DELAY,     /* Not used */
     PIN_MIN,       /* Minimum value for signal */

@@ -1,4 +1,4 @@
-# pins-to-c.py 8.1.2020/pekka
+# pins-to-c.py 27.3.2020/pekka
 # Converts hardware IO specification(s) written in JSON to C source and header files. 
 import json
 import os
@@ -10,17 +10,30 @@ pin_types = {
     "analog_inputs" : "PIN_ANALOG_INPUT",
     "analog_outputs" : "PIN_ANALOG_OUTPUT",
     "pwm" : "PIN_PWM", 
-    "timers" : "PIN_TIMER"}
+    "spi" : "PIN_SPI",
+    "timers" : "PIN_TIMER",
+    "uart" : "PIN_UART"}
 
 prm_type_list = {
     "pull-up": "PIN_PULL_UP", 
     "touch": "PIN_TOUCH", 
     "frequency": "PIN_FREQENCY",
+    "frequency-kHz": "PIN_FREQENCY_KHZ",
     "resolution": "PIN_RESOLUTION",
     "init": "PIN_INIT",
     "interrupt": "PIN_INTERRUPT",
+    "timer": "PIN_TIMER_SELECT",
+    "miso": "PIN_MISO",
+    "mosi": "PIN_MOSI",
+    "sclk": "PIN_SCLK",
+    "cd": "PIN_CS",
+    "dc": "PIN_DC",
+    "rx": "PIN_RX",
+    "tx": "PIN_TX",
     "speed": "PIN_SPEED", 
-    "delay": "PIN_DELAY"}
+    "delay": "PIN_DELAY",
+    "min": "PIN_MIN", 
+    "max": "PIN_MAX"}
 
 def start_c_files():
     global cfile, hfile, cfilepath, hfilepath
@@ -58,6 +71,9 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
             if c_attr_name == 'PIN_INTERRUPT':
                 c_prm_list_has_interrupt = True
+
+        elif attr != 'name' and attr != 'addr' and attr != 'bank':
+            print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")                
 
     # If we have C parameters, write to C file
     c_prm_array_name = "OS_NULL"
@@ -169,13 +185,17 @@ def process_group_block(group):
     global nro_groups, group_nr, ccontent, c_prm_comment_written
     global nro_pins, pin_nr, pin_group_list
 
-    hfile.write('\n  struct\n  {\n')
-    hfile.write('    PinGroupHdr hdr;\n')
-
     pin_type = group.get("name", None)
     if pin_type == None:
         print("'name' not found for group in " + device_name)
         exit()
+
+    if pin_types.get(pin_type, None) == None:
+        print("Pin group '"+ pin_type + "' ignored.")
+        return;
+
+    hfile.write('\n  struct\n  {\n')
+    hfile.write('    PinGroupHdr hdr;\n')
 
     pins = group.get("pins", None)
     if pins == None:
@@ -347,8 +367,11 @@ def mymain():
         print("No source files")
         exit()
 
-#    sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/pins-io.json')
-#    outpath = '/coderoot/pins/examples/jane/config/include/carol/pins-io.c'
+#    sourcefiles.append('/coderoot/dehec-ref/dref/config/pins/yogurt/pins-io.json')
+#    outpath = '/coderoot/dehec-ref/dref/config/include/yogurt/pins-io.c'
+
+#     sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/pins-io.json')
+#     outpath = '/coderoot/pins/examples/jane/config/include/carol/pins-io.c'
 
 #    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
 #    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
