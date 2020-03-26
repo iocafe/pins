@@ -6,7 +6,7 @@ set(E_PROJECT "pins")
 project(${E_PROJECT})
 
 # include build information common to all projects.
-include(../eosal/build/cmakedefs/eosal-defs.txt)
+include(../eosal/osbuild/cmakedefs/eosal-defs.txt)
 
 # Set path to where to keep libraries.
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $ENV{E_LIBOUT})
