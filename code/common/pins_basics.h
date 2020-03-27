@@ -35,12 +35,13 @@ typedef enum
 {
     PIN_RV,        /* Reserved for value */
     PIN_PULL_UP,
+    PIN_PULL_DOWN,
     PIN_TOUCH,
     PIN_FREQENCY,
     PIN_FREQENCY_KHZ,
     PIN_RESOLUTION,
     PIN_INIT,
-    PIN_INTERRUPT, /* Can specify interrup channel, etc */
+    PIN_INTERRUPT, /* Can specify interrupt channel, etc */
     PIN_TIMER_SELECT,
     PIN_MISO,
     PIN_MOSI,
@@ -49,8 +50,8 @@ typedef enum
     PIN_DC,
     PIN_RX,
     PIN_TX,
-    PIN_SPEED,     /* Not used */
-    PIN_DELAY,     /* Not used */
+    PIN_TRANSMITTER_CTRL,
+    PIN_SPEED,
     PIN_MIN,       /* Minimum value for signal */
     PIN_MAX        /* Maximum value for signal, 0 if not set */
 }

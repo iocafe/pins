@@ -21,7 +21,7 @@ def runcmd(cmd):
     output = stream.read()
     print(output)
 
-runcmd(PINSTOC + ' ' + MYPINS + '.json -o ' + MYINCLUDE + '/' + MYAPP + '-io.c')
+runcmd(PINSTOC + ' ' + MYPINS + '.json -o ' + MYINCLUDE + '/pins-io.c')
 
 print("*** Check that the output files have been generated (error checks are still missing).")
 print("*** You may need to recompile all C code since generated files in config/include folder are not in compiler dependencies.")

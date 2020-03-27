@@ -18,7 +18,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $ENV{E_BIN})
 # Set path to source files.
 set(E_SOURCE_PATH "$ENV{E_ROOT}/pins/examples/${E_PROJECT}/code")
 
-# Add pins to include path.
+# Add iocom and pins to include path.
+include_directories("$ENV{E_ROOT}/iocom")
 include_directories("$ENV{E_ROOT}/pins")
 
 # Set path to HW specific source files. ************

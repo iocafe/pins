@@ -21,7 +21,7 @@
       {
         "name": "analog_inputs",
         "pins": [
-          {"name": "potentiometer", "addr": 26, "speed": 3, "delay": 11, "max": 4095}
+          {"name": "potentiometer", "addr": 26, "speed": 3, "max": 4095}
         ]
       },
       {
@@ -34,8 +34,7 @@
       {
         "name": "uart",
         "pins": [
-          {"name": "U2_TXD", "addr": 17},
-          {"name": "U2_RXD", "addr": 16}
+          {"name": "uart2", "addr": 2, "rx": 16, "tx": 17, "speed": 96}
         ]
       },
       {
@@ -60,8 +59,6 @@
             {"name": "DEV_CSC", "addr": 11}
           ]
       }
-
-
     ]
   }]
 }

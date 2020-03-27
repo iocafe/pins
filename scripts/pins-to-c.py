@@ -16,6 +16,7 @@ pin_types = {
 
 prm_type_list = {
     "pull-up": "PIN_PULL_UP", 
+    "pull-down": "PIN_PULL_DOWN", 
     "touch": "PIN_TOUCH", 
     "frequency": "PIN_FREQENCY",
     "frequency-kHz": "PIN_FREQENCY_KHZ",
@@ -30,8 +31,8 @@ prm_type_list = {
     "dc": "PIN_DC",
     "rx": "PIN_RX",
     "tx": "PIN_TX",
+    "tc": "PIN_TRANSMITTER_CTRL",
     "speed": "PIN_SPEED", 
-    "delay": "PIN_DELAY",
     "min": "PIN_MIN", 
     "max": "PIN_MAX"}
 
@@ -72,7 +73,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             if c_attr_name == 'PIN_INTERRUPT':
                 c_prm_list_has_interrupt = True
 
-        elif attr != 'name' and attr != 'addr' and attr != 'bank':
+        elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group':
             print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")                
 
     # If we have C parameters, write to C file
