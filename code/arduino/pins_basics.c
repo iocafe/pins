@@ -16,7 +16,9 @@
 #include <Arduino.h>
 #include "pins.h"
 
-#define LED_BUILTIN 2
+
+static void pin_ll_setup_pwm(
+    const Pin *pin);
 
 /**
 ****************************************************************************************************
@@ -70,14 +72,7 @@ void pins_ll_setup(
                     break;
 
                 case PIN_PWM:
-                    frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
-                    if (!frequency_hz) frequency_hz = 50; /* Default servo frequency */
-                    resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
-                    if (!resolution_bits) resolution_bits = 12;
-                    initial_state  = pin_get_prm(pin, PIN_INIT);
-                    ledcSetup(pin->bank, frequency_hz, resolution_bits);
-                    ledcAttachPin(pin->addr, pin->bank);
-                    ledcWrite(pin->bank, initial_state);
+                    pin_ll_setup_pwm(pin);
                     break;
 
                 case PIN_ANALOG_INPUT:
@@ -97,6 +92,44 @@ void pins_ll_setup(
 /**
 ****************************************************************************************************
 
+  @brief Setup a pin as PWM.
+  @anchor pin_ll_setup_pwm
+
+  The pin_ll_setup_pwm() function...
+  @return  None.
+
+****************************************************************************************************
+*/
+static void pin_ll_setup_pwm(
+    const Pin *pin)
+{
+    os_int
+        is_touch_sensor,
+        frequency_hz,
+        resolution_bits,
+        initial_state;
+
+    frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
+    if (!frequency_hz)
+    {
+        frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
+        if (!frequency_hz)
+        {
+            frequency_hz = 50; /* Default servo frequency */
+        }
+    }
+    resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
+    if (!resolution_bits) resolution_bits = 12;
+    initial_state  = pin_get_prm(pin, PIN_INIT);
+    ledcSetup(pin->bank, frequency_hz, resolution_bits);
+    ledcAttachPin(pin->addr, pin->bank);
+    ledcWrite(pin->bank, initial_state);
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Set IO pin state.
   @anchor pin_ll_set
 
@@ -105,9 +138,8 @@ void pins_ll_setup(
 
 ****************************************************************************************************
 */
-void pin_ll_set(
-    const Pin *pin,
-    os_int x)
+static void pin_ll_setup_pwm(
+    const Pin *pin)
 {
     if (pin->addr >= 0) switch (pin->type)
     {
