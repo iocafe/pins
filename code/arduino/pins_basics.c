@@ -42,10 +42,7 @@ void pins_ll_setup(
     os_short gcount, pcount;
 
     os_int
-        is_touch_sensor,
-        frequency_hz,
-        resolution_bits,
-        initial_state;
+        is_touch_sensor;
 
     gcount = pins_hdr->n_groups;
     group =  pins_hdr->group;
@@ -104,7 +101,6 @@ static void pin_ll_setup_pwm(
     const Pin *pin)
 {
     os_int
-        is_touch_sensor,
         frequency_hz,
         resolution_bits,
         initial_state;
@@ -138,8 +134,9 @@ static void pin_ll_setup_pwm(
 
 ****************************************************************************************************
 */
-static void pin_ll_setup_pwm(
-    const Pin *pin)
+void pin_ll_set(
+    const Pin *pin,
+    os_int x)
 {
     if (pin->addr >= 0) switch (pin->type)
     {

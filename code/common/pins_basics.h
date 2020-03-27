@@ -135,7 +135,7 @@ void pins_ll_setup(
  */
 void pin_ll_set(
     const Pin *pin,
-    os_int state);
+    os_int x);
 
 /* Get pin state.
  */
