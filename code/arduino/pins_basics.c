@@ -16,6 +16,10 @@
 #include <Arduino.h>
 #include "pins.h"
 
+#ifdef ESP_PLATFORM
+#include "driver/ledc.h"
+#include "driver/periph_ctrl.h"
+#endif
 
 static void pin_ll_setup_pwm(
     const Pin *pin);
@@ -46,6 +50,8 @@ void pins_ll_setup(
 
     gcount = pins_hdr->n_groups;
     group =  pins_hdr->group;
+
+periph_module_enable(PERIPH_LEDC_MODULE); // ?????????????????????????? THIS SHOULD BE COMMON FOR LIB, NOT FOR PIN GROUP
 
     while (gcount--)
     {
@@ -92,6 +98,12 @@ void pins_ll_setup(
   @brief Setup a pin as PWM.
   @anchor pin_ll_setup_pwm
 
+  ESP32 note: Generate 1 MHz clock signal with ESP32,  note 24.3.2020/pekka
+    LEDC peripheral can be used to generate clock signals between
+       40 MHz (half of APB clock) and approximately 0.001 Hz.
+       Please check the LEDC chapter in Technical Reference Manual.
+
+
   The pin_ll_setup_pwm() function...
   @return  None.
 
@@ -100,10 +112,15 @@ void pins_ll_setup(
 static void pin_ll_setup_pwm(
     const Pin *pin)
 {
+#ifdef ESP_PLATFORM
     os_int
         frequency_hz,
         resolution_bits,
-        initial_state;
+        initial_state,
+        timer_nr;
+
+    ledc_timer_config_t ledc_timer;
+    ledc_channel_config_t channel_config;
 
     frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
     if (!frequency_hz)
@@ -116,10 +133,33 @@ static void pin_ll_setup_pwm(
     }
     resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
     if (!resolution_bits) resolution_bits = 12;
-    initial_state  = pin_get_prm(pin, PIN_INIT);
-    ledcSetup(pin->bank, frequency_hz, resolution_bits);
+    initial_state = pin_get_prm(pin, PIN_INIT);
+    timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
+
+    /* Set up timer
+     */
+    os_memclear(&ledc_timer, sizeof(ledc_timer));
+    ledc_timer.duty_resolution = resolution_bits,
+    ledc_timer.freq_hz = frequency_hz,
+    ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
+    ledc_timer.timer_num = timer_nr;  // LEDC_TIMER_0
+
+    /* I think not needed for new esp-idf software, try uncommenting
+       ledc_timer.clk_cfg = LEDC_USE_APB_CLK */
+    ledc_timer_config(&ledc_timer); // Set up GPIO PIN
+
+    os_memclear(&channel_config, sizeof(channel_config));
+    channel_config.channel    = pin->bank; // LEDC_CHANNEL_0
+    channel_config.duty       = initial_state;
+    channel_config.gpio_num   = pin->addr;
+    channel_config.speed_mode = LEDC_HIGH_SPEED_MODE;
+    channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
+    ledc_channel_config(&channel_config);
+
+    /* ledcSetup(pin->bank, frequency_hz, resolution_bits);
     ledcAttachPin(pin->addr, pin->bank);
-    ledcWrite(pin->bank, initial_state);
+    ledcWrite(pin->bank, initial_state); */
+#endif
 }
 
 
