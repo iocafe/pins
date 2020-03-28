@@ -125,7 +125,8 @@ static void pin_ll_setup_pwm(
     frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
     if (!frequency_hz)
     {
-        frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
+        /* Should be 1024, not 1000: keeps it precise */
+        frequency_hz = 1024 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
         if (!frequency_hz)
         {
             frequency_hz = 50; /* Default servo frequency */
@@ -154,6 +155,7 @@ static void pin_ll_setup_pwm(
     channel_config.gpio_num   = pin->addr;
     channel_config.speed_mode = LEDC_HIGH_SPEED_MODE;
     channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
+    channel_config.hpoint = 500 * pin->bank;
     ledc_channel_config(&channel_config);
 
     /* ledcSetup(pin->bank, frequency_hz, resolution_bits);
