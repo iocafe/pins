@@ -22,6 +22,7 @@ prm_type_list = {
     "frequency-kHz": "PIN_FREQENCY_KHZ",
     "resolution": "PIN_RESOLUTION",
     "init": "PIN_INIT",
+    "hpoint": "PIN_HPOINT",
     "interrupt": "PIN_INTERRUPT",
     "timer": "PIN_TIMER_SELECT",
     "miso": "PIN_MISO",
