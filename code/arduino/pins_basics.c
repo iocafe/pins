@@ -116,7 +116,8 @@ static void pin_ll_setup_pwm(
     os_int
         frequency_hz,
         resolution_bits,
-        initial_state,
+        initial_duty,
+        hpoint,
         timer_nr;
 
     ledc_timer_config_t ledc_timer;
@@ -134,7 +135,8 @@ static void pin_ll_setup_pwm(
     }
     resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
     if (!resolution_bits) resolution_bits = 12;
-    initial_state = pin_get_prm(pin, PIN_INIT);
+    initial_duty = pin_get_prm(pin, PIN_INIT);
+    hpoint = pin_get_prm(pin, PIN_HPOINT);
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
 
     /* Set up timer
@@ -151,16 +153,16 @@ static void pin_ll_setup_pwm(
 
     os_memclear(&channel_config, sizeof(channel_config));
     channel_config.channel    = pin->bank; // LEDC_CHANNEL_0
-    channel_config.duty       = initial_state;
+    channel_config.duty       = initial_duty;
     channel_config.gpio_num   = pin->addr;
     channel_config.speed_mode = LEDC_HIGH_SPEED_MODE;
     channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
-    channel_config.hpoint = 500 * pin->bank;
+    channel_config.hpoint = hpoint;
     ledc_channel_config(&channel_config);
 
     /* ledcSetup(pin->bank, frequency_hz, resolution_bits);
     ledcAttachPin(pin->addr, pin->bank);
-    ledcWrite(pin->bank, initial_state); */
+    ledcWrite(pin->bank, initial_duty); */
 #endif
 }
 

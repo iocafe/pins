@@ -41,6 +41,7 @@ typedef enum
     PIN_FREQENCY_KHZ,
     PIN_RESOLUTION,
     PIN_INIT,
+    PIN_HPOINT,
     PIN_INTERRUPT, /* Can specify interrupt channel, etc */
     PIN_TIMER_SELECT,
     PIN_MISO,
