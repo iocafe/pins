@@ -4,3 +4,5 @@ https://hackaday.io/project/9829-linear-ccd-module
 https://www.youtube.com/watch?v=FBlp7KK4NuQ
 
 https://github.com/superzerg/TCD1304AP_teensy2pp
+
+https://tcd1304.wordpress.com/driving-circuit-and-pcb/
