@@ -26,24 +26,13 @@ struct Pin;
 #define PINS_INT_CHANGE	(PINS_INT_FALLING|PINS_INT_RISING)
 
 
-/* Interrupt handler function type.
- */
-/* MOVED TO HW SPECIFIC #ifdef OSAL_ARDUINO
-  #ifdef ESP_PLATFORM
-    typedef void IRAM_ATTR pin_interrupt_handler(void);
-    #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void IRAM_ATTR func_name() {
-    #define END_PIN_INTERRUPT_HANDLER }
-    #define PINS_SIMULATED_INTERRUPTS 0
-  #endif
-#endif
-*/
-
-/* Default function for testing in Windows/Linux.
+/* Default interrupt handler defines to be used if OS specific ones are
+   not defined (for testing in Windows/Linux).
  */
 #ifndef BEGIN_PIN_INTERRUPT_HANDLER
   typedef void pin_interrupt_handler(void);
   #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
-  #define END_PIN_INTERRUPT_HANDLER }
+  #define END_PIN_INTERRUPT_HANDLER(func_name) }
   #define PINS_SIMULATED_INTERRUPTS 1
 #endif
 
