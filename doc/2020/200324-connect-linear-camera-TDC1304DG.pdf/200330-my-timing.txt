@@ -1,3 +1,0 @@
-It needs three very specific signals which turn on and off as the specific moment. The base clock can be selected from 0.8 to 4 Mhz, and sets the data transfer rate. Currently, I am running it at 1 Mhz, which is good to get 50 frames per second out (one frame 20 ms). 
-Then it needs SH signal, this needs to be 1 us pulse every N us. The separation between the pulses sets integration time, either that and light flash needs to be controlled to give right exposure (that image is not too dark or saturated). I run this pulse at 400Hz.
-The third signal it needs is IGC. It clears the integration buffer (starts a new frame). It must go low 200ns - 1 us before SH goes high, and held high 1 ... 5 us after SH goes low. I run this at 50 Hz.
