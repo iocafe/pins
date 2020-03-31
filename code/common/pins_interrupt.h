@@ -33,7 +33,9 @@ struct Pin;
   typedef void pin_interrupt_handler(void);
   #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
   #define END_PIN_INTERRUPT_HANDLER(func_name) }
+  #ifndef PINS_SIMULATED_INTERRUPTS
   #define PINS_SIMULATED_INTERRUPTS 1
+  #endif
 #endif
 
 /* Structure for simulated configuration.
