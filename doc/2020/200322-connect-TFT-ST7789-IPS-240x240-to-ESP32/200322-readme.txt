@@ -1,5 +1,8 @@
 Connect TFT ST7789 IPS 240x240 display to ESP32
 
+Used library:
+  - TFT_eSPI by Bodmer 
+
 Good instructions:
   - https://www.youtube.com/watch?v=HoZhgNcJjNA
   - https://www.reddit.com/r/esp32/comments/f8b5k8/connecting_and_configuring_the_st7789_lcd_spi/
