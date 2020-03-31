@@ -64,6 +64,7 @@ OSAL_C_HEADER_BEGINS
 #include "code/common/pins_parameters.h"
 #include "code/common/pins_morse_code.h"
 #include "code/common/pins_display.h"
+#include "code/common/pins_camera.h"
 
 /* If C++ compilation, end the undecorated code.
  */
