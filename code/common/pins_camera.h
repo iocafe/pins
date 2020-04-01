@@ -117,6 +117,11 @@ pinsCamera;
 */
 typedef struct pinsCameraInterface
 {
+    /* Initialize library code for the camera type.
+     */
+    void (*initialize)(
+        void);
+
     /* Open a camera.
      */
 	osalStatus (*open)(
@@ -138,6 +143,7 @@ typedef struct pinsCameraInterface
         pinsCameraImage *image);
 }
 pinsCameraInterface;
+
 
 
 void pins_release_camera_image(
