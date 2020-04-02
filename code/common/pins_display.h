@@ -40,6 +40,16 @@
  */
 #if PINS_DISPLAY
 
+
+/** Parameters for initialize_display() function.
+ */
+typedef struct pinsDisplayParams
+{
+    const struct Pin *spi_pin;
+}
+pinsDisplayParams;
+
+
 /* Number of text lines and line width in characters.
  */
 #define PINS_DISPLAY_ROWS 3
@@ -81,8 +91,8 @@ PinsDisplay;
  */
 void initialize_display(
     PinsDisplay *display,
-    iocRoot *root,
-    void *reserved);
+    const pinsDisplayParams *prm,
+    iocRoot *root);
 
 /* Set text or picture to display.
  */
@@ -103,7 +113,7 @@ void run_display(
  */
 void initialize_display_hw(
     PinsDisplay *display,
-    void *reserved);
+    const pinsDisplayParams *prm);
 
 /* Run display hardware (called by run_display)
  */

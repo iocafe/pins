@@ -61,7 +61,7 @@ static void tdc1304_cam_initialize(
 
 static osalStatus tdc1304_cam_open(
     pinsCamera *c,
-    const os_char *parameters)
+    const pinsCameraParams *prm)
 {
     osalThreadOptParams opt;
     os_int id;

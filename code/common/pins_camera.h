@@ -155,7 +155,7 @@ typedef struct pinsCameraInterface
      */
 	osalStatus (*open)(
         pinsCamera *c,
-        const os_char *parameters);
+        const pinsCameraParams *prm);
 
 	void (*close)(
         pinsCamera *c);

@@ -41,7 +41,7 @@ TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
 */
 void initialize_display_hw(
     PinsDisplay *display,
-    void *reserved)
+    const pinsDisplayParams *prm)
 {
     tft.init();
 

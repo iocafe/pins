@@ -36,16 +36,16 @@ static void display_net_state_notification_handler(
   The initialize_display() function initializes the display state structure.
 
   @param   display The display state structure.
+  @param   prm Parameter structure.
   @param   root Pointer to iocom root object, OS_NULL if nome.
-  @param   reserved Reserved for future, set OS_NULL for now.
   @return  None.
 
 ****************************************************************************************************
 */
 void initialize_display(
     PinsDisplay *display,
-    iocRoot *root,
-    void *reserved)
+    const pinsDisplayParams *prm,
+    iocRoot *root)
 {
     os_memclear(display, sizeof(PinsDisplay));
     display->root = root;
@@ -54,7 +54,7 @@ void initialize_display(
 
     /* Call hardware/platform specific initialization code.
      */
-    initialize_display_hw(display, reserved);
+    initialize_display_hw(display, prm);
 }
 
 
