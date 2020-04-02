@@ -8,4 +8,13 @@ Function of the "pins" is to:
 - HW specific pin configuration is written once in JSON file and is separated from application code. 
 - Pin configuration information in JSON is converted to C, iocom signals mappings and documentation. 
 
+Pins library encapsulates:
+- Digital and anlog inputs and outputs.
+- Input pin state change interrupts
+- Timers and timer interrupts
+- PWM
+- UART
+- Device state displays (TFT)
+- Cameras (linear and pixel matrix)
+
 https://github.com/iocafe/pins/blob/master/doc/190916-pins-library/190916-pins-library.pdf
