@@ -30,7 +30,7 @@ typedef struct
 {
     pinsCamera *c;
     volatile os_int pos;
-    volatile os_char buf[TDC1304_DATA_SZ];
+    os_char buf[TDC1304_DATA_SZ];
     os_int data_start, data_end;
     os_int igc_start, igc_end;
     os_int sh_start, sh_end;
@@ -38,6 +38,18 @@ typedef struct
 staticCameraState;
 
 static staticCameraState cam_state[TDC1304_MAX_CAMERAS];
+
+/* Forward referred static functions.
+ */
+static void tdc1304_cam_task(
+    void *prm,
+    osalEvent done);
+
+static void tdc1304_cam_ll_start(
+    pinsCamera *c);
+
+static void tdc1304_cam_ll_stop(
+    pinsCamera *c);
 
 
 static void tdc1304_cam_initialize(
@@ -55,16 +67,13 @@ static osalStatus tdc1304_cam_open(
     os_int id;
 
     os_memclear(c, sizeof(pinsCamera));
-    timer_pin;
-    igc_pin;
-    sh_pin;
 
     /* We could support two TDC1304 cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
     for (id = 0; cam_state[id].c; id++)
     {
-        if (i >= TDC1304_MAX_CAMERAS - 1)
+        if (id >= TDC1304_MAX_CAMERAS - 1)
         {
             osal_debug_error("tdc1304_cam_open: Maximum number of cameras used");
             return OSAL_STATUS_FAILED;
@@ -80,7 +89,7 @@ static osalStatus tdc1304_cam_open(
 
     /* Create thread that transfers camera frames.
      */
-    os_memclear(opt, sizeof(opt));
+    os_memclear(&opt, sizeof(opt));
     opt.priority = OSAL_THREAD_PRIORITY_HIGH;
     opt.thread_name = "tdc1304";
     c->camera_thread = osal_thread_create(tdc1304_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
@@ -122,19 +131,18 @@ static void tdc1304_cam_stop(
 
 
 static void tdc1304_cam_set_parameter(
-        pinsCamera *c,
-        pinsCameraParamIx ix,
-        os_long x)
+    pinsCamera *c,
+    pinsCameraParamIx ix,
+    os_long x)
 {
     /* tdc1304_cam_ll_stop(c);
     if (was running) tdc1304_cam_ll_start(c); */
 }
 
 static void tdc1304_cam_release_image(
-        pinsCameraImage *image)
+    pinsCameraImage *image)
 {
-    buf_sz = sizeof(pinsCameraImage) + TDC1304_DATA_SZ;
-    os_free(image, buf_sz);
+    os_free(image, sizeof(pinsCameraImage) + TDC1304_DATA_SZ);
 }
 
 
@@ -142,20 +150,19 @@ static pinsCameraImage *tdc1304_cam_allocate_image(
     pinsCamera *c)
 {
     pinsCameraImage *image;
-    oe_memsz buf_sz;
+    os_memsz buf_sz;
 
     buf_sz = sizeof(pinsCameraImage) + TDC1304_DATA_SZ;
-    image = (pinsCameraImage*) = osal_malloc(buf_sz, OS_NULL);
+    image = (pinsCameraImage*)os_malloc(buf_sz, OS_NULL);
     if (image  == OS_NULL)
     {
         osal_debug_error("tdc1304_cam_allocate_image: Memory allocation failed");
         return OS_NULL;
     }
-    image = (pinsCameraImage*)buf;
-    os_memclear(image, pinsCameraImage);
+    os_memclear(image, sizeof(pinsCameraImage));
 
     image->iface = c->iface;
-    os_memcpy(image->buf, xxx, TDC1304_DATA_SZ);
+    os_memcpy(image->buf, cam_state[c->id].buf, TDC1304_DATA_SZ);
     image->buf_sz = TDC1304_DATA_SZ;
     image->byte_w = TDC1304_DATA_SZ;
     image->w = TDC1304_DATA_SZ;
@@ -165,12 +172,12 @@ static pinsCameraImage *tdc1304_cam_allocate_image(
 }
 
 
-typedef void tdc1304_cam_task(
+static void tdc1304_cam_task(
     void *prm,
     osalEvent done)
 {
     pinsCamera *c;
-    c = (pinsCamera*)param;
+    c = (pinsCamera*)prm;
     osal_event_set(done);
 
     while (!c->stop_thread)
@@ -182,6 +189,7 @@ typedef void tdc1304_cam_task(
 
 BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 #define ISR_CAM_IX 0
+    os_int pos, i;
     pos = cam_state[ISR_CAM_IX].pos;
 
     if (pos >= cam_state[ISR_CAM_IX].data_end)
@@ -213,12 +221,11 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         if (pos >= cam_state[ISR_CAM_IX].data_start)
         {
             i = pos - cam_state[ISR_CAM_IX].data_start;
-            cam_state[ISR_CAM_IX].buf[i] = local_adc1_read(ADC1_CHANNEL_0);
+            // cam_state[ISR_CAM_IX].buf[i] = local_adc1_read(ADC1_CHANNEL_0);
         }
 
         cam_state[ISR_CAM_IX].pos = ++pos;
     }
-  }
 #undef ISR_CAM_IX
 END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
@@ -226,7 +233,7 @@ END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 static void tdc1304_cam_ll_start(
         pinsCamera *c)
 {
-    pin_setup_timer(pin, prm);
+    // pin_setup_timer(pin, prm);
 }
 
 static void tdc1304_cam_ll_stop(

@@ -14,15 +14,17 @@
 ****************************************************************************************************
 */
 #include "pins.h"
-// #include <soc/sens_reg.h>
-// #include <soc/sens_struct.h>
+#include "Arduino.h"
+
+TaskHandle_t complexHandlerTask;
+hw_timer_t * adcTimer = NULL; // our timer
 
 void pin_setup_timer(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
     adcTimer = timerBegin(3, 80, true); // 80 MHz / 80 = 1 MHz hardware clock for easy figuring
-    timerAttachInterrupt(adcTimer, &onTimer, true); // Attaches the handler function to the timer
+    timerAttachInterrupt(adcTimer, prm->int_handler_func, true); // Attaches the handler function to the timer
     timerAlarmWrite(adcTimer, 4, true);
     timerAlarmEnable(adcTimer);
 }

@@ -113,7 +113,7 @@ typedef struct pinsCamera
 
     /** Event to trigger camera thread, OS_NULL if none.
      */
-    osalEvent *camera_event;
+    osalEvent camera_event;
 
     /** Flag to stop camera thread.
      */
@@ -184,7 +184,7 @@ void pins_release_camera_image(
 
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
-  extern pinsCameraInterface pins_tdc1304_camera_iface;
+  extern const pinsCameraInterface pins_tdc1304_camera_iface;
   #define PINS_CAMERA_IFACE pins_tdc1304_camera_iface
 #endif
 
