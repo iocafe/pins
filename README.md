@@ -10,15 +10,15 @@ Function of the "pins" is to:
 
 Pins library encapsulates:
 - Digital and anlog inputs and outputs.
-- Input pin state change interrupts
-- Timers and timer interrupts
+- Input pin state change interrupts.
+- Timers and timer interrupts.
 - PWM
 - UART
 - SPI
-- Device state displays (TFT)
-- Cameras (linear and pixel matrix)
+- Device state displays (TFT).
+- Cameras (linear and pixel matrix).
 
 Supported HW platforms/frameworks:
-- ESP32 is currently being tested/developed
+- ESP32 is currently being tested/developed.
 
 https://github.com/iocafe/pins/blob/master/doc/190916-pins-library/190916-pins-library.pdf
