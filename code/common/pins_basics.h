@@ -25,7 +25,8 @@ typedef enum
     PIN_PWM,
     PIN_SPI,
     PIN_TIMER,
-    PIN_UART
+    PIN_UART,
+    PIN_CAMERA
 }
 pinType;
 
@@ -53,6 +54,11 @@ typedef enum
     PIN_TX,
     PIN_TRANSMITTER_CTRL,
     PIN_SPEED,
+    PIN_A,
+    PIN_B,
+    PIN_C,
+    PIN_D,
+    PIN_E,
     PIN_MIN,       /* Minimum value for signal */
     PIN_MAX        /* Maximum value for signal, 0 if not set */
 }

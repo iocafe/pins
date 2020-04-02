@@ -12,6 +12,7 @@ pin_types = {
     "pwm" : "PIN_PWM", 
     "spi" : "PIN_SPI",
     "timers" : "PIN_TIMER",
+    "cameras" : "PIN_CAMERA",
     "uart" : "PIN_UART"}
 
 prm_type_list = {
@@ -34,6 +35,11 @@ prm_type_list = {
     "tx": "PIN_TX",
     "tc": "PIN_TRANSMITTER_CTRL",
     "speed": "PIN_SPEED", 
+    "pin-a": "PIN_A",
+    "pin-b": "PIN_B",
+    "pin-c": "PIN_C",
+    "pin-d": "PIN_D",
+    "pin-e": "PIN_E",
     "min": "PIN_MIN", 
     "max": "PIN_MAX"}
 
