@@ -73,6 +73,12 @@ typedef struct pinsCameraParams
      */
     pinsCameraCallbackFunc *callback_func;
     void *callback_context;
+
+#if PINS_CAMERA == PINS_TDC1304_CAMERA
+    const struct Pin *timer_pin;
+    const struct Pin *igc_pin;
+    const struct Pin *sh_pin;
+#endif
 }
 pinsCameraParams;
 
@@ -100,6 +106,28 @@ typedef struct pinsCamera
      */
     pinsCameraCallbackFunc *callback_func;
     void *callback_context;
+
+    /** Thread running the camera, OS_NULL if none.
+     */
+    osalThreadHandle *camera_thread;
+
+    /** Event to trigger camera thread, OS_NULL if none.
+     */
+    osalEvent *camera_event;
+
+    /** Flag to stop camera thread.
+     */
+    volatile os_boolean stop_thread;
+
+    /** Camera identifier, used internally by implementation.
+     */
+    os_int id;
+
+#if PINS_CAMERA == PINS_TDC1304_CAMERA
+    const struct Pin *timer_pin;
+    const struct Pin *igc_pin;
+    const struct Pin *sh_pin;
+#endif
 }
 pinsCamera;
 
@@ -131,6 +159,12 @@ typedef struct pinsCameraInterface
 	void (*close)(
         pinsCamera *c);
 
+    void (*start)(
+        pinsCamera *c);
+
+    void (*stop)(
+        pinsCamera *c);
+
     /* void (*trig)(
         pinsCamera *c); */
 
@@ -145,9 +179,13 @@ typedef struct pinsCameraInterface
 pinsCameraInterface;
 
 
-
 void pins_release_camera_image(
     pinsCameraImage *image);
 
+
+#if PINS_CAMERA == PINS_TDC1304_CAMERA
+  extern pinsCameraInterface pins_tdc1304_camera_iface;
+  #define PINS_CAMERA_IFACE pins_tdc1304_camera_iface
+#endif
 
 #endif

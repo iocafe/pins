@@ -126,8 +126,7 @@ static void pin_ll_setup_pwm(
     frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
     if (!frequency_hz)
     {
-        /* Should be 1024, not 1000: keeps it precise */
-        frequency_hz = 1024 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
+        frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
         if (!frequency_hz)
         {
             frequency_hz = 50; /* Default servo frequency */
