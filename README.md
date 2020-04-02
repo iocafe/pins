@@ -14,6 +14,7 @@ Pins library encapsulates:
 - Timers and timer interrupts
 - PWM
 - UART
+- SPI
 - Device state displays (TFT)
 - Cameras (linear and pixel matrix)
 
