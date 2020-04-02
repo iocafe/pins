@@ -34,6 +34,10 @@ typedef struct
     os_int data_start, data_end;
     os_int igc_start, igc_end;
     os_int sh_start, sh_end;
+
+    /** Signal input and timing output pins.
+     */
+    Pin in_pin, igc_pin, sh_pin;
 }
 staticCameraState;
 
@@ -50,6 +54,9 @@ static void tdc1304_cam_ll_start(
 
 static void tdc1304_cam_ll_stop(
     pinsCamera *c);
+
+static void tdc1304_setup_camera_io_pins(
+        pinsCamera *c);
 
 
 static void tdc1304_cam_initialize(
@@ -86,6 +93,7 @@ static osalStatus tdc1304_cam_open(
     os_memclear(&cam_state[id], sizeof(staticCameraState));
     cam_state[id].c = c;
     c->id = id;
+    tdc1304_setup_camera_io_pins(c);
 
     /* Create event to trigger the thread.
      */
@@ -100,7 +108,6 @@ static osalStatus tdc1304_cam_open(
 
     return OSAL_STATUS_FAILED;
 }
-
 
 static void tdc1304_cam_close(
     pinsCamera *c)
@@ -209,17 +216,19 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
     {
         if (pos == cam_state[ISR_CAM_IX].igc_start)
         {
+            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 1);
         }
         else if (pos == cam_state[ISR_CAM_IX].igc_end)
         {
-
+            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 0);
         }
         if (pos == cam_state[ISR_CAM_IX].sh_start)
         {
+            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 1);
         }
         else if (pos == cam_state[ISR_CAM_IX].sh_end)
         {
-
+            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 0);
         }
 
         if (pos >= cam_state[ISR_CAM_IX].data_start)
@@ -243,6 +252,29 @@ static void tdc1304_cam_ll_start(
 static void tdc1304_cam_ll_stop(
         pinsCamera *c)
 {
+}
+
+static void tdc1304_setup_camera_io_pins(
+        pinsCamera *c)
+{
+    staticCameraState *cs;
+
+    cs = &cam_state[c->id];
+
+    /* Camera analog video signal input.
+     */
+    cs->in_pin.type = PIN_ANALOG_INPUT;
+    cs->in_pin.addr = pin_get_prm(c->camera_pin, PIN_A);
+
+    /* Integration time (electronic shutter) signal SH.
+     */
+    cs->sh_pin.type = PIN_OUTPUT;
+    cs->sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
+
+    /* Integration clear (new image) signal IGC.
+     */
+    cs->igc_pin.type = PIN_OUTPUT;
+    cs->igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
 }
 
 
