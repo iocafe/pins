@@ -23,6 +23,7 @@
  */
 #ifndef PINS_CAMERA
 #define PINS_CAMERA PINS_NO_CAMERA
+// #define PINS_CAMERA PINS_TDC1304_CAMERA
 #endif
 
 /* If we got a camera
@@ -69,7 +70,7 @@ typedef struct pinsCameraParams
 {
     /** Camera interface (structure of camera implementation function pointers).
      */
-    const struct pinsCameraInterface *iface;
+    // const struct pinsCameraInterface *iface;
 
     /** Pointer to callback function and application specific content pointer to pass
         to the callback function..
@@ -179,9 +180,9 @@ typedef struct pinsCameraInterface
 }
 pinsCameraInterface;
 
-
-void pins_release_camera_image(
-    pinsCameraImage *image);
+/* Macro to free memory allocated for an image (frame).
+ */
+#define pins_release_camera_image(image) image->iface->release_image(image)
 
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA

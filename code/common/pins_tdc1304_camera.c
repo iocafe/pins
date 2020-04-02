@@ -1,10 +1,10 @@
 /**
 
-  @file    arduino/pins_esp32_tdc1304_camera.c
+  @file    common/pins_tdc1304_camera.c
   @brief   Camera hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    30.3.2020
+  @date    2.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -15,7 +15,7 @@
 */
 #include "pins.h"
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
-#include "Arduino.h"
+// #include "Arduino.h"
 
 // TaskHandle_t complexHandlerTask;
 // hw_timer_t * adcTimer = NULL; // our timer
@@ -67,6 +67,10 @@ static osalStatus tdc1304_cam_open(
     os_int id;
 
     os_memclear(c, sizeof(pinsCamera));
+    c->camera_pin = prm->camera_pin;
+    c->timer_pin = prm->timer_pin;
+    c->callback_func = prm->callback_func;
+    c->callback_context = prm->callback_context;
 
     /* We could support two TDC1304 cameras later on, we should check which static camera
        structure is free, etc. Now one only.

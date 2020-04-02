@@ -234,7 +234,6 @@ void run_display_hw(
         display->displayed_code = code;
     }
 
-
     if (display->app_data_touched)
     {
         tft.fillRect(0, display->app_rect_top, DISPLAY_W, DISPLAY_H - display->app_rect_top, background);
