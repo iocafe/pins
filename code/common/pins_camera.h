@@ -22,8 +22,7 @@
 /* If no camera defined for build, set 0
  */
 #ifndef PINS_CAMERA
-// #define PINS_CAMERA PINS_NO_CAMERA
-#define PINS_CAMERA PINS_TDC1304_CAMERA
+#define PINS_CAMERA PINS_NO_CAMERA
 #endif
 
 /* If we got a camera
@@ -68,6 +67,10 @@ typedef void pinsCameraCallbackFunc(
  */
 typedef struct pinsCameraParams
 {
+    /** Camera interface (structure of camera implementation function pointers).
+     */
+    const struct pinsCameraInterface *iface;
+
     /** Pointer to callback function and application specific content pointer to pass
         to the callback function..
      */
@@ -75,9 +78,8 @@ typedef struct pinsCameraParams
     void *callback_context;
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
+    const struct Pin *camera_pin;
     const struct Pin *timer_pin;
-    const struct Pin *igc_pin;
-    const struct Pin *sh_pin;
 #endif
 }
 pinsCameraParams;
@@ -124,9 +126,8 @@ typedef struct pinsCamera
     os_int id;
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
+    const struct Pin *camera_pin;
     const struct Pin *timer_pin;
-    const struct Pin *igc_pin;
-    const struct Pin *sh_pin;
 #endif
 }
 pinsCamera;
