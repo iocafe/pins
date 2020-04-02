@@ -18,7 +18,7 @@ Pins library encapsulates:
 - Device state displays (TFT)
 - Cameras (linear and pixel matrix)
 
-Supported HW platforms/frameworks
+Supported HW platforms/frameworks:
 - ESP32 is currently being tested/developed
 
 https://github.com/iocafe/pins/blob/master/doc/190916-pins-library/190916-pins-library.pdf
