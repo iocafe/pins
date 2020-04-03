@@ -26,3 +26,9 @@ void pin_set_prm(
 os_int pin_get_prm(
     const Pin *pin,
     pinPrm prm);
+
+/* Get fequency setting for the pin.
+ */
+os_int pin_get_frequency(
+    const Pin *pin,
+    os_int default_frequency);

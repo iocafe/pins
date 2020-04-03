@@ -16,15 +16,30 @@
 #include "pins.h"
 #include "Arduino.h"
 
-TaskHandle_t complexHandlerTask;
-hw_timer_t * adcTimer = NULL; // our timer
 
 void pin_setup_timer(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
-    adcTimer = timerBegin(3, 80, true); // 80 MHz / 80 = 1 MHz hardware clock for easy figuring
-    timerAttachInterrupt(adcTimer, prm->int_handler_func, true); // Attaches the handler function to the timer
-    timerAlarmWrite(adcTimer, 4, true);
-    timerAlarmEnable(adcTimer);
+    hw_timer_t * t;
+    os_int timer_nr, frequency_hz, divisor;
+    const os_int hw_clock_frequency = 80000000; // 80 MHz
+
+    timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
+    frequency_hz = pin_get_frequency(pin, 50);
+
+    divisor = 1;
+    if (frequency_hz >= 1)
+    {
+        divisor = hw_clock_frequency / frequency_hz;
+    }
+    if (divisor < 1) divisor = 1;
+
+    t = timerBegin(timer_nr, 1, true);
+    timerAttachInterrupt(t, prm->int_handler_func, true);
+    timerAlarmWrite(t, divisor, true);
+    if (pin_get_prm(pin, PIN_INIT))
+    {
+        timerAlarmEnable(t);
+    }
 }

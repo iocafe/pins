@@ -120,15 +120,9 @@ static void pin_ll_setup_pwm(
     ledc_timer_config_t ledc_timer;
     ledc_channel_config_t channel_config;
 
-    frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
-    if (!frequency_hz)
-    {
-        frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
-        if (!frequency_hz)
-        {
-            frequency_hz = 50; /* Default servo frequency */
-        }
-    }
+    /* 50 = default servo frequency.
+     */
+    frequency_hz = pin_get_frequency(pin, 50);
     resolution_bits = pin_get_prm(pin, PIN_RESOLUTION);
     if (!resolution_bits) resolution_bits = 12;
     initial_duty = pin_get_prm(pin, PIN_INIT);

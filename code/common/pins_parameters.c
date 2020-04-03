@@ -90,3 +90,39 @@ os_int pin_get_prm(
     }
     return 0;
 }
+
+
+/**
+****************************************************************************************************
+
+  @brief Get fequency setting for the pin.
+  @anchor pin_get_frequency
+
+  The pin_get_frequency() function returns a frequency setting for pin. Frequency can be
+  specified as Hz or kHz, thus the function.
+
+  @param   pin Pointer to static information structure for the pin.
+  @param   default_frequency Default frequency to return if frequency is unspecified.
+
+  @return  Frequency setting, if no frequency specified, the function returns the default
+           frequency given as argument.
+
+****************************************************************************************************
+*/
+os_int pin_get_frequency(
+    const Pin *pin,
+    os_int default_frequency)
+{
+    os_int frequency_hz;
+
+    frequency_hz = pin_get_prm(pin, PIN_FREQENCY);
+    if (!frequency_hz)
+    {
+        frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
+        if (!frequency_hz)
+        {
+            frequency_hz = default_frequency;
+        }
+    }
+    return frequency_hz;
+}

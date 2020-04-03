@@ -70,8 +70,7 @@ void pin_simulate_timer(
     if (pin->int_conf->int_handler_func == OS_NULL) return;
 
     os_get_timer(&ti);
-    x = pin_get_prm(pin, PIN_FREQENCY);
-    if (x <= 0) x = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
+    x = pin_get_frequency(pin, 50);
     period_ms = 1;
     if (x > 0) period_ms = (os_int)(1000.0 / x + 0.5);
     if (period_ms < 1) period_ms = 1;
