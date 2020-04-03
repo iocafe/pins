@@ -366,16 +366,19 @@ static void tdc1304_setup_camera_io_pins(
      */
     cs->in_pin.type = PIN_ANALOG_INPUT;
     cs->in_pin.addr = pin_get_prm(c->camera_pin, PIN_A);
+    pin_ll_setup(&cs->in_pin, PINS_DEFAULT);
 
     /* Integration time (electronic shutter) signal SH.
      */
     cs->sh_pin.type = PIN_OUTPUT;
     cs->sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
+    pin_ll_setup(&cs->sh_pin, PINS_DEFAULT);
 
     /* Integration clear (new image) signal IGC.
      */
     cs->igc_pin.type = PIN_OUTPUT;
     cs->igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
+    pin_ll_setup(&cs->igc_pin, PINS_DEFAULT);
 }
 
 

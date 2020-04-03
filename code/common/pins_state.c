@@ -39,7 +39,26 @@ void pins_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags)
 {
-    pins_ll_setup(pins_hdr, flags);
+    const PinGroupHdr **group;
+    const Pin *pin;
+    os_short gcount, pcount;
+
+    pins_ll_initialize();
+
+    gcount = pins_hdr->n_groups;
+    group =  pins_hdr->group;
+
+    while (gcount--)
+    {
+        pcount = (*group)->n_pins;
+        pin = (*group)->pin;
+
+        while (pcount--) {
+            pin_ll_setup(pin++, flags);
+        }
+
+        group++;
+    }
 }
 
 

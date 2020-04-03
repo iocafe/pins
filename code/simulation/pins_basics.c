@@ -20,38 +20,36 @@
 /**
 ****************************************************************************************************
 
-  @brief Initialize Hardware IO.
-  @anchor pins_ll_setup
+  @brief Initialize hardware IO library.
+  @anchor pins_ll_initialize
 
-  The pins_ll_setup() function...
-  @param   pins_hdr Top level pins IO configuration structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_initialize(
+    void)
+{
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Initialize hardware IO pin.
+  @anchor pin_ll_setup
+
+  The pin_ll_setup() function...
+  @param   pin Pin to initialize.
   @param   flags Reserved for future, set 0 for now.
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_ll_setup(
-    const IoPinsHdr *pins_hdr,
+void pin_ll_setup(
+    const Pin *pin,
     os_int flags)
 {
-    const PinGroupHdr **group;
-    const Pin *pin;
-    os_short gcount, pcount;
-
-    gcount = pins_hdr->n_groups;
-    group = pins_hdr->group;
-    while (gcount--)
-    {
-        pcount = (*group)->n_pins;
-        pin = (*group)->pin;
-        while (pcount--)
-        {
-
-            pin++;
-        }
-
-        group++;
-    }
 }
 
 

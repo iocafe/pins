@@ -24,70 +24,67 @@
 static void pin_ll_setup_pwm(
     const Pin *pin);
 
+
 /**
 ****************************************************************************************************
 
-  @brief Initialize Hardware IO.
-  @anchor pins_ll_setup
+  @brief Initialize hardware IO library.
+  @anchor pins_ll_initialize
 
-  The pins_ll_setup() function...
-  @param   pins_hdr Top level pins IO configuration structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_initialize(
+    void)
+{
+    periph_module_enable(PERIPH_LEDC_MODULE);
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Initialize hardware IO pin.
+  @anchor pin_ll_setup
+
+  The pin_ll_setup() function...
+  @param   pin Pin to initialize.
   @param   flags Reserved for future, set 0 for now.
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_ll_setup(
-    const IoPinsHdr *pins_hdr,
+void pin_ll_setup(
+    const Pin *pin,
     os_int flags)
 {
-    const PinGroupHdr **group;
-    const Pin *pin;
-    os_short gcount, pcount;
-
     os_int
         is_touch_sensor;
 
-    gcount = pins_hdr->n_groups;
-    group =  pins_hdr->group;
-
-periph_module_enable(PERIPH_LEDC_MODULE); // ?????????????????????????? THIS SHOULD BE COMMON FOR LIB, NOT FOR PIN GROUP
-
-    while (gcount--)
+    if (pin->addr >=  0) switch (pin->type)
     {
-        pcount = (*group)->n_pins;
-        pin = (*group)->pin;
-        while (pcount--)
-        {
-            if (pin->addr >=  0) switch (pin->type)
+        case PIN_INPUT:
+            is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
+
+            if (!is_touch_sensor)
             {
-                case PIN_INPUT:
-                    is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
-
-                    if (!is_touch_sensor)
-                    {
-                        pinMode(pin->addr, pin_get_prm(pin, PIN_PULL_UP) ? INPUT_PULLUP : INPUT);
-                    }
-                    break;
-
-                case PIN_OUTPUT:
-                    pinMode(pin->addr, OUTPUT);
-                    break;
-
-                case PIN_PWM:
-                    pin_ll_setup_pwm(pin);
-                    break;
-
-                case PIN_ANALOG_INPUT:
-                case PIN_ANALOG_OUTPUT:
-                case PIN_TIMER:
-                    break;
+                pinMode(pin->addr, pin_get_prm(pin, PIN_PULL_UP) ? INPUT_PULLUP : INPUT);
             }
+            break;
 
-            pin++;
-        }
+        case PIN_OUTPUT:
+            pinMode(pin->addr, OUTPUT);
+            break;
 
-        group++;
+        case PIN_PWM:
+            pin_ll_setup_pwm(pin);
+            break;
+
+        case PIN_ANALOG_INPUT:
+        case PIN_ANALOG_OUTPUT:
+        case PIN_TIMER:
+            break;
     }
 }
 

@@ -131,11 +131,15 @@ typedef struct Pin
 }
 Pin;
 
-
-/* Setup IO hardware for a device.
+/* Initialize IO hardware library.
  */
-void pins_ll_setup(
-    const IoPinsHdr *pins_hdr,
+void pins_ll_initialize(
+    void);
+
+/* Setup IO hardware pin.
+ */
+void pin_ll_setup(
+    const Pin *pin,
     os_int flags);
 
 /* Set IO pin state.
