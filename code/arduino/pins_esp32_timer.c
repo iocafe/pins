@@ -23,7 +23,7 @@ void pin_setup_timer(
 {
     hw_timer_t * t;
     os_int timer_nr, frequency_hz, divisor;
-    const os_int hw_clock_frequency = 80000000; // 80 MHz
+    const os_int hw_clock_frequency = 40000000; // 80 MHz
 
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     frequency_hz = pin_get_frequency(pin, 50);
