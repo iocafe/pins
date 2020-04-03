@@ -46,6 +46,10 @@ typedef struct PinInterruptConf
      */
     pin_interrupt_handler *int_handler_func;
 
+    /** Timer if we are simulating timer interrupts.
+     */
+    os_timer hit_timer;
+
     /** Interrupt mode flags.
      */
     os_short flags;
@@ -86,9 +90,17 @@ void pin_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm);
 
-
 /* Detach interrupt from GPIO pin.
  */
 void pin_detach_interrupt(
     const struct Pin *pin);
 
+#if PINS_SIMULATED_INTERRUPTS
+
+/* Trigger a simulalated interrupt if flags match to x change.
+ */
+void pin_simulate_interrupt(
+    const struct Pin *pin,
+    os_int x);
+
+#endif

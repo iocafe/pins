@@ -66,9 +66,8 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     global nro_pins, pin_nr, define_list
 
     # Generate C parameter list for the pin
-    # c_prm_list = ""
     c_prm_list = "PIN_RV, PIN_RV"
-    c_prm_list_has_interrupt = False
+    c_prm_list_has_interrupt = (pin_type == 'timers')
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":

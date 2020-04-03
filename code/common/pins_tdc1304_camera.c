@@ -15,10 +15,6 @@
 */
 #include "pins.h"
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
-// #include "Arduino.h"
-
-// TaskHandle_t complexHandlerTask;
-// hw_timer_t * adcTimer = NULL; // our timer
 
 #define TDC1304_DATA_SZ 3800
 
@@ -246,7 +242,13 @@ END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 static void tdc1304_cam_ll_start(
         pinsCamera *c)
 {
-    // pin_setup_timer(pin, prm);
+    pinTimerParams prm;
+
+    os_memclear(&prm, sizeof(prm));
+    prm.flags = PIN_TIMER_START;
+    prm.int_handler_func = tdc1304_cam_1_on_timer;
+
+    pin_setup_timer(c->timer_pin, &prm);
 }
 
 static void tdc1304_cam_ll_stop(

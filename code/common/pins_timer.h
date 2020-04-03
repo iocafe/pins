@@ -23,7 +23,7 @@ struct Pin;
 
 /* Parameter structure for pin_attach_interrupt() function.
  */
-typedef struct pinTimerInterruptParams
+typedef struct pinTimerParams
 {
     /** Pointer to interrupt handler function.
      */
@@ -36,10 +36,14 @@ typedef struct pinTimerInterruptParams
 pinTimerParams;
 
 
-/* Attach and interrupt to a GPIO pin.
- */
 void pin_setup_timer(
     const struct Pin *pin,
     pinTimerParams *prm);
 
 
+#if PINS_SIMULATED_INTERRUPTS
+/* Trigger a simulalated timer interrupt periodically.
+ */
+void pin_simulate_timer(
+    const struct Pin *pin);
+#endif
