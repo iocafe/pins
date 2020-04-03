@@ -90,8 +90,8 @@ pinsCameraParams;
  */
 typedef enum pinsCameraParamIx
 {
-    PINS_CAM_INTEGRATION_NS,
-    PINS_CAM_FLAGH_NS
+    PINS_CAM_INTEGRATION_US
+//     PINS_CAM_FLAGH_NS
 }
 pinsCameraParamIx;
 
@@ -125,6 +125,10 @@ typedef struct pinsCamera
     /** Camera identifier, used internally by implementation.
      */
     os_int id;
+
+    /** Camera parameters.
+     */
+    os_long integration_us;
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
     const struct Pin *camera_pin;
