@@ -17,8 +17,8 @@
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
 #define TDC1304_DATA_CLOCK_HZ 250000.0
-#define TDC1304_MIN_DATA_CLOCKS 3900.0
-#define TDC1304_DATA_SZ 3200
+#define TDC1304_MIN_DATA_CLOCKS 4000.0
+#define TDC1304_DATA_SZ 3694
 
 #define TDC1304_START_CLOCK 10
 #define TDC1304_IGC_PULSE_CLOCKS 2
@@ -31,12 +31,14 @@
 typedef struct
 {
     pinsCamera *c;
-    volatile os_int pos;
+    volatile os_short pos;
+    volatile os_short data_pos;
+    volatile os_short processed_pos;
     os_uchar buf[TDC1304_DATA_SZ];
-    os_int data_start, data_end;
-    os_int igc_start, igc_end;
-    os_int sh_start, sh_end;
-    os_int clocks_per_sh, clocks_per_frame;
+    os_short data_start, data_end;
+    os_short igc_start, igc_end;
+    os_short sh_start, sh_end;
+    os_short clocks_per_sh, clocks_per_frame;
 
     volatile os_boolean frame_ready;
 
@@ -113,8 +115,10 @@ static osalStatus tdc1304_cam_open(
     /* Create thread that transfers camera frames.
      */
     os_memclear(&opt, sizeof(opt));
-    opt.priority = OSAL_THREAD_PRIORITY_HIGH;
+    opt.priority = OSAL_THREAD_PRIORITY_TIME_CRITICAL;
     opt.thread_name = "tdc1304";
+    opt.pin_to_core = OS_TRUE;
+    opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(tdc1304_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 
     return OSAL_STATUS_FAILED;
@@ -253,21 +257,50 @@ static void tdc1304_cam_task(
     osalEvent done)
 {
     pinsCameraImage *image;
+    staticCameraState *cs;
     pinsCamera *c;
     c = (pinsCamera*)prm;
 
+    cs = &cam_state[c->id];
+
     osal_event_set(done);
+
+    // osal_thread_set_priority(OSAL_THREAD_PRIORITY_TIME_CRITICAL);
+
+int dummy = 0, xsum = 0, xn = 0;
 
     while (!c->stop_thread && osal_go())
     {
         if (osal_event_wait(c->camera_event, 2017) != OSAL_STATUS_TIMEOUT)
         {
+            if (cs->data_pos > cs->processed_pos)
+            {
+                // os_int x = local_adc1_read_test(cam_state[c->id].in_pin.addr);
+                os_int x = pin_ll_get(&cs->in_pin);
+
+xsum += x;
+xn ++;
+                // while (cs->data_pos > cs->processed_pos)
+                {
+                    cs->processed_pos++;
+                }
+            }
+
             if (cam_state[c->id].frame_ready && c->callback_func)
             {
                 cam_state[c->id].frame_ready = OS_FALSE;
 
                 image = tdc1304_cam_allocate_image(c);
                 c->callback_func(image, c->callback_context);
+
+                if (++dummy > 100)
+                {
+                    dummy = 0;
+                    osal_debug_error_int("HERE data_pos ",  cs->data_pos);
+                    osal_debug_error_int("HERE processed_pos ",  cs->processed_pos);
+                    if (xn) osal_debug_error_int("HERE average ",  xsum / xn);
+                    xsum = xn = 0;
+                }
             }
         }
     }
@@ -280,8 +313,7 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         pos,
         sh_pos,
         data_pos,
-        igc_start,
-        x;
+        igc_start;
 
     pos = cam_state[ISR_CAM_IX].pos;
     igc_start = cam_state[ISR_CAM_IX].igc_start;
@@ -291,6 +323,8 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         {
             cam_state[ISR_CAM_IX].frame_ready = OS_FALSE;
             pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 1);
+            cam_state[ISR_CAM_IX].data_pos = -1;
+            cam_state[ISR_CAM_IX].processed_pos = -1;
         }
         else if (pos == cam_state[ISR_CAM_IX].igc_end)
         {
@@ -311,27 +345,35 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         if (data_pos >= 0 && data_pos < TDC1304_DATA_SZ)
         {
             // x = 0;
-            x = pin_ll_get(&cam_state[ISR_CAM_IX].in_pin);
-            cam_state[ISR_CAM_IX].buf[data_pos] = x; // local_adc1_read(ADC1_CHANNEL_0);
+            // x = pin_ll_get(&cam_state[ISR_CAM_IX].in_pin);
+
+            // cam_state[ISR_CAM_IX].buf[data_pos] = x; // local_adc1_read(ADC1_CHANNEL_0);
+
+            cam_state[ISR_CAM_IX].data_pos = data_pos;
+            osal_event_set(cam_state[ISR_CAM_IX].c->camera_event);
+
+            goto getout1;
         }
 
         else if (pos >= cam_state[ISR_CAM_IX].data_end)
         {
-            if (pos == cam_state[ISR_CAM_IX].data_end)
-            {
+            // if (pos == cam_state[ISR_CAM_IX].data_end)
+            //{
                 cam_state[ISR_CAM_IX].frame_ready = OS_TRUE;
                 osal_event_set(cam_state[ISR_CAM_IX].c->camera_event);
-            }
+            // }
             cam_state[ISR_CAM_IX].pos = ++pos;
             if (pos >= cam_state[ISR_CAM_IX].clocks_per_frame)
             {
                 cam_state[ISR_CAM_IX].pos = 0;
             }
-            return;
+            goto getout2;
         }
     }
 
+getout1:
     cam_state[ISR_CAM_IX].pos = ++pos;
+getout2:;
 #undef ISR_CAM_IX
 END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
@@ -339,6 +381,7 @@ END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 static void tdc1304_cam_ll_start(
         pinsCamera *c)
 {
+    staticCameraState *cs;
     pinTimerParams prm;
 
     os_memclear(&prm, sizeof(prm));
@@ -346,6 +389,12 @@ static void tdc1304_cam_ll_start(
     prm.int_handler_func = tdc1304_cam_1_on_timer;
 
     pin_setup_timer(c->timer_pin, &prm);
+
+    cs = &cam_state[c->id];
+    cs->pos = 0;
+    cs->data_pos = -1;
+    cs->processed_pos = -1;
+
 }
 
 static void tdc1304_cam_ll_stop(

@@ -18,6 +18,10 @@
 #include <Arduino.h>
 #include "pins.h"
 
+#include <soc/sens_reg.h>
+#include <soc/sens_struct.h>
+
+
 /**
 ****************************************************************************************************
 
@@ -103,3 +107,14 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
     return 0;
 }
 
+
+int IRAM_ATTR local_adc1_read_test(int channel) {
+    uint16_t adc_value;
+    SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
+    while (SENS.sar_slave_addr1.meas_status != 0);
+    SENS.sar_meas_start1.meas1_start_sar = 0;
+    SENS.sar_meas_start1.meas1_start_sar = 1;
+    while (SENS.sar_meas_start1.meas1_done_sar == 0);
+    adc_value = SENS.sar_meas_start1.meas1_data_sar;
+    return adc_value;
+}
