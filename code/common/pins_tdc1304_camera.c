@@ -286,6 +286,7 @@ xn ++;
                 }
             }
 
+
             if (cam_state[c->id].frame_ready && c->callback_func)
             {
                 cam_state[c->id].frame_ready = OS_FALSE;

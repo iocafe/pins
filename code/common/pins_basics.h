@@ -106,7 +106,7 @@ typedef struct Pin
     /** Pointer to parameter array, two first os_shorts are reserved for storing value
         as os_int.
      */
-    os_short *prm;
+    os_ushort *prm;
 
     /** Number of items in parameter array. Number of set parameters is this divided by
         two, since each 16 bit number is parameter number amd parameter value.
