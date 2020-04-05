@@ -21,6 +21,9 @@
 #include "driver/periph_ctrl.h"
 #endif
 
+static void pin_ll_setup_output(
+    const Pin *pin);
+
 static void pin_ll_setup_pwm(
     const Pin *pin);
 
@@ -74,7 +77,7 @@ void pin_ll_setup(
             break;
 
         case PIN_OUTPUT:
-            pinMode(pin->addr, OUTPUT);
+            pin_ll_setup_output(pin);
             break;
 
         case PIN_PWM:
@@ -88,6 +91,42 @@ void pin_ll_setup(
     }
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Setup a pin as PWM.
+  @anchor pin_ll_setup_pwm
+
+  ESP32 note: Generate 1 MHz clock signal with ESP32,  note 24.3.2020/pekka
+    LEDC peripheral can be used to generate clock signals between
+       40 MHz (half of APB clock) and approximately 0.001 Hz.
+       Please check the LEDC chapter in Technical Reference Manual.
+
+
+  The pin_ll_setup_pwm() function...
+  @return  None.
+
+****************************************************************************************************
+*/
+static void pin_ll_setup_output(
+    const Pin *pin)
+{
+#ifdef ESP_PLATFORM
+    gpio_config_t io_conf;
+    os_memclear(&io_conf, sizeof(io_conf));
+
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = 1ULL << pin->addr;
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    gpio_config(&io_conf);
+#else
+    pinMode(pin->addr, OUTPUT);
+#endif
+}
 
 /**
 ****************************************************************************************************

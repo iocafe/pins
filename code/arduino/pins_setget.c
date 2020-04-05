@@ -28,8 +28,6 @@
   @brief Set IO pin state.
   @anchor pin_ll_set
 
-  CAN BE CALLED FROM INTERRUPT HANDLER.
-
   The pin_ll_set() function...
   @return  None.
 
@@ -42,7 +40,11 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
     if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_OUTPUT:
+#ifdef ESP_PLATFORM
+            gpio_set_level(pin->addr, x);
+#else
             digitalWrite(pin->addr, x);
+#endif
             break;
 
         case PIN_PWM:
@@ -68,8 +70,6 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
 
   @brief Get IO pin state.
   @anchor pin_get
-
-  CAN BE CALLED FROM INTERRUPT HANDLER.
 
   The pin_ll_get() function...
   @return  None.
