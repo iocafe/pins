@@ -18,9 +18,13 @@
 #include <Arduino.h>
 #include "pins.h"
 
-#include <soc/sens_reg.h>
-#include <soc/sens_struct.h>
+// #include <soc/sens_reg.h>
+// #include <soc/sens_struct.h>
 
+#ifdef ESP_PLATFORM
+#include "driver/ledc.h"
+// #include "driver/periph_ctrl.h"
+#endif
 
 /**
 ****************************************************************************************************
@@ -48,7 +52,14 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
             break;
 
         case PIN_PWM:
+#ifdef ESP_PLATFORM
+            /* Not thread safe: PWM channel duty must be modified only from one thread at a time.
+             */
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, pin->bank, (uint32_t)x);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, pin->bank);
+#else
             ledcWrite(pin->bank, x);
+#endif
             break;
 
     case PIN_ANALOG_OUTPUT:
@@ -108,7 +119,7 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
 }
 
 
-int IRAM_ATTR local_adc1_read_test(int channel) {
+/* int IRAM_ATTR local_adc1_read_test(int channel) {
     uint16_t adc_value;
     SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
     while (SENS.sar_slave_addr1.meas_status != 0);
@@ -117,4 +128,4 @@ int IRAM_ATTR local_adc1_read_test(int channel) {
     while (SENS.sar_meas_start1.meas1_done_sar == 0);
     adc_value = SENS.sar_meas_start1.meas1_data_sar;
     return adc_value;
-}
+} */

@@ -48,17 +48,19 @@ typedef struct
      */
     os_ushort sh_prm_count;
     os_ushort igc_prm_count;
+    os_ushort igc_loopback_prm_count;
     os_ushort sh_pin_prm[TCD1394_MAX_PIN_PRM];
     os_ushort igc_pin_prm[TCD1394_MAX_PIN_PRM];
+    os_ushort igc_loopback_pin_prm[TCD1394_MAX_PIN_PRM];
 
     /** Signal input and timing output pins.
      */
-    Pin in_pin, igc_pin, sh_pin;
+    Pin in_pin, igc_pin, sh_pin, igc_loopback_pin;
 }
 staticCameraState;
 
 
-
+int nappu; // ??????????????????????????????????????????????
 
 
 static staticCameraState cam_state[TDC1304_MAX_CAMERAS];
@@ -281,7 +283,7 @@ static void tdc1304_cam_task(
 
     // osal_thread_set_priority(OSAL_THREAD_PRIORITY_TIME_CRITICAL);
 
-int dummy = 0, xsum = 0, xn = 0;
+int dummy = 0, gummy = 0, xsum = 0, xn = 0;
 
     while (!c->stop_thread && osal_go())
     {
@@ -312,9 +314,11 @@ xn ++;
                 {
                     dummy = 0;
                     osal_debug_error_int("HERE data_pos ",  cs->data_pos);
-                    osal_debug_error_int("HERE processed_pos ",  cs->processed_pos);
+                    osal_debug_error_int("HERE NAPPU ",  nappu);
                     if (xn) osal_debug_error_int("HERE average ",  xsum / xn);
                     xsum = xn = 0;
+
+pin_ll_set(&cs->igc_pin, gummy++ % 2 ? 65520: 65536);
                 }
             }
         }
@@ -393,6 +397,15 @@ getout2:;
 END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
 
+BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+#define ISR_CAM_IX 0
+
+    nappu++;
+
+#undef ISR_CAM_IX
+END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+
+
 static void tdc1304_cam_ll_start(
         pinsCamera *c)
 {
@@ -442,6 +455,7 @@ static void tdc1304_setup_camera_io_pins(
         pinsCamera *c)
 {
     staticCameraState *cs;
+    pinInterruptParams iprm;
 
     cs = &cam_state[c->id];
 
@@ -486,6 +500,28 @@ static void tdc1304_setup_camera_io_pins(
     cs->igc_pin.prm = cs->igc_pin_prm;
     cs->igc_pin.prm_n = (os_char)cs->igc_prm_count;
     pin_ll_setup(&cs->igc_pin, PINS_DEFAULT);
+
+
+    /* IGC loop back parameters
+     */
+    cs->igc_loopback_prm_count = 0;
+    tdc1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_RV, PIN_RV);
+    tdc1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_INTERRUPT, 1);
+
+    /* Integration clear (new image) signal IGC.
+     */
+    cs->igc_loopback_pin.type = PIN_INPUT;
+    cs->igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);
+    cs->igc_loopback_pin.prm = cs->igc_loopback_pin_prm;
+    cs->igc_loopback_pin.prm_n = (os_char)cs->igc_loopback_prm_count;
+    pin_ll_setup(&cs->igc_loopback_pin, PINS_DEFAULT);
+
+    /* Receive interrupts when pin does up.
+     */
+    os_memclear(&iprm, sizeof(iprm));
+    iprm.int_handler_func = tdc1304_cam_1_igc_end;
+    iprm.flags = PINS_INT_RISING;
+    pin_attach_interrupt(&cs->igc_loopback_pin, &iprm);
 }
 
 

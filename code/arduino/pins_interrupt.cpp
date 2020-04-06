@@ -16,6 +16,10 @@
 #include "pins.h"
 #include "Arduino.h"
 
+#ifdef ESP_PLATFORM
+#include "driver/gpio.h"
+#endif
+
 /**
 ****************************************************************************************************
 
@@ -39,6 +43,25 @@ void pin_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm)
 {
+#ifdef ESP_PLATFORM
+    gpio_int_type_t itype;
+    gpio_num_t addr;
+    addr = (gpio_num_t)pin->addr;
+
+    gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL);
+
+    switch (prm->flags & PINS_INT_CHANGE)
+    {
+        case PINS_INT_FALLING: itype = GPIO_INTR_NEGEDGE; break;
+        case PINS_INT_RISING:  itype = GPIO_INTR_POSEDGE; break;
+        default:
+        case PINS_INT_CHANGE: itype = GPIO_INTR_ANYEDGE; break;
+    }
+    gpio_set_intr_type(addr, itype);
+
+    gpio_intr_enable(addr);
+
+#else
     int mode;
 
     switch (prm->flags & PINS_INT_CHANGE)
@@ -50,6 +73,7 @@ void pin_attach_interrupt(
     }
 
     attachInterrupt(pin->addr, prm->int_handler_func, mode);
+#endif
 }
 
 
@@ -69,7 +93,16 @@ void pin_attach_interrupt(
 void pin_detach_interrupt(
     const struct Pin *pin)
 {
+#ifdef ESP_PLATFORM
+    gpio_num_t addr;
+    addr = (gpio_num_t)pin->addr;
+
+    gpio_intr_disable(addr);
+    gpio_isr_handler_remove(addr);
+
+#else
     detachInterrupt(pin->addr);
+#endif
 }
 
 

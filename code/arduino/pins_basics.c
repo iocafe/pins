@@ -45,6 +45,7 @@ void pins_ll_initialize(
     void)
 {
     periph_module_enable(PERIPH_LEDC_MODULE);
+    gpio_install_isr_service(0);
 }
 
 
@@ -217,7 +218,7 @@ static void pin_ll_setup_pwm(
     channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
     channel_config.hpoint = hpoint;
     ledc_channel_config(&channel_config);
-
+#else
     /* ledcSetup(pin->bank, frequency_hz, resolution_bits);
     ledcAttachPin(pin->addr, pin->bank);
     ledcWrite(pin->bank, initial_duty); */
