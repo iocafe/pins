@@ -40,6 +40,11 @@ prm_type_list = {
     "pin-c": "PIN_C",
     "pin-d": "PIN_D",
     "pin-e": "PIN_E",
+    "bank-a": "PIN_A_BANK",
+    "bank-b": "PIN_B_BANK",
+    "bank-c": "PIN_C_BANK",
+    "bank-d": "PIN_D_BANK",
+    "bank-e": "PIN_E_BANK",
     "min": "PIN_MIN", 
     "max": "PIN_MAX"}
 

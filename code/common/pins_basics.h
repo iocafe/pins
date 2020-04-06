@@ -59,6 +59,11 @@ typedef enum
     PIN_C,
     PIN_D,
     PIN_E,
+    PIN_A_BANK,
+    PIN_B_BANK,
+    PIN_C_BANK,
+    PIN_D_BANK,
+    PIN_E_BANK,
     PIN_MIN,       /* Minimum value for signal */
     PIN_MAX        /* Maximum value for signal, 0 if not set */
 }

@@ -28,6 +28,8 @@
 #define TDC1304_MAX_CAMERAS 1
 #endif
 
+#define TCD1394_MAX_PIN_PRM 14
+
 typedef struct
 {
     pinsCamera *c;
@@ -42,11 +44,22 @@ typedef struct
 
     volatile os_boolean frame_ready;
 
+    /* Pin parameters.
+     */
+    os_ushort sh_prm_count;
+    os_ushort igc_prm_count;
+    os_ushort sh_pin_prm[TCD1394_MAX_PIN_PRM];
+    os_ushort igc_pin_prm[TCD1394_MAX_PIN_PRM];
+
     /** Signal input and timing output pins.
      */
     Pin in_pin, igc_pin, sh_pin;
 }
 staticCameraState;
+
+
+
+
 
 static staticCameraState cam_state[TDC1304_MAX_CAMERAS];
 
@@ -147,6 +160,7 @@ static void tdc1304_cam_start(
     pinsCamera *c)
 {
     tdc1304_calculate_timing(c);
+    tdc1304_setup_camera_io_pins(c);
     tdc1304_cam_ll_start(c);
 }
 
@@ -323,23 +337,23 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         if (pos == igc_start)
         {
             cam_state[ISR_CAM_IX].frame_ready = OS_FALSE;
-            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 1);
+//            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 1);
             cam_state[ISR_CAM_IX].data_pos = -1;
             cam_state[ISR_CAM_IX].processed_pos = -1;
         }
         else if (pos == cam_state[ISR_CAM_IX].igc_end)
         {
-            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 0);
+//            pin_ll_set(&cam_state[ISR_CAM_IX].igc_pin, 0);
         }
 
         sh_pos = (pos - igc_start) % cam_state[ISR_CAM_IX].clocks_per_sh;
         if (sh_pos == cam_state[ISR_CAM_IX].sh_start)
         {
-            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 1);
+//            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 1);
         }
         else if (sh_pos == cam_state[ISR_CAM_IX].sh_end)
         {
-            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 0);
+//            pin_ll_set(&cam_state[ISR_CAM_IX].sh_pin, 0);
         }
 
         data_pos = pos - cam_state[ISR_CAM_IX].data_start;
@@ -403,6 +417,27 @@ static void tdc1304_cam_ll_stop(
 {
 }
 
+static void tdc1304_append_pin_parameter(
+    os_ushort *pin_prm,
+    os_ushort *pin_prm_count,
+    pinPrm prm,
+    os_int value)
+{
+    os_ushort i;
+
+    i = *pin_prm_count;
+    if (i >= TCD1394_MAX_PIN_PRM - 1)
+    {
+        osal_debug_error("tcd1394: too many pin parameters");
+        return;
+    }
+
+    pin_prm[i++] = prm;
+    pin_prm[i++] = value;
+    *pin_prm_count = i;
+}
+
+
 static void tdc1304_setup_camera_io_pins(
         pinsCamera *c)
 {
@@ -418,14 +453,38 @@ static void tdc1304_setup_camera_io_pins(
 
     /* Integration time (electronic shutter) signal SH.
      */
-    cs->sh_pin.type = PIN_OUTPUT;
+    cs->sh_prm_count = 0;
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RV, PIN_RV);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_TIMER_SELECT, 1);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_FREQENCY, 48);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RESOLUTION, 16);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_INIT, 4);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_HPOINT, 3);
+
+    cs->sh_pin.type = PIN_PWM;
+    cs->sh_pin.bank = pin_get_prm(c->camera_pin, PIN_B_BANK); /* PWM channel */
     cs->sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
+    cs->sh_pin.prm = cs->sh_pin_prm;
+    cs->sh_pin.prm_n = (os_char)cs->sh_prm_count;
     pin_ll_setup(&cs->sh_pin, PINS_DEFAULT);
+
+    /* IGC parameters
+     */
+    cs->igc_prm_count = 0;
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RV, PIN_RV);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_TIMER_SELECT, 1);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_FREQENCY, 48);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RESOLUTION, 16);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_INIT, 65520);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_HPOINT, 17);
 
     /* Integration clear (new image) signal IGC.
      */
-    cs->igc_pin.type = PIN_OUTPUT;
+    cs->igc_pin.type = PIN_PWM;
+    cs->igc_pin.bank = pin_get_prm(c->camera_pin, PIN_C_BANK); /* PWM channel */
     cs->igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
+    cs->igc_pin.prm = cs->igc_pin_prm;
+    cs->igc_pin.prm_n = (os_char)cs->igc_prm_count;
     pin_ll_setup(&cs->igc_pin, PINS_DEFAULT);
 }
 
