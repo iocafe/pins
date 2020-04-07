@@ -94,7 +94,7 @@ static osalStatus tdc1304_cam_open(
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
 
-    c->integration_us = 200;
+    c->integration_us = 1000;
     c->iface = &pins_tdc1304_camera_iface;
 
     /* We could support two TDC1304 cameras later on, we should check which static camera
@@ -258,9 +258,9 @@ int dummy = 0, xsum = 0, xn = 0;
 
                     while (processed_pos < max_pos) {
                         cs->buf[processed_pos++] = x;
-        xsum += x;
-        xn ++;
                     }
+                    xsum += x;
+                    xn ++;
                     cs->processed_pos = processed_pos;
                 }
 
@@ -275,6 +275,7 @@ int dummy = 0, xsum = 0, xn = 0;
 
     if (++dummy > 100 && xn) {
         osal_debug_error_int("HERE average ",  xsum / xn);
+        osal_debug_error_int("HERE n ",  xn);
         dummy = 0;
     }
     xsum = xn = 0;
@@ -393,7 +394,11 @@ static void tdc1304_setup_camera_io_pins(
     if (sh_frequency_hz < 10) sh_frequency_hz = 10;
     sh_period_us = 1000000.0 / sh_frequency_hz;
 
+    /* Determine bits to have approximately 0.1 us resolution.
+     */
     bits = 16;
+    while ( sh_period_us / (1 << bits) < 0.1)
+        bits --;
     max_pulse = 1 << bits;
 
     /* SH pulse
