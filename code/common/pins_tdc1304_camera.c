@@ -17,12 +17,7 @@
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
 #define TDC1304_DATA_CLOCK_HZ 200000.0
-#define TDC1304_MIN_DATA_CLOCKS 4000.0
 #define TDC1304_DATA_SZ 3694
-
-#define TDC1304_START_CLOCK 10
-#define TDC1304_IGC_PULSE_CLOCKS 2
-#define TDC1304_SH_PULSE_CLOCKS 1
 
 #ifndef TDC1304_MAX_CAMERAS
 #define TDC1304_MAX_CAMERAS 1
@@ -401,19 +396,22 @@ static void tdc1304_setup_camera_io_pins(
     bits = 16;
     max_pulse = 1 << bits;
 
-    // SH pulse
+    /* SH pulse
+     */
     pulse_us = 1.0;
     pulse_setting = max_pulse * pulse_us / sh_period_us;
     sh_pulse_setting = (os_int)(pulse_setting + 0.9999);
     if (sh_pulse_setting < 1) sh_pulse_setting = 1;
 
-    // IGC pulse
+    /* IGC pulse
+     */
     pulse_us = 5.0;
     pulse_setting = max_pulse * pulse_us / sh_period_us;
     igc_pulse_setting = (os_int)(pulse_setting + 0.9999);
     if (igc_pulse_setting < 1) igc_pulse_setting = 1;
 
-    // SH delay
+    /* SH delay
+     */
     pulse_us = 0.5;
     pulse_setting = max_pulse * pulse_us / sh_period_us;
     sh_delay_setting = os_round_int(pulse_setting);
@@ -457,7 +455,6 @@ static void tdc1304_setup_camera_io_pins(
     cs->igc_pin.prm = cs->igc_pin_prm;
     cs->igc_pin.prm_n = (os_char)cs->igc_prm_count;
     pin_ll_setup(&cs->igc_pin, PINS_DEFAULT);
-
 
     /* IGC loop back parameters
      */
