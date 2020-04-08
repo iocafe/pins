@@ -45,7 +45,7 @@ void pins_ll_initialize(
     void)
 {
     periph_module_enable(PERIPH_LEDC_MODULE);
-    gpio_install_isr_service(0);
+    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 }
 
 

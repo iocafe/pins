@@ -112,7 +112,7 @@ typedef struct pinsCamera
 
     /** Thread running the camera, OS_NULL if none.
      */
-    osalThreadHandle *camera_thread;
+    osalThread *camera_thread;
 
     /** Event to trigger camera thread, OS_NULL if none.
      */

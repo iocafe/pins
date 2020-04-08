@@ -37,6 +37,10 @@ typedef struct
     volatile os_boolean start_new_frame;
     volatile os_boolean frame_ready;
 
+    /* Interrupts are enabled globally. Used to disable interrupts when writing to flash.
+     */
+    volatile os_boolean interrupts_enabled;
+
     os_int igc_on_pulse_setting;
     os_int igc_off_pulse_setting;
 
@@ -71,7 +75,11 @@ static void tdc1304_cam_ll_stop(
     pinsCamera *c);
 
 static void tdc1304_setup_camera_io_pins(
-        pinsCamera *c);
+    pinsCamera *c);
+
+static void tdc1304_enable_interrupts(
+    os_boolean enable,
+    void *context);
 
 
 static void tdc1304_cam_initialize(
@@ -85,6 +93,7 @@ static osalStatus tdc1304_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
+    staticCameraState *cs;
     osalThreadOptParams opt;
     os_int id;
 
@@ -108,10 +117,16 @@ static osalStatus tdc1304_cam_open(
             return OSAL_STATUS_FAILED;
         }
     }
-    os_memclear(&cam_state[id], sizeof(staticCameraState));
-    cam_state[id].c = c;
+    cs = &cam_state[id];
+    os_memclear(cs, sizeof(staticCameraState));
+    cs->c = c;
     c->id = id;
-    tdc1304_setup_camera_io_pins(c);
+
+    /* Start listening for global interrupt enable functions.
+     */
+    cs->interrupts_enabled = osal_add_interrupt_to_list(tdc1304_enable_interrupts, cs);
+
+//     tdc1304_setup_camera_io_pins(c);
 
     /* Create event to trigger the thread.
      */
@@ -481,6 +496,17 @@ static void tdc1304_setup_camera_io_pins(
     iprm.int_handler_func = tdc1304_cam_1_igc_end;
     iprm.flags = PINS_INT_RISING;
     pin_attach_interrupt(&cs->igc_loopback_pin, &iprm);
+}
+
+/* Global enable/disable interrupts callback for flash writes.
+ */
+static void tdc1304_enable_interrupts(
+    os_boolean enable,
+    void *context)
+{
+    staticCameraState *cs;
+    cs = (staticCameraState*)context;
+    cs->interrupts_enabled = enable;
 }
 
 
