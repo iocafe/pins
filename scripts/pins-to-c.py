@@ -24,7 +24,7 @@ prm_type_list = {
     "resolution": "PIN_RESOLUTION",
     "init": "PIN_INIT",
     "hpoint": "PIN_HPOINT",
-    "interrupt": "PIN_INTERRUPT",
+    "interrupt": "PIN_INTERRUPT_ENABLED",
     "timer": "PIN_TIMER_SELECT",
     "miso": "PIN_MISO",
     "mosi": "PIN_MOSI",
@@ -81,7 +81,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
                             
             c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
 
-            if c_attr_name == 'PIN_INTERRUPT':
+            if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
 
         elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group':

@@ -30,6 +30,12 @@ typedef enum
 }
 pinType;
 
+/* Bit fields for PIN_INTERRUPT_ENABLED parameter.
+ */
+#define PIN_GLOBAL_INTERRUPTS_ENABLED 1
+#define PIN_INTERRUPTS_ENABLED_FOR_PIN 2
+#define PIN_GPIO_PIN_INTERRUPTS_ENABLED 4
+
 /** Enumeration of possible parameters for the pin.
  */
 typedef enum
@@ -43,7 +49,7 @@ typedef enum
     PIN_RESOLUTION,
     PIN_INIT,
     PIN_HPOINT,
-    PIN_INTERRUPT, /* Can specify interrupt channel, etc */
+    PIN_INTERRUPT_ENABLED,
     PIN_TIMER_SELECT,
     PIN_MISO,
     PIN_MOSI,

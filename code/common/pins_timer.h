@@ -18,10 +18,10 @@ struct Pin;
 
 /* Timer flags
  */
-#define PIN_TIMER_START 1
+// #define PIN_TIMER_START 1
 
 
-/* Parameter structure for pin_attach_interrupt() function.
+/* Parameter structure for pin_gpio_attach_interrupt() function.
  */
 typedef struct pinTimerParams
 {
@@ -31,19 +31,24 @@ typedef struct pinTimerParams
 
     /* Flags for the timer.
      */
-    os_int flags;
+    // os_int flags;
 }
 pinTimerParams;
 
-
-void pin_setup_timer(
+/* Start timer and attach interrupt.
+ */
+void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm);
 
+/* Detach interrupt from timer (may stop timer).
+ */
+void pin_timer_detach_interrupt(
+    const struct Pin *pin);
 
 #if PINS_SIMULATED_INTERRUPTS
 /* Trigger a simulalated timer interrupt periodically.
  */
-void pin_simulate_timer(
+void pin_timer_simulate_interrupt(
     const struct Pin *pin);
 #endif

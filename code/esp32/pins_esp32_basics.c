@@ -1,12 +1,10 @@
 /**
 
-  @file    arduino/pins_setget.c
+  @file    esp32/pins_esp32_basics.c
   @brief   Pins library basic functionality.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    8.1.2020
-
-  THESE CAN BE CALLED FROM INTERRUPT HANDLER.
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -15,16 +13,80 @@
 
 ****************************************************************************************************
 */
-#include <Arduino.h>
+// #include <Arduino.h>
 #include "pins.h"
-
-// #include <soc/sens_reg.h>
-// #include <soc/sens_struct.h>
+#include "code/esp32/pins_esp32_gpio.h""
+#include "code/esp32/pins_esp32_pwm.h"
 
 #ifdef ESP_PLATFORM
 #include "driver/ledc.h"
-// #include "driver/periph_ctrl.h"
+#include "driver/periph_ctrl.h"
 #endif
+
+
+/**
+****************************************************************************************************
+
+  @brief Initialize hardware IO library.
+  @anchor pins_ll_initialize
+
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_initialize(
+    void)
+{
+    periph_module_enable(PERIPH_LEDC_MODULE);
+    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Initialize hardware IO pin.
+  @anchor pin_ll_setup
+
+  The pin_ll_setup() function...
+  @param   pin Pin to initialize.
+  @param   flags Reserved for future, set 0 for now.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pin_ll_setup(
+    const Pin *pin,
+    os_int flags)
+{
+    os_int
+        is_touch_sensor;
+
+    if (pin->addr >=  0) switch (pin->type)
+    {
+        case PIN_INPUT:
+            is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
+            if (!is_touch_sensor)
+            {
+                pin_gpio_setup_input(pin);
+            }
+            break;
+
+        case PIN_OUTPUT:
+            pin_gpio_setup_output(pin);
+            break;
+
+        case PIN_PWM:
+            pin_pwm_setup(pin);
+            break;
+
+        case PIN_ANALOG_INPUT:
+        case PIN_ANALOG_OUTPUT:
+        case PIN_TIMER:
+            break;
+    }
+}
+
 
 /**
 ****************************************************************************************************
@@ -119,13 +181,4 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
 }
 
 
-/* int IRAM_ATTR local_adc1_read_test(int channel) {
-    uint16_t adc_value;
-    SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
-    while (SENS.sar_slave_addr1.meas_status != 0);
-    SENS.sar_meas_start1.meas1_start_sar = 0;
-    SENS.sar_meas_start1.meas1_start_sar = 1;
-    while (SENS.sar_meas_start1.meas1_done_sar == 0);
-    adc_value = SENS.sar_meas_start1.meas1_data_sar;
-    return adc_value;
-} */
+

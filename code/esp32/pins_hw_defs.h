@@ -1,10 +1,10 @@
 /**
 
-  @file    arduino/pins_hw_defs.h
+  @file    esp32/pins_hw_defs.h
   @brief   Operating system specific defines for the pins library.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    17.3.2020
+  @date    7.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,

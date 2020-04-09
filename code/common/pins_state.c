@@ -223,7 +223,7 @@ void pins_read_all(
 #if PINS_SIMULATED_INTERRUPTS
                     if (pin->int_conf)
                     {
-                        pin_simulate_interrupt(pin, x);
+                        pin_gpio_simulate_interrupt(pin, x);
                     }
 #endif
                 }
@@ -233,7 +233,7 @@ void pins_read_all(
 #if PINS_SIMULATED_INTERRUPTS
                 if (type == PIN_TIMER)
                 {
-                    pin_simulate_timer(pin);
+                    pin_timer_simulate_interrupt(pin);
                 }
 #endif
                 if (pin_to_iocom_func &&

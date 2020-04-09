@@ -2,7 +2,7 @@
 #include "pins.h"
 
 /* Parameters for inputs */
-static os_short pins_inputs_gazerbeam_prm[]= {PIN_RV, PIN_RV, PIN_INTERRUPT, 1};
+static os_short pins_inputs_gazerbeam_prm[]= {PIN_RV, PIN_RV, PIN_INTERRUPT_ENABLED, 1};
 PINS_INTCONF_STRUCT(pin_gazerbeam_intconf)
 static os_short pins_inputs_dip_switch_3_prm[]= {PIN_RV, PIN_RV, PIN_PULL_UP, 1};
 static os_short pins_inputs_dip_switch_4_prm[]= {PIN_RV, PIN_RV};

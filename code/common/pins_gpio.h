@@ -1,6 +1,6 @@
 /**
 
-  @file    common/pins_interrupt.h
+  @file    common/pins_gpio.h
   @brief   Interrups and handlers.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -69,7 +69,7 @@ PinInterruptConf;
 #endif
 
 
-/* Parameter structure for pin_attach_interrupt() function.
+/* Parameter structure for pin_gpio_attach_interrupt() function.
  */
 typedef struct pinInterruptParams
 {
@@ -86,20 +86,20 @@ pinInterruptParams;
 
 /* Attach and interrupt to a GPIO pin.
  */
-void pin_attach_interrupt(
+void pin_gpio_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm);
 
 /* Detach interrupt from GPIO pin.
  */
-void pin_detach_interrupt(
+void pin_gpio_detach_interrupt(
     const struct Pin *pin);
 
 #if PINS_SIMULATED_INTERRUPTS
 
 /* Trigger a simulalated interrupt if flags match to x change.
  */
-void pin_simulate_interrupt(
+void pin_gpio_simulate_interrupt(
     const struct Pin *pin,
     os_int x);
 

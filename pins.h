@@ -29,7 +29,7 @@ OSAL_C_HEADER_BEGINS
  */
 #ifndef PINS_TARGET_HDRS_INCLUDED
 #ifdef E_OS_arduino
-  #include "code/arduino/pins_hw_defs.h"
+  #include "code/esp32/pins_hw_defs.h"
   #define PINS_TARGET_HDRS_INCLUDED
 #endif
 #endif
@@ -58,7 +58,7 @@ OSAL_C_HEADER_BEGINS
 
 /* Include generic pins library headers.
  */
-#include "code/common/pins_interrupt.h"
+#include "code/common/pins_gpio.h"
 #include "code/common/pins_timer.h"
 #include "code/common/pins_basics.h"
 #include "code/common/pins_state.h"

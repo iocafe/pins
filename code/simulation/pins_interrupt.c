@@ -20,9 +20,9 @@
 ****************************************************************************************************
 
   @brief Attach and interrupt to a GPIO pin.
-  @anchor pin_attach_interrupt
+  @anchor pin_gpio_attach_interrupt
 
-  The pin_attach_interrupt() function to set an interrupt handler function on a pin by pin basis.
+  The pin_gpio_attach_interrupt() function to set an interrupt handler function on a pin by pin basis.
 
   There may be HW specific parameters and limitations for reserving interrupt channels, etc.
   The HW specific parameters are in JSON file for the hardware.
@@ -35,7 +35,7 @@
 
 ****************************************************************************************************
 */
-void pin_attach_interrupt(
+void pin_gpio_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm)
 {
@@ -43,7 +43,7 @@ void pin_attach_interrupt(
 
     if (pin->int_conf == OS_NULL)
     {
-        osal_debug_error("pin_attach_interrupt: No \'interrupt\' attribute in JSON, etc");
+        osal_debug_error("pin_gpio_attach_interrupt: No \'interrupt\' attribute in JSON, etc");
         return;
     }
 
@@ -60,27 +60,27 @@ void pin_attach_interrupt(
 ****************************************************************************************************
 
   @brief Detach interrupt from GPIO pin.
-  @anchor pin_detach_interrupt
+  @anchor pin_gpio_detach_interrupt
 
-  You can call pin_detach_interrupt() function when you no longer want to receive interrupts
+  You can call pin_gpio_detach_interrupt() function when you no longer want to receive interrupts
   related to the pin.
 
   @return  None.
 
 ****************************************************************************************************
 */
-void pin_detach_interrupt(
+void pin_gpio_detach_interrupt(
     const struct Pin *pin)
 {
     if (pin->int_conf == OS_NULL)
     {
-        osal_debug_error("pin_detach_interrupt: No \'interrupt\' attribute in JSON, etc");
+        osal_debug_error("pin_gpio_detach_interrupt: No \'interrupt\' attribute in JSON, etc");
         return;
     }
 
     if (pin->int_conf->int_handler_func == OS_NULL)
     {
-        osal_debug_error("pin_detach_interrupt: Interrupt was not attached to pin?");
+        osal_debug_error("pin_gpio_detach_interrupt: Interrupt was not attached to pin?");
         return;
     }
 
@@ -93,9 +93,9 @@ void pin_detach_interrupt(
 ****************************************************************************************************
 
   @brief Trigger a simulalated interrupt if flags match to x change.
-  @anchor pin_simulate_interrupt
+  @anchor pin_gpio_simulate_interrupt
 
-  The pin_simulate_interrupt function triggers a simulated interrupt if:
+  The pin_gpio_simulate_interrupt function triggers a simulated interrupt if:
   - x is zero and PINS_INT_FALLING flag is set (included in PINS_INT_CHANGE).
   - x is nonzero and PINS_INT_RISING flag is set (included in PINS_INT_CHANGE).
 
@@ -107,7 +107,7 @@ void pin_detach_interrupt(
 
 ****************************************************************************************************
 */
-void pin_simulate_interrupt(
+void pin_gpio_simulate_interrupt(
     const struct Pin *pin,
     os_int x)
 {
@@ -117,7 +117,7 @@ void pin_simulate_interrupt(
      */
     if (pin->int_conf == OS_NULL)
     {
-        osal_debug_error("pin_simulate_interrupt: NULL int_conf pointer");
+        osal_debug_error("pin_gpio_simulate_interrupt: NULL int_conf pointer");
         return;
     }
 

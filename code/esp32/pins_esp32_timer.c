@@ -1,6 +1,6 @@
 /**
 
-  @file    arduino/pins_esp32_timer.c
+  @file    esp32/pins_esp32_timer.c
   @brief   Interrups and handlers.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -17,7 +17,7 @@
 #include "Arduino.h"
 
 
-void pin_setup_timer(
+void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
@@ -42,4 +42,12 @@ void pin_setup_timer(
     {
         timerAlarmEnable(t);
     }
+}
+
+
+void pin_timer_detach_interrupt(
+    const struct Pin *pin)
+{
+
+
 }

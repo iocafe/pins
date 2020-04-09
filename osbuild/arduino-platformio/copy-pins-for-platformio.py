@@ -33,7 +33,7 @@ def copy_level_2(sourcedir,roottargetdir,targetdir):
     for f in files:
         p = join(sourcedir, f)
         if isdir(p):
-            if f == 'common' or f == 'arduino':
+            if f == 'common' or f == 'arduino' or f == 'esp32':
                 copy_level_3(sourcedir + '/' + f, roottargetdir, targetdir + '/' + f)
 
 def copy_info(f,sourcedir,targetdir):

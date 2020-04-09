@@ -1,6 +1,6 @@
 /**
 
-  @file    arduino/pins_display_tft_espi.c
+  @file    arduino/pins_espi_display.c
   @brief   SPI TFT display wrapper for ESP/Arduino platform.
   @author  Pekka Lehtikoski
   @version 1.0

@@ -133,6 +133,6 @@ static void tdc1304_cam_ll_start(
     prm.flags = PIN_TIMER_START;
     prm.int_handler_func = tdc1304_cam_1_on_timer;
 
-    pin_setup_timer(c->timer_pin, &prm);
+    pin_timer_attach_interrupt(c->timer_pin, &prm);
 }
 

@@ -31,7 +31,6 @@ typedef struct
     volatile os_short pos;
     volatile os_short processed_pos;
 
-
     os_uchar buf[TDC1304_DATA_SZ];
 
     volatile os_boolean start_new_frame;
@@ -39,7 +38,7 @@ typedef struct
 
     /* Interrupts are enabled globally. Used to disable interrupts when writing to flash.
      */
-    volatile os_boolean interrupts_enabled;
+    // volatile os_boolean interrupts_enabled;
 
     os_int igc_on_pulse_setting;
     os_int igc_off_pulse_setting;
@@ -76,10 +75,6 @@ static void tdc1304_cam_ll_stop(
 
 static void tdc1304_setup_camera_io_pins(
     pinsCamera *c);
-
-static void tdc1304_enable_interrupts(
-    os_boolean enable,
-    void *context);
 
 
 static void tdc1304_cam_initialize(
@@ -121,10 +116,6 @@ static osalStatus tdc1304_cam_open(
     os_memclear(cs, sizeof(staticCameraState));
     cs->c = c;
     c->id = id;
-
-    /* Start listening for global interrupt enable functions.
-     */
-    cs->interrupts_enabled = osal_add_interrupt_to_list(tdc1304_enable_interrupts, cs);
 
 //     tdc1304_setup_camera_io_pins(c);
 
@@ -334,10 +325,10 @@ static void tdc1304_cam_ll_start(
     pinTimerParams prm;
 
     os_memclear(&prm, sizeof(prm));
-    prm.flags = PIN_TIMER_START;
+    // prm.flags = PIN_TIMER_START;
     prm.int_handler_func = tdc1304_cam_1_on_timer;
 
-    pin_setup_timer(c->timer_pin, &prm);
+    pin_timer_attach_interrupt(c->timer_pin, &prm);
 
     cs = &cam_state[c->id];
     cs->pos = 0;
@@ -480,7 +471,7 @@ static void tdc1304_setup_camera_io_pins(
      */
     cs->igc_loopback_prm_count = 0;
     tdc1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_RV, PIN_RV);
-    tdc1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_INTERRUPT, 1);
+    tdc1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_INTERRUPT_ENABLED, 1);
 
     /* Integration clear (new image) signal IGC.
      */
@@ -495,19 +486,9 @@ static void tdc1304_setup_camera_io_pins(
     os_memclear(&iprm, sizeof(iprm));
     iprm.int_handler_func = tdc1304_cam_1_igc_end;
     iprm.flags = PINS_INT_RISING;
-    pin_attach_interrupt(&cs->igc_loopback_pin, &iprm);
+    pin_gpio_attach_interrupt(&cs->igc_loopback_pin, &iprm);
 }
 
-/* Global enable/disable interrupts callback for flash writes.
- */
-static void tdc1304_enable_interrupts(
-    os_boolean enable,
-    void *context)
-{
-    staticCameraState *cs;
-    cs = (staticCameraState*)context;
-    cs->interrupts_enabled = enable;
-}
 
 
 const pinsCameraInterface pins_tdc1304_camera_iface

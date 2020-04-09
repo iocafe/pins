@@ -15,7 +15,7 @@
 */
 #include "pins.h"
 
-void pin_setup_timer(
+void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
@@ -23,7 +23,7 @@ void pin_setup_timer(
 
     if (pin->int_conf == OS_NULL)
     {
-        osal_debug_error("pin_setup_timer: pin->int_conf is NULL");
+        osal_debug_error("pin_timer_attach_interrupt: pin->int_conf is NULL");
         return;
     }
 
@@ -31,7 +31,7 @@ void pin_setup_timer(
         for simulation.
      */
     pin->int_conf->int_handler_func = prm->int_handler_func;
-    pin->int_conf->flags = prm->flags;
+    // pin->int_conf->flags = prm->flags;
     os_get_timer(&pin->int_conf->hit_timer);
 #endif
 }
@@ -42,7 +42,7 @@ void pin_setup_timer(
 ****************************************************************************************************
 
   @brief Trigger a simulalated timer interrupt periodically.
-  @anchor pin_simulate_timer
+  @anchor pin_timer_simulate_interrupt
 
   For PC simulation only.
 
@@ -51,7 +51,7 @@ void pin_setup_timer(
 
 ****************************************************************************************************
 */
-void pin_simulate_timer(
+void pin_timer_simulate_interrupt(
     const struct Pin *pin)
 {
     os_timer ti;
@@ -61,7 +61,7 @@ void pin_simulate_timer(
      */
     if (pin->int_conf == OS_NULL)
     {
-        osal_debug_error("pin_simulate_interrupt: NULL int_conf pointer");
+        osal_debug_error("pin_gpio_simulate_interrupt: NULL int_conf pointer");
         return;
     }
 
