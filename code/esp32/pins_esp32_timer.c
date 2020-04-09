@@ -41,7 +41,7 @@ void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
-return;
+    return;
 #ifdef ESP_PLATFORM
     timer_config_t config;
     os_int timer_nr, timer_group, frequency_hz, divisor, target_count, count;
@@ -72,6 +72,10 @@ return;
     config.counter_dir = TIMER_COUNT_UP;	//Does counter increment or decrement (timer_count_dir_t)
     config.auto_reload = OS_TRUE;           //If counter should auto_reload a specific initial value on the timer’s alarm, or continue incrementing or decrementing.
     config.divider = divisor;                    //Divisor of the incoming 80 MHz (12.5nS) APB_CLK clock. E.g. 80 = 1uS per timer tick
+
+count = 10000;
+divisor = 8000;
+
 
     timer_init(timer_group, timer_nr, &config);
     timer_set_counter_value(timer_group, timer_nr, 0);
@@ -117,7 +121,6 @@ return;
 void pin_timer_detach_interrupt(
     const struct Pin *pin)
 {
-    return;
 #ifdef ESP_PLATFORM
     pin_timer_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
     pin_timer_control_interrupt(pin);

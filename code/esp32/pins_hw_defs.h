@@ -19,11 +19,11 @@
 #ifdef ESP_PLATFORM
   #ifdef PINS_OS_INT_HANDLER_HDRS
     #include "esp_attr.h"
+    #include "driver/timer.h"
   #endif
   typedef void pin_interrupt_handler(void *ulle);
 
   #ifdef PINS_OS_INT_HANDLER_HDRS
-    // #define PINS_LOCK_PREFIX pins_lock_
     #define PINS_LOCK_NAME(name) pins_lock_##name
 
     #define BEGIN_PIN_INTERRUPT_HANDLER(name) \
@@ -34,6 +34,14 @@
 
     #define END_PIN_INTERRUPT_HANDLER(name) \
       portEXIT_CRITICAL_ISR(&PINS_LOCK_NAME(name)); }
+
+    #define BEGIN_TIMER_INTERRUPT_HANDLER(name) \
+    void IRAM_ATTR name(void *ulle) {
+
+    #define END_TIMER_INTERRUPT_HANDLER(name) \
+      TIMERG0.int_clr_timers.t1 = 1; \
+      TIMERG0.hw_timer[1].config.alarm_en = 1; }
+
   #endif
 
   #define PINS_SIMULATED_INTERRUPTS 0

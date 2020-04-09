@@ -20,6 +20,8 @@ typedef void pin_interrupt_handler(void);
 #ifdef PINS_OS_INT_HANDLER_HDRS
 #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
 #define END_PIN_INTERRUPT_HANDLER(func_name) }
+#define BEGIN_TIMER_INTERRUPT_HANDLER(func_name) void func_name() {
+#define END_TIMER_INTERRUPT_HANDLER(func_name) }
 #endif
 
 #define PINS_SIMULATED_INTERRUPTS 1

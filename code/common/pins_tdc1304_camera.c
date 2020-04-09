@@ -310,11 +310,11 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
 
-BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+BEGIN_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 #define ISR_CAM_IX 0
     cam_state[ISR_CAM_IX].start_new_frame = OS_TRUE;
 #undef ISR_CAM_IX
-END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+END_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 
 
 static void tdc1304_cam_ll_start(
