@@ -15,7 +15,7 @@
 */
 // #include <Arduino.h>
 #include "pins.h"
-#include "code/esp32/pins_esp32_gpio.h""
+#include "code/esp32/pins_esp32_gpio.h"
 #include "code/esp32/pins_esp32_pwm.h"
 
 #ifdef ESP_PLATFORM

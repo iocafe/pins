@@ -26,12 +26,12 @@ static void pin_gpio_global_interrupt_control(
     os_boolean enable,
     void *context);
 
-static void pin_set_interrupt_enable_flag(
+static void pin_gpio_set_interrupt_enable_flag(
     const struct Pin *pin,
     os_boolean enable,
     os_int flag);
 
-static void pin_control_pin_interrupt(
+static void pin_gpio_control_interrupt(
     const struct Pin *pin);
 
 /**
@@ -142,11 +142,10 @@ void pin_gpio_attach_interrupt(
      */
     pin_set_prm(pin, PIN_INTERRUPT_ENABLED, 0);
     enable = osal_add_interrupt_to_list(pin_gpio_global_interrupt_control, (void*)pin);
-    pin_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
-    pin_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
+    pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
+    pin_gpio_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
 
-    pin_control_pin_interrupt(pin);
-    // gpio_intr_enable(addr);
+    pin_gpio_control_interrupt(pin);
 
 #else
     int mode;
@@ -181,8 +180,8 @@ void pin_gpio_detach_interrupt(
     const struct Pin *pin)
 {
 #ifdef ESP_PLATFORM
-    pin_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-    pin_control_pin_interrupt(pin);
+    pin_gpio_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
+    pin_gpio_control_interrupt(pin);
 
     // gpio_intr_disable(addr);
     // gpio_isr_handler_remove(addr);
@@ -201,14 +200,14 @@ static void pin_gpio_global_interrupt_control(
     const struct Pin *pin;
     pin = (const struct Pin*)context;
 
-    pin_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
-    pin_control_pin_interrupt(pin);
+    pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
+    pin_gpio_control_interrupt(pin);
 }
 
 /*
  @param  flag PIN_GLOBAL_INTERRUPTS_ENABLED or PIN_INTERRUPTS_ENABLED_FOR_PIN
 */
-static void pin_set_interrupt_enable_flag(
+static void pin_gpio_set_interrupt_enable_flag(
     const struct Pin *pin,
     os_boolean enable,
     os_int flag)
@@ -226,7 +225,7 @@ static void pin_set_interrupt_enable_flag(
 }
 
 
-static void pin_control_pin_interrupt(
+static void pin_gpio_control_interrupt(
     const struct Pin *pin)
 {
     os_int x;

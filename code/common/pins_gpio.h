@@ -29,7 +29,7 @@ struct Pin;
 /* Default interrupt handler defines to be used if OS specific ones are
    not defined (for testing in Windows/Linux).
  */
-#ifndef BEGIN_PIN_INTERRUPT_HANDLER
+/* #ifndef BEGIN_PIN_INTERRUPT_HANDLER
   typedef void pin_interrupt_handler(void);
   #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
   #define END_PIN_INTERRUPT_HANDLER(func_name) }
@@ -37,6 +37,7 @@ struct Pin;
   #define PINS_SIMULATED_INTERRUPTS 1
   #endif
 #endif
+*/
 
 /* Structure for simulated configuration.
  */

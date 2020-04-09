@@ -26,6 +26,7 @@ prm_type_list = {
     "hpoint": "PIN_HPOINT",
     "interrupt": "PIN_INTERRUPT_ENABLED",
     "timer": "PIN_TIMER_SELECT",
+    "tgroup": "PIN_TIMER_GROUP_SELECT",
     "miso": "PIN_MISO",
     "mosi": "PIN_MOSI",
     "sclk": "PIN_SCLK",
@@ -72,7 +73,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
     # Generate C parameter list for the pin
     c_prm_list = "PIN_RV, PIN_RV"
-    c_prm_list_has_interrupt = (pin_type == 'timers')
+    c_prm_list_has_interrupt = False
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":
@@ -86,6 +87,12 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
         elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group':
             print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")                
+
+    if c_prm_list_has_interrupt == False and pin_type == 'timers':
+        c_prm_list_has_interrupt = True
+        if c_prm_list != "":
+            c_prm_list = c_prm_list + ", "    
+        c_prm_list = c_prm_list + "PIN_INTERRUPT_ENABLED, 1"
 
     # If we have C parameters, write to C file
     c_prm_array_name = "OS_NULL"

@@ -13,6 +13,7 @@
 
 ****************************************************************************************************
 */
+#define PINS_OS_INT_HANDLER_HDRS
 #include "pins.h"
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
@@ -116,8 +117,6 @@ static osalStatus tdc1304_cam_open(
     os_memclear(cs, sizeof(staticCameraState));
     cs->c = c;
     c->id = id;
-
-//     tdc1304_setup_camera_io_pins(c);
 
     /* Create event to trigger the thread.
      */
@@ -488,7 +487,6 @@ static void tdc1304_setup_camera_io_pins(
     iprm.flags = PINS_INT_RISING;
     pin_gpio_attach_interrupt(&cs->igc_loopback_pin, &iprm);
 }
-
 
 
 const pinsCameraInterface pins_tdc1304_camera_iface

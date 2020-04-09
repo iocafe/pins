@@ -20,7 +20,7 @@
   #ifdef PINS_OS_INT_HANDLER_HDRS
     #include "esp_attr.h"
   #endif
-  typedef void pin_interrupt_handler(void);
+  typedef void pin_interrupt_handler(void *ulle);
 
   #ifdef PINS_OS_INT_HANDLER_HDRS
     // #define PINS_LOCK_PREFIX pins_lock_
@@ -29,7 +29,7 @@
     #define BEGIN_PIN_INTERRUPT_HANDLER(name) \
     static portMUX_TYPE DRAM_ATTR PINS_LOCK_NAME(name) = portMUX_INITIALIZER_UNLOCKED; \
     \
-    void IRAM_ATTR name() { \
+    void IRAM_ATTR name(void *ulle) { \
         portENTER_CRITICAL_ISR(&PINS_LOCK_NAME(name));
 
     #define END_PIN_INTERRUPT_HANDLER(name) \
@@ -37,4 +37,6 @@
   #endif
 
   #define PINS_SIMULATED_INTERRUPTS 0
+#else
+   typedef void pin_interrupt_handler(void);
 #endif
