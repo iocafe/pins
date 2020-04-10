@@ -147,9 +147,10 @@ void run_display_hw(
     {
         color = background;
         if (display->state_led_on) {
-            switch (display->code)
+            switch (code)
             {
                 case MORSE_CONFIGURING: color = TFT_YELLOW; break;
+                case MORSE_CONFIGURATION_MATCH: color = TFT_GREEN; break;
                 case MORSE_RUNNING: color = TFT_GREEN; break;
                 default: color = TFT_RED; break;
             }
@@ -161,20 +162,28 @@ void run_display_hw(
     }
 
 
-    if (display->displayed_code != display->code && !delay_it)
+    if (display->displayed_code != code && !delay_it)
     {
         display->app_rect_top = DISPLAY_TITLE_H + DISPLAY_SEPARATOR_H;
         if (code != MORSE_RUNNING)
         {
             if (code != MORSE_RUNNING)
             {
-                tft.fillRect(0, display->app_rect_top, DISPLAY_W, DISPLAY_WARN_BOX_SZ, background);
-                tft.fillRect(0, display->app_rect_top + DISPLAY_WARN_BOX_SZ, DISPLAY_W, DISPLAY_SEPARATOR_H, TFT_PURPLE);
+                tft.fillRect(0, display->app_rect_top, DISPLAY_W,
+                    DISPLAY_WARN_BOX_SZ, background);
+                tft.fillRect(0, display->app_rect_top + DISPLAY_WARN_BOX_SZ,
+                    DISPLAY_W, DISPLAY_SEPARATOR_H, TFT_PURPLE);
 
                 x = DISPLAY_W - DISPLAY_WARN_BOX_SZ/2;
                 y = display->app_rect_top + DISPLAY_WARN_BOX_SZ/2;
                 r = DISPLAY_WARN_BOX_SZ / 3;
-                if (code > 0)
+
+                if (code == MORSE_CONFIGURATION_MATCH)
+                {
+                    bgr_color = TFT_GREEN;
+                    color = TFT_BLUE;
+                }
+                else if (code > 0)
                 {
                     bgr_color = TFT_YELLOW;
                     color = TFT_RED;

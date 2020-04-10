@@ -17,8 +17,8 @@
 #include "pins.h"
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
-#define TDC1304_DATA_CLOCK_HZ 200000.0
-#define TDC1304_DATA_SZ 3694
+#define TDC1304_TIMING_CLOCK_HZ 200000.0
+#define TDC1304_DATA_SZ (3694/2)
 
 #ifndef TDC1304_MAX_CAMERAS
 #define TDC1304_MAX_CAMERAS 1
@@ -394,9 +394,9 @@ static void tdc1304_setup_camera_io_pins(
 
     /* Calculate timing
      */
-    clocks_per_sh = os_round_int(0.000001 * c->integration_us * TDC1304_DATA_CLOCK_HZ);
+    clocks_per_sh = os_round_int(0.000001 * c->integration_us * TDC1304_TIMING_CLOCK_HZ);
     if (clocks_per_sh < 10) clocks_per_sh = 10;
-    sh_frequency_hz = os_round_int(TDC1304_DATA_CLOCK_HZ / clocks_per_sh);
+    sh_frequency_hz = os_round_int(TDC1304_TIMING_CLOCK_HZ / clocks_per_sh);
     if (sh_frequency_hz < 10) sh_frequency_hz = 10;
     sh_period_us = 1000000.0 / sh_frequency_hz;
 

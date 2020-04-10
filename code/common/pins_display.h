@@ -77,13 +77,15 @@ typedef struct PinsDisplay
         show_network_name,
         app_data_touched;
 
-    MorseCodeEnum displayed_code;
+    MorseCodeEnum
+        displayed_code;
 
     os_timer
         title_timer,
         code_change_timer;
 
-    os_short app_rect_top;
+    os_short
+        app_rect_top;
 }
 PinsDisplay;
 

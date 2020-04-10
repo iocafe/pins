@@ -116,6 +116,12 @@ static void make_morse_recipe(
         morse->recipe.time_ms[n++] = 0;
     }
 
+    else if (code == MORSE_CONFIGURATION_MATCH)
+    {
+        morse->recipe.time_ms[n++] = 1000;
+        morse->recipe.time_ms[n++] = 200;
+    }
+
     else if (code <= 0)
     {
         morse->recipe.time_ms[n++] = 100;
@@ -233,12 +239,15 @@ MorseCodeEnum network_state_to_morse_code(
 {
     MorseCodeEnum code;
     osaLightHouseClientState lighthouse_state;
+    osalGazerbeamConnectionState gbs;
 
     /* If Gazerbeam configuration (WiFi with Android phone) is on?
      */
-    if (osal_get_network_state_int(OSAL_NS_GAZERBEAM_CONNECTED, 0))
+    gbs = osal_get_network_state_int(OSAL_NS_GAZERBEAM_CONNECTED, 0);
+    if (gbs)
     {
-        code = MORSE_CONFIGURING;
+        code = (gbs == OSAL_NS_GAZERBEAM_CONFIGURATION_MATCH)
+                ? MORSE_CONFIGURATION_MATCH : MORSE_CONFIGURING;
         goto setit;
     }
 

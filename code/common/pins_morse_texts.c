@@ -41,6 +41,7 @@ const os_char *morse_code_to_text(
     switch (code)
     {
         case MORSE_CONFIGURING: p = "configuring"; break;
+        case MORSE_CONFIGURATION_MATCH: p = "configuration ready"; break;
         case MORSE_RUNNING: p = "running"; break;
         case MORSE_NETWORK_NOT_CONNECTED: p = "network not\nconnected"; break;
         case MORSE_LIGHTHOUSE_NOT_VISIBLE: p = "server multicast\nnot received"; break;

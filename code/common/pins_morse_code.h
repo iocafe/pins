@@ -24,7 +24,8 @@
  */
 typedef enum MorseCodeEnum
 {
-    MORSE_CONFIGURING = -1,
+    MORSE_CONFIGURING = -2,
+    MORSE_CONFIGURATION_MATCH = -1,
     MORSE_RUNNING = 0,
     MORSE_NETWORK_NOT_CONNECTED = 1, /* Not connected to WiFi or Ethernet network. */
     MORSE_LIGHTHOUSE_NOT_VISIBLE = 2,

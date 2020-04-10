@@ -116,7 +116,6 @@ void run_display(
         display->state_led_touched = OS_TRUE;
     }
 
-
     run_display_hw(display, timer);
 }
 
