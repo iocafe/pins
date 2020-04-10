@@ -126,7 +126,8 @@ void pin_gpio_attach_interrupt(
     os_boolean enable;
     addr = (gpio_num_t)pin->addr;
 
-    gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL);
+    /* gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL); */
+    gpio_isr_handler_add(addr, prm->int_handler_func, NULL);
 
     switch (prm->flags & PINS_INT_CHANGE)
     {

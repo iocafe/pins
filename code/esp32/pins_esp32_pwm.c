@@ -70,8 +70,9 @@ void pin_pwm_setup(
     ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
     ledc_timer.timer_num = timer_nr;  // LEDC_TIMER_0
 
-    /* I think not needed for new esp-idf software, try uncommenting
-       ledc_timer.clk_cfg = LEDC_USE_APB_CLK */
+    /* I think needed for new esp-idf software ?
+    ledc_timer.clk_cfg = LEDC_USE_APB_CLK;
+     */
     ledc_timer_config(&ledc_timer); // Set up GPIO PIN
 
     os_memclear(&channel_config, sizeof(channel_config));

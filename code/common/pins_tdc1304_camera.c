@@ -26,8 +26,6 @@
 
 #define TCD1394_MAX_PIN_PRM 14
 
-int teppo_timer, teppo_loop;
-
 typedef struct
 {
     pinsCamera *c;
@@ -290,11 +288,6 @@ int dummy = 0, xsum = 0, xn = 0;
                 }
             }
         }
-        else
-        {
-            osal_debug_error_int("HERE timer count ",  teppo_timer);
-            osal_debug_error_int("HERE loopback count ",  teppo_loop);
-        }
     }
 }
 
@@ -304,6 +297,7 @@ BEGIN_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
     if (cam_state[ISR_CAM_IX].start_new_frame)
     {
         cam_state[ISR_CAM_IX].pos = 0;
+        cam_state[ISR_CAM_IX].processed_pos = 0;
         cam_state[ISR_CAM_IX].start_new_frame = OS_FALSE;
         cam_state[ISR_CAM_IX].frame_ready = OS_FALSE;
     }
@@ -313,7 +307,6 @@ BEGIN_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
     osal_event_set(cam_state[ISR_CAM_IX].c->camera_event);
 
-    teppo_timer++;
 #undef ISR_CAM_IX
 END_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
@@ -321,7 +314,6 @@ END_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 #define ISR_CAM_IX 0
     cam_state[ISR_CAM_IX].start_new_frame = OS_TRUE;
-    teppo_loop ++;
 #undef ISR_CAM_IX
 END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 

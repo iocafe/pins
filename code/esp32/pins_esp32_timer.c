@@ -14,13 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
-// #include "Arduino.h"
-
-// #include "esp_intr_alloc.h"
- #include "esp_attr.h"
 #include "driver/timer.h"
-
-typedef void pins_esp_timer_int_handle(void *);
 
 /* Forward referred static functions.
  */
@@ -52,7 +46,7 @@ void pin_timer_attach_interrupt(
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
     frequency_hz = pin_get_frequency(pin, 50);
-    target_count = 1000;
+    target_count = 10000;
 
     divisor = 1;
     if (frequency_hz >= 1)
@@ -65,22 +59,22 @@ void pin_timer_attach_interrupt(
     count = os_round_int((os_double)hw_clock_frequency / (os_double)(divisor * frequency_hz));
 
     os_memclear(&config, sizeof(config));
-    config.alarm_en = OS_TRUE;				//Alarm Enable
-    config.counter_en = OS_FALSE;			//If the counter is enabled it will start incrementing / decrementing immediately after calling timer_init()
-    config.intr_type = TIMER_INTR_LEVEL;	//Is interrupt is triggered on timer’s alarm (timer_intr_mode_t)
-    config.counter_dir = TIMER_COUNT_UP;	//Does counter increment or decrement (timer_count_dir_t)
-    config.auto_reload = OS_TRUE;           //If counter should auto_reload a specific initial value on the timer’s alarm, or continue incrementing or decrementing.
-    config.divider = divisor;                    //Divisor of the incoming 80 MHz (12.5nS) APB_CLK clock. E.g. 80 = 1uS per timer tick
-
-//    osal_debug_error_int("HERE count ", count);
-//    osal_debug_error_int("HERE div ", divisor);
-
+    config.alarm_en = TIMER_ALARM_EN;
+    config.counter_en = TIMER_PAUSE;
+    config.intr_type = TIMER_INTR_LEVEL;
+    config.counter_dir = TIMER_COUNT_UP;
+    config.auto_reload = OS_TRUE;
+    config.divider = divisor;
+#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+    config.clk_src = TIMER_SRC_CLK_APB;
+#endif
     timer_init(timer_group, timer_nr, &config);
+
     timer_set_counter_value(timer_group, timer_nr, 0);
     timer_set_alarm_value(timer_group, timer_nr, count);
 
-    timer_isr_register(timer_group, timer_nr, (pins_esp_timer_int_handle*)(prm->int_handler_func), NULL, 0, &s_timer_handle);
-    timer_isr_register(timer_group, timer_nr, prm->int_handler_func, NULL, 0, &s_timer_handle);
+    timer_isr_register(timer_group, timer_nr, prm->int_handler_func,
+        (void*)(timer_group | (timer_nr << 4)), ESP_INTR_FLAG_IRAM, &s_timer_handle);
 
     /* Start listening for global interrupt enable functions.
        It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
@@ -96,7 +90,6 @@ void pin_timer_attach_interrupt(
     hw_timer_t * t;
     os_int timer_nr, frequency_hz, divisor;
     const os_int hw_clock_frequency = 80000000; // 80 MHz
-    // const os_int hw_clock_frequency = 40000000; // 80 MHz
 
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     frequency_hz = pin_get_frequency(pin, 50);
@@ -106,7 +99,7 @@ void pin_timer_attach_interrupt(
     {
         divisor = hw_clock_frequency / frequency_hz;
     }
-    if (divisor < 1) divisor = 1;
+    if (divisor < 2) divisor = 2;
 
     t = timerBegin(timer_nr, 1, true);
     timerAttachInterrupt(t, prm->int_handler_func, true);
@@ -165,7 +158,6 @@ static void pin_timer_set_interrupt_enable_flag(
 static void pin_timer_control_interrupt(
     const struct Pin *pin)
 {
-    return;
     os_int x, timer_group, timer_nr;
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
