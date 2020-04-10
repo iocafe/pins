@@ -26,6 +26,8 @@
 
 #define TCD1394_MAX_PIN_PRM 14
 
+int teppo_timer, teppo_loop;
+
 typedef struct
 {
     pinsCamera *c;
@@ -288,11 +290,16 @@ int dummy = 0, xsum = 0, xn = 0;
                 }
             }
         }
+        else
+        {
+            osal_debug_error_int("HERE timer count ",  teppo_timer);
+            osal_debug_error_int("HERE loopback count ",  teppo_loop);
+        }
     }
 }
 
 
-BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
+BEGIN_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 #define ISR_CAM_IX 0
     if (cam_state[ISR_CAM_IX].start_new_frame)
     {
@@ -306,15 +313,17 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
     osal_event_set(cam_state[ISR_CAM_IX].c->camera_event);
 
+    teppo_timer++;
 #undef ISR_CAM_IX
-END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
+END_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
 
 
-BEGIN_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 #define ISR_CAM_IX 0
     cam_state[ISR_CAM_IX].start_new_frame = OS_TRUE;
+    teppo_loop ++;
 #undef ISR_CAM_IX
-END_TIMER_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
+END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_igc_end)
 
 
 static void tdc1304_cam_ll_start(
@@ -324,7 +333,6 @@ static void tdc1304_cam_ll_start(
     pinTimerParams prm;
 
     os_memclear(&prm, sizeof(prm));
-    // prm.flags = PIN_TIMER_START;
     prm.int_handler_func = tdc1304_cam_1_on_timer;
 
     pin_timer_attach_interrupt(c->timer_pin, &prm);
@@ -375,6 +383,7 @@ static void tdc1304_setup_camera_io_pins(
         pulse_setting;
 
     os_int
+        timer_nr,
         bits,
         max_pulse,
         clocks_per_sh,
@@ -430,11 +439,13 @@ static void tdc1304_setup_camera_io_pins(
     cs->igc_on_pulse_setting = max_pulse - igc_pulse_setting;
     cs->igc_off_pulse_setting = max_pulse;
 
+    timer_nr = pin_get_prm(c->camera_pin, PIN_TIMER_SELECT);
+
     /* Integration time (electronic shutter) signal SH.
      */
     cs->sh_prm_count = 0;
     tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RV, PIN_RV);
-    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_TIMER_SELECT, 1);
+    tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_TIMER_SELECT, timer_nr);
     tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_FREQENCY, sh_frequency_hz);
     tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RESOLUTION, bits);
     tdc1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_INIT, sh_pulse_setting);
@@ -451,7 +462,7 @@ static void tdc1304_setup_camera_io_pins(
      */
     cs->igc_prm_count = 0;
     tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RV, PIN_RV);
-    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_TIMER_SELECT, 1);
+    tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_TIMER_SELECT, timer_nr);
     tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_FREQENCY, sh_frequency_hz);
     tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RESOLUTION, bits);
     tdc1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_INIT, cs->igc_on_pulse_setting);

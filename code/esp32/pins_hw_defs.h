@@ -39,9 +39,8 @@
     void IRAM_ATTR name(void *ulle) {
 
     #define END_TIMER_INTERRUPT_HANDLER(name) \
-      TIMERG0.int_clr_timers.t1 = 1; \
-      TIMERG0.hw_timer[1].config.alarm_en = 1; }
-
+      TIMERG0.int_clr_timers.t0 = 1; \
+      TIMERG0.hw_timer[0].config.alarm_en = 1; }
   #endif
 
   #define PINS_SIMULATED_INTERRUPTS 0

@@ -41,7 +41,6 @@ void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
-    return;
 #ifdef ESP_PLATFORM
     timer_config_t config;
     os_int timer_nr, timer_group, frequency_hz, divisor, target_count, count;
@@ -53,7 +52,7 @@ void pin_timer_attach_interrupt(
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
     frequency_hz = pin_get_frequency(pin, 50);
-    target_count = 100000;
+    target_count = 1000;
 
     divisor = 1;
     if (frequency_hz >= 1)
@@ -73,16 +72,15 @@ void pin_timer_attach_interrupt(
     config.auto_reload = OS_TRUE;           //If counter should auto_reload a specific initial value on the timer’s alarm, or continue incrementing or decrementing.
     config.divider = divisor;                    //Divisor of the incoming 80 MHz (12.5nS) APB_CLK clock. E.g. 80 = 1uS per timer tick
 
-count = 10000;
-divisor = 8000;
-
+//    osal_debug_error_int("HERE count ", count);
+//    osal_debug_error_int("HERE div ", divisor);
 
     timer_init(timer_group, timer_nr, &config);
     timer_set_counter_value(timer_group, timer_nr, 0);
     timer_set_alarm_value(timer_group, timer_nr, count);
 
     timer_isr_register(timer_group, timer_nr, (pins_esp_timer_int_handle*)(prm->int_handler_func), NULL, 0, &s_timer_handle);
-    timer_start(timer_group, timer_nr);
+    timer_isr_register(timer_group, timer_nr, prm->int_handler_func, NULL, 0, &s_timer_handle);
 
     /* Start listening for global interrupt enable functions.
        It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
@@ -167,6 +165,7 @@ static void pin_timer_set_interrupt_enable_flag(
 static void pin_timer_control_interrupt(
     const struct Pin *pin)
 {
+    return;
     os_int x, timer_group, timer_nr;
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
@@ -179,12 +178,14 @@ static void pin_timer_control_interrupt(
             timer_enable_intr(timer_group, timer_nr);
             x |= PIN_GPIO_PIN_INTERRUPTS_ENABLED;
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
+            timer_start(timer_group, timer_nr);
         }
     }
     else
     {
         if (x & PIN_GPIO_PIN_INTERRUPTS_ENABLED)
         {
+            timer_pause(timer_group, timer_nr);
             timer_disable_intr(timer_group, timer_nr);
             x &= ~PIN_GPIO_PIN_INTERRUPTS_ENABLED;
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
