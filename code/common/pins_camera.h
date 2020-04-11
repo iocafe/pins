@@ -41,10 +41,16 @@ typedef struct pinsCameraImage
      */
     const struct pinsCameraInterface *iface;
 
-    /** Image data buffer and  buffer size in bytes.
+    /** Image buffer and buffer size in bytes. Image buffer starts with
+        flat pinsCameraImageBufHdr folloed by image pixel data.
      */
     os_uchar *buf;
     os_memsz buf_sz;
+
+    /** Image pixel data.
+     */
+    os_uchar *data;
+    os_memsz data_sz;
 
     /** Image width in bytes, pointer to pixel below p[0] is p[byte_w].
      */
@@ -53,8 +59,31 @@ typedef struct pinsCameraImage
     /** Image size, w = width in pixels, h = height in pixels.
      */
     os_int w, h;
+
+    /** Image format
+     */
+    os_uchar format;
 }
 pinsCameraImage;
+
+
+/** Camera image as received by camera callback function.
+    This must be flat.
+ */
+typedef struct pinsCameraImageBufHdr
+{
+    /* Stream data format
+     */
+    os_uchar format;
+    os_uchar reserved;
+    os_uchar checksum_low;
+    os_uchar checksum_high;
+    os_uchar width_low;
+    os_uchar width_high;
+    os_uchar height_low;
+    os_uchar height_high;
+}
+pinsCameraImageBufHdr;
 
 
 /** Camera callback function type, called when a frame has been captured.
@@ -178,15 +207,9 @@ typedef struct pinsCameraInterface
         pinsCamera *c,
         pinsCameraParamIx ix,
         os_long x);
-
-	void (*release_image)(
-        pinsCameraImage *image);
 }
 pinsCameraInterface;
 
-/* Macro to free memory allocated for an image (frame).
- */
-#define pins_release_camera_image(image) image->iface->release_image(image)
 
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA

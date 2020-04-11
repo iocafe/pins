@@ -32,7 +32,7 @@ typedef struct
     volatile os_short pos;
     volatile os_short processed_pos;
 
-    os_uchar buf[TDC1304_DATA_SZ];
+    os_uchar buf[sizeof(pinsCameraImageBufHdr) + TDC1304_DATA_SZ];
 
     volatile os_boolean start_new_frame;
     volatile os_boolean frame_ready;
@@ -186,36 +186,38 @@ static void tdc1304_cam_set_parameter(
     }
 }
 
-static void tdc1304_cam_release_image(
+
+static pinsCameraImage *tdc1304_finalize_camera_image(
+    pinsCamera *c,
     pinsCameraImage *image)
 {
-    os_free(image, sizeof(pinsCameraImage) + TDC1304_DATA_SZ);
-}
+    pinsCameraImageBufHdr *hdr;
+    os_uchar *buf;
+    os_ushort checksum;
 
-
-
-static pinsCameraImage *tdc1304_cam_allocate_image(
-    pinsCamera *c)
-{
-    pinsCameraImage *image;
-    os_memsz buf_sz;
-
-    buf_sz = sizeof(pinsCameraImage) + TDC1304_DATA_SZ;
-    image = (pinsCameraImage*)os_malloc(buf_sz, OS_NULL);
-    if (image  == OS_NULL)
-    {
-        osal_debug_error("tdc1304_cam_allocate_image: Memory allocation failed");
-        return OS_NULL;
-    }
     os_memclear(image, sizeof(pinsCameraImage));
+    buf = cam_state[c->id].buf;
+    os_memclear(buf, sizeof(pinsCameraImageBufHdr));
 
     image->iface = c->iface;
-    image->buf = (os_uchar*)image + sizeof(pinsCameraImage);
-    os_memcpy(image->buf, cam_state[c->id].buf, TDC1304_DATA_SZ);
-    image->buf_sz = TDC1304_DATA_SZ;
+    image->buf = buf;
+    image->buf_sz = sizeof(pinsCameraImageBufHdr) + TDC1304_DATA_SZ;
+    hdr = (pinsCameraImageBufHdr*)buf;
+    hdr->format = 10;
+    hdr->width_low = (os_uchar)TDC1304_DATA_SZ;
+    hdr->width_high = (os_uchar)(TDC1304_DATA_SZ >> 8);
+    hdr->height_low = 1;
+
+    image->data = buf + sizeof(pinsCameraImageBufHdr);
+    image->data_sz = TDC1304_DATA_SZ;
     image->byte_w = TDC1304_DATA_SZ;
     image->w = TDC1304_DATA_SZ;
     image->h = 1;
+    image->format = hdr->format;
+
+    checksum = os_checksum((const os_char*)buf, image->buf_sz, OS_NULL);
+    hdr->checksum_low = (os_uchar)checksum;
+    hdr->checksum_high = (os_uchar)(checksum >> 8);
 
     return image;
 }
@@ -225,7 +227,7 @@ static void tdc1304_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsCameraImage *image;
+    pinsCameraImage image;
     staticCameraState *cs;
     pinsCamera *c;
     os_int x;
@@ -262,7 +264,7 @@ int dummy = 0, xsum = 0, xn = 0;
                     }
 
                     while (processed_pos < max_pos) {
-                        cs->buf[processed_pos++] = x;
+                        cs->buf[sizeof(pinsCameraImageBufHdr) + processed_pos++] = x;
                     }
                     xsum += x;
                     xn ++;
@@ -271,8 +273,8 @@ int dummy = 0, xsum = 0, xn = 0;
 
                 if (pos > TDC1304_DATA_SZ + 30) // + 30 SLACK
                 {
-                    image = tdc1304_cam_allocate_image(c);
-                    c->callback_func(image, c->callback_context);
+                    tdc1304_finalize_camera_image(c, &image);
+                    c->callback_func(&image, c->callback_context);
 
                     cs->frame_ready = OS_TRUE;
                     cs->processed_pos = 0;
@@ -499,8 +501,7 @@ const pinsCameraInterface pins_tdc1304_camera_iface
     tdc1304_cam_close,
     tdc1304_cam_start,
     tdc1304_cam_stop,
-    tdc1304_cam_set_parameter,
-    tdc1304_cam_release_image
+    tdc1304_cam_set_parameter
 };
 
 #endif
