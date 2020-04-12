@@ -32,7 +32,7 @@ typedef struct
     volatile os_short pos;
     volatile os_short processed_pos;
 
-    os_uchar buf[sizeof(pinsCameraImageBufHdr) + TDC1304_DATA_SZ];
+    os_uchar buf[sizeof(iocBitmapHdr) + TDC1304_DATA_SZ];
 
     volatile os_boolean start_new_frame;
     volatile os_boolean frame_ready;
@@ -187,27 +187,48 @@ static void tdc1304_cam_set_parameter(
 }
 
 
+static os_long tdc1304_cam_get_parameter(
+    pinsCamera *c,
+    pinsCameraParamIx ix)
+{
+    os_long x;
+    switch (ix)
+    {
+        case PINS_CAM_MAX_IMAGE_SZ:
+            x = sizeof(iocBitmapHdr) + TDC1304_DATA_SZ;
+            break;
+
+        default:
+            x = -1;
+            break;
+    }
+
+    return x;
+}
+
+
 static void tdc1304_finalize_camera_image(
     pinsCamera *c,
     pinsCameraImage *image)
 {
-    pinsCameraImageBufHdr *hdr;
+    iocBitmapHdr *hdr;
     os_uchar *buf;
 
     os_memclear(image, sizeof(pinsCameraImage));
     buf = cam_state[c->id].buf;
-    os_memclear(buf, sizeof(pinsCameraImageBufHdr));
+    os_memclear(buf, sizeof(iocBitmapHdr));
 
     image->iface = c->iface;
+    image->camera = c;
     image->buf = buf;
-    image->buf_sz = sizeof(pinsCameraImageBufHdr) + TDC1304_DATA_SZ;
-    hdr = (pinsCameraImageBufHdr*)buf;
+    image->buf_sz = sizeof(iocBitmapHdr) + TDC1304_DATA_SZ;
+    hdr = (iocBitmapHdr*)buf;
     hdr->format = 10;
     hdr->width_low = (os_uchar)TDC1304_DATA_SZ;
     hdr->width_high = (os_uchar)(TDC1304_DATA_SZ >> 8);
     hdr->height_low = 1;
 
-    image->data = buf + sizeof(pinsCameraImageBufHdr);
+    image->data = buf + sizeof(iocBitmapHdr);
     image->data_sz = TDC1304_DATA_SZ;
     image->byte_w = TDC1304_DATA_SZ;
     image->w = TDC1304_DATA_SZ;
@@ -257,7 +278,7 @@ int dummy = 0, xsum = 0, xn = 0;
                     }
 
                     while (processed_pos < max_pos) {
-                        cs->buf[sizeof(pinsCameraImageBufHdr) + processed_pos++] = x;
+                        cs->buf[sizeof(iocBitmapHdr) + processed_pos++] = x;
                     }
                     xsum += x;
                     xn ++;
@@ -494,7 +515,8 @@ const pinsCameraInterface pins_tdc1304_camera_iface
     tdc1304_cam_close,
     tdc1304_cam_start,
     tdc1304_cam_stop,
-    tdc1304_cam_set_parameter
+    tdc1304_cam_set_parameter,
+    tdc1304_cam_get_parameter
 };
 
 #endif

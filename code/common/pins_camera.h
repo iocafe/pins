@@ -31,7 +31,7 @@
 #if PINS_CAMERA
 
 struct pinsCameraInterface;
-
+struct pinsCamera;
 
 /** Camera image as received by camera callback function.
  */
@@ -41,8 +41,12 @@ typedef struct pinsCameraImage
      */
     const struct pinsCameraInterface *iface;
 
+    /** Camera pointer
+     */
+    struct pinsCamera *camera;
+
     /** Image buffer and buffer size in bytes. Image buffer starts with
-        flat pinsCameraImageBufHdr folloed by image pixel data.
+        flat iocBitmapHdr followed by image pixel data.
      */
     os_uchar *buf;
     os_memsz buf_sz;
@@ -65,26 +69,6 @@ typedef struct pinsCameraImage
     os_uchar format;
 }
 pinsCameraImage;
-
-
-/** Camera image as received by camera callback function.
-    This must be flat.
-    format Stream data format
- */
-#define PINS_CAMERA_IMG_TSTAMP_SZ 8
-typedef struct pinsCameraImageBufHdr
-{
-    os_uchar format;
-    os_uchar reserved;
-    os_uchar checksum_low;
-    os_uchar checksum_high;
-    os_uchar width_low;
-    os_uchar width_high;
-    os_uchar height_low;
-    os_uchar height_high;
-    os_uchar tstamp[PINS_CAMERA_IMG_TSTAMP_SZ];
-}
-pinsCameraImageBufHdr;
 
 
 /** Camera callback function type, called when a frame has been captured.
@@ -117,10 +101,15 @@ pinsCameraParams;
 
 
 /** Enumeration of camera parameters which can be modified.
+
+    - PINS_CAM_INTEGRATION_US: Set integration time
+    - PINS_CAM_INTEGRATION_US: Get maximum image size in bytes including bitmap header
+
  */
 typedef enum pinsCameraParamIx
 {
-    PINS_CAM_INTEGRATION_US
+    PINS_CAM_INTEGRATION_US,
+    PINS_CAM_MAX_IMAGE_SZ
 //     PINS_CAM_FLAGH_NS
 }
 pinsCameraParamIx;
@@ -208,18 +197,13 @@ typedef struct pinsCameraInterface
         pinsCamera *c,
         pinsCameraParamIx ix,
         os_long x);
+
+    os_long (*get_parameter)(
+        pinsCamera *c,
+        pinsCameraParamIx ix);
 }
 pinsCameraInterface;
 
-/* Store check sum within image
- */
-void pins_set_camera_image_checksum(
-    pinsCameraImage *image);
-
-/* Store time stamp within image (must be called before pins_set_camera_image_checksum)
- */
-void pins_set_camera_image_timestamp(
-    pinsCameraImage *image);
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
   extern const pinsCameraInterface pins_tdc1304_camera_iface;
