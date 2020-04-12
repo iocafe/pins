@@ -187,13 +187,12 @@ static void tdc1304_cam_set_parameter(
 }
 
 
-static pinsCameraImage *tdc1304_finalize_camera_image(
+static void tdc1304_finalize_camera_image(
     pinsCamera *c,
     pinsCameraImage *image)
 {
     pinsCameraImageBufHdr *hdr;
     os_uchar *buf;
-    os_ushort checksum;
 
     os_memclear(image, sizeof(pinsCameraImage));
     buf = cam_state[c->id].buf;
@@ -214,12 +213,6 @@ static pinsCameraImage *tdc1304_finalize_camera_image(
     image->w = TDC1304_DATA_SZ;
     image->h = 1;
     image->format = hdr->format;
-
-    checksum = os_checksum((const os_char*)buf, image->buf_sz, OS_NULL);
-    hdr->checksum_low = (os_uchar)checksum;
-    hdr->checksum_high = (os_uchar)(checksum >> 8);
-
-    return image;
 }
 
 

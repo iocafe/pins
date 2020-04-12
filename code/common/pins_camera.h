@@ -69,11 +69,11 @@ pinsCameraImage;
 
 /** Camera image as received by camera callback function.
     This must be flat.
+    format Stream data format
  */
+#define PINS_CAMERA_IMG_TSTAMP_SZ 8
 typedef struct pinsCameraImageBufHdr
 {
-    /* Stream data format
-     */
     os_uchar format;
     os_uchar reserved;
     os_uchar checksum_low;
@@ -82,6 +82,7 @@ typedef struct pinsCameraImageBufHdr
     os_uchar width_high;
     os_uchar height_low;
     os_uchar height_high;
+    os_uchar tstamp[PINS_CAMERA_IMG_TSTAMP_SZ];
 }
 pinsCameraImageBufHdr;
 
@@ -210,7 +211,15 @@ typedef struct pinsCameraInterface
 }
 pinsCameraInterface;
 
+/* Store check sum within image
+ */
+void pins_set_camera_image_checksum(
+    pinsCameraImage *image);
 
+/* Store time stamp within image (must be called before pins_set_camera_image_checksum)
+ */
+void pins_set_camera_image_timestamp(
+    pinsCameraImage *image);
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
   extern const pinsCameraInterface pins_tdc1304_camera_iface;
