@@ -32,7 +32,7 @@ typedef struct
     volatile os_short pos;
     volatile os_short processed_pos;
 
-    os_uchar buf[sizeof(iocBitmapHdr) + TDC1304_DATA_SZ];
+    os_uchar buf[sizeof(iocBrickHdr) + TDC1304_DATA_SZ];
 
     volatile os_boolean start_new_frame;
     volatile os_boolean frame_ready;
@@ -190,7 +190,7 @@ static os_long tcd1304_cam_get_parameter(
     switch (ix)
     {
         case PINS_CAM_MAX_IMAGE_SZ:
-            x = sizeof(iocBitmapHdr) + TDC1304_DATA_SZ;
+            x = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
             break;
 
         default:
@@ -204,26 +204,26 @@ static os_long tcd1304_cam_get_parameter(
 
 static void tcd1304_finalize_camera_image(
     pinsCamera *c,
-    pinsCameraImage *image)
+    pinsPhoto *image)
 {
-    iocBitmapHdr *hdr;
+    iocBrickHdr *hdr;
     os_uchar *buf;
 
-    os_memclear(image, sizeof(pinsCameraImage));
+    os_memclear(image, sizeof(pinsPhoto));
     buf = cam_state[c->id].buf;
-    os_memclear(buf, sizeof(iocBitmapHdr));
+    os_memclear(buf, sizeof(iocBrickHdr));
 
     image->iface = c->iface;
     image->camera = c;
     image->buf = buf;
-    image->buf_sz = sizeof(iocBitmapHdr) + TDC1304_DATA_SZ;
-    hdr = (iocBitmapHdr*)buf;
-    hdr->format = 10;
+    image->buf_sz = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
+    hdr = (iocBrickHdr*)buf;
+    hdr->format = IOC_BYTE_BRICK;
     hdr->width_low = (os_uchar)TDC1304_DATA_SZ;
     hdr->width_high = (os_uchar)(TDC1304_DATA_SZ >> 8);
     hdr->height_low = 1;
 
-    image->data = buf + sizeof(iocBitmapHdr);
+    image->data = buf + sizeof(iocBrickHdr);
     image->data_sz = TDC1304_DATA_SZ;
     image->byte_w = TDC1304_DATA_SZ;
     image->w = TDC1304_DATA_SZ;
@@ -236,7 +236,7 @@ static void tcd1304_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsCameraImage image;
+    pinsPhoto image;
     staticCameraState *cs;
     pinsCamera *c;
     os_int x;
@@ -273,7 +273,7 @@ int dummy = 0, xsum = 0, xn = 0;
                     }
 
                     while (processed_pos < max_pos) {
-                        cs->buf[sizeof(iocBitmapHdr) + processed_pos++] = x;
+                        cs->buf[sizeof(iocBrickHdr) + processed_pos++] = x;
                     }
                     xsum += x;
                     xn ++;
