@@ -1,6 +1,6 @@
 /**
 
-  @file    common/pins_tdc1304_camera.c
+  @file    common/pins_tcd1304_camera.c
   @brief   Camera hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -28,7 +28,7 @@
 #define TDC1304_MAX_CAMERAS 1
 #endif
 
-#define TCD1394_MAX_PIN_PRM 14
+#define TCD1304_MAX_PIN_PRM 14
 
 typedef struct
 {
@@ -37,7 +37,7 @@ typedef struct
 staticCameraState;
 
 
-static osalStatus tdc1304_cam_open(
+static osalStatus tcd1304_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
@@ -58,12 +58,12 @@ static osalStatus tdc1304_cam_open(
     opt.thread_name = "mythread";
     opt.pin_to_core = OS_TRUE;
     opt.pin_to_core_nr = 0;
-    c->camera_thread = osal_thread_create(tdc1304_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
+    c->camera_thread = osal_thread_create(tcd1304_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 
     return OSAL_STATUS_FAILED;
 }
 
-static void tdc1304_cam_close(
+static void tcd1304_cam_close(
     pinsCamera *c)
 {
     if (c->camera_thread)
@@ -83,7 +83,7 @@ static void tdc1304_cam_close(
 }
 
 
-static void tdc1304_cam_task(
+static void tcd1304_cam_task(
     void *prm,
     osalEvent done)
 {
@@ -104,7 +104,7 @@ static void tdc1304_cam_task(
 }
 
 
-BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
+BEGIN_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
     os_int
         pos,
         sh_pos,
@@ -121,17 +121,17 @@ BEGIN_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
         }
     }
 
-END_PIN_INTERRUPT_HANDLER(tdc1304_cam_1_on_timer)
+END_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
 
 
-static void tdc1304_cam_ll_start(
+static void tcd1304_cam_ll_start(
         pinsCamera *c)
 {
     pinTimerParams prm;
 
     os_memclear(&prm, sizeof(prm));
     prm.flags = PIN_TIMER_START;
-    prm.int_handler_func = tdc1304_cam_1_on_timer;
+    prm.int_handler_func = tcd1304_cam_1_on_timer;
 
     pin_timer_attach_interrupt(c->timer_pin, &prm);
 }

@@ -15,3 +15,31 @@
 */
 #include "pins.h"
 
+
+void pins_store_image_to_buffer(
+    pinsCameraImage *image,
+    iocBitmapBuffer *b,
+    iocBitmapCompression compression)
+{
+    os_memsz bytes;
+
+   /* If we have not allocated bitmap buffer, do it
+     */
+    if (b->buf_sz == 0)
+    {
+        ioc_allocate_bitmap_buffer(b,
+            image->iface->get_parameter(image->camera, PINS_CAM_MAX_IMAGE_SZ));
+    }
+
+    b->buf_n = 0;
+    b->pos = 0;
+
+    /* Compress bitmap data, set timestamp and calculate checksum Set current position to zero
+     */
+    bytes = ioc_compress_bitmap(b->buf, b->buf_sz,
+        image->buf, image->format, image->w, image->h, compression);
+    ioc_set_bitmap_timestamp(b->buf);
+    ioc_set_bitmap_checksum(b->buf, b->buf_sz);
+
+    b->buf_n = bytes;
+}

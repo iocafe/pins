@@ -206,8 +206,13 @@ pinsCameraInterface;
 
 
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
-  extern const pinsCameraInterface pins_tdc1304_camera_iface;
-  #define PINS_CAMERA_IFACE pins_tdc1304_camera_iface
+  extern const pinsCameraInterface pins_tcd1304_camera_iface;
+  #define PINS_CAMERA_IFACE pins_tcd1304_camera_iface
 #endif
+
+void pins_store_image_to_buffer(
+    pinsCameraImage *image,
+    iocBitmapBuffer *b,
+    iocBitmapCompression compression);
 
 #endif
