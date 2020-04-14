@@ -16,8 +16,8 @@
 #include "pins.h"
 
 
-void pins_store_image_to_buffer(
-    pinsPhoto *image,
+void pins_store_photo_to_brick(
+    pinsPhoto *photo,
     iocBrickBuffer *b,
     iocBrickCompression compression)
 {
@@ -28,7 +28,7 @@ void pins_store_image_to_buffer(
     if (b->buf_sz == 0)
     {
         ioc_allocate_brick_buffer(b,
-            image->iface->get_parameter(image->camera, PINS_CAM_MAX_IMAGE_SZ));
+            photo->iface->get_parameter(photo->camera, PINS_CAM_MAX_IMAGE_SZ));
     }
 
     b->buf_n = 0;
@@ -37,7 +37,7 @@ void pins_store_image_to_buffer(
     /* Compress brick data, set timestamp and calculate checksum Set current position to zero
      */
     bytes = ioc_compress_brick(b->buf, b->buf_sz,
-        image->buf, image->format, image->w, image->h, compression);
+        photo->buf, photo->format, photo->w, photo->h, compression);
     ioc_set_brick_timestamp(b->buf);
     ioc_set_brick_checksum(b->buf, b->buf_sz);
 

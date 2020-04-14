@@ -33,7 +33,7 @@
 struct pinsCameraInterface;
 struct pinsCamera;
 
-/** Camera image as received by camera callback function.
+/** Camera photo as received by camera callback function.
  */
 typedef struct pinsPhoto
 {
@@ -46,7 +46,7 @@ typedef struct pinsPhoto
     struct pinsCamera *camera;
 
     /** Image buffer and buffer size in bytes. Image buffer starts with
-        flat iocBrickHdr followed by image pixel data.
+        flat iocBrickHdr followed by photo pixel data.
      */
     os_uchar *buf;
     os_memsz buf_sz;
@@ -74,7 +74,7 @@ pinsPhoto;
 /** Camera callback function type, called when a frame has been captured.
  */
 typedef void pinsCameraCallbackFunc(
-    pinsPhoto *image,
+    pinsPhoto *photo,
     void *context);
 
 
@@ -103,7 +103,7 @@ pinsCameraParams;
 /** Enumeration of camera parameters which can be modified.
 
     - PINS_CAM_INTEGRATION_US: Set integration time
-    - PINS_CAM_INTEGRATION_US: Get maximum image size in bytes including brick header
+    - PINS_CAM_INTEGRATION_US: Get maximum photo size in bytes including brick header
 
  */
 typedef enum pinsCameraParamIx
@@ -210,8 +210,8 @@ pinsCameraInterface;
   #define PINS_CAMERA_IFACE pins_tcd1304_camera_iface
 #endif
 
-void pins_store_image_to_buffer(
-    pinsPhoto *image,
+void pins_store_photo_to_brick(
+    pinsPhoto *photo,
     iocBrickBuffer *b,
     iocBrickCompression compression);
 

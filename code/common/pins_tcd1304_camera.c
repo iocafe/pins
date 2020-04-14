@@ -202,33 +202,33 @@ static os_long tcd1304_cam_get_parameter(
 }
 
 
-static void tcd1304_finalize_camera_image(
+static void tcd1304_finalize_camera_photo(
     pinsCamera *c,
-    pinsPhoto *image)
+    pinsPhoto *photo)
 {
     iocBrickHdr *hdr;
     os_uchar *buf;
 
-    os_memclear(image, sizeof(pinsPhoto));
+    os_memclear(photo, sizeof(pinsPhoto));
     buf = cam_state[c->id].buf;
     os_memclear(buf, sizeof(iocBrickHdr));
 
-    image->iface = c->iface;
-    image->camera = c;
-    image->buf = buf;
-    image->buf_sz = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
+    photo->iface = c->iface;
+    photo->camera = c;
+    photo->buf = buf;
+    photo->buf_sz = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
     hdr = (iocBrickHdr*)buf;
     hdr->format = IOC_BYTE_BRICK;
     hdr->width_low = (os_uchar)TDC1304_DATA_SZ;
     hdr->width_high = (os_uchar)(TDC1304_DATA_SZ >> 8);
     hdr->height_low = 1;
 
-    image->data = buf + sizeof(iocBrickHdr);
-    image->data_sz = TDC1304_DATA_SZ;
-    image->byte_w = TDC1304_DATA_SZ;
-    image->w = TDC1304_DATA_SZ;
-    image->h = 1;
-    image->format = hdr->format;
+    photo->data = buf + sizeof(iocBrickHdr);
+    photo->data_sz = TDC1304_DATA_SZ;
+    photo->byte_w = TDC1304_DATA_SZ;
+    photo->w = TDC1304_DATA_SZ;
+    photo->h = 1;
+    photo->format = hdr->format;
 }
 
 
@@ -236,7 +236,7 @@ static void tcd1304_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsPhoto image;
+    pinsPhoto photo;
     staticCameraState *cs;
     pinsCamera *c;
     os_int x;
@@ -282,8 +282,8 @@ int dummy = 0, xsum = 0, xn = 0;
 
                 if (pos > TDC1304_DATA_SZ + 30) // + 30 SLACK
                 {
-                    tcd1304_finalize_camera_image(c, &image);
-                    c->callback_func(&image, c->callback_context);
+                    tcd1304_finalize_camera_photo(c, &photo);
+                    c->callback_func(&photo, c->callback_context);
 
                     cs->frame_ready = OS_TRUE;
                     cs->processed_pos = 0;
@@ -478,7 +478,7 @@ static void tcd1304_setup_camera_io_pins(
     tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_INIT, cs->igc_on_pulse_setting);
     tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_HPOINT, igc_pulse_setting);
 
-    /* Integration clear (new image) signal IGC.
+    /* Integration clear (new photo) signal IGC.
      */
     cs->igc_pin.type = PIN_PWM;
     cs->igc_pin.bank = pin_get_prm(c->camera_pin, PIN_C_BANK); /* PWM channel */
@@ -493,7 +493,7 @@ static void tcd1304_setup_camera_io_pins(
     tcd1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_RV, PIN_RV);
     tcd1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_INTERRUPT_ENABLED, 1);
 
-    /* Integration clear (new image) signal IGC.
+    /* Integration clear (new photo) signal IGC.
      */
     cs->igc_loopback_pin.type = PIN_INPUT;
     cs->igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);

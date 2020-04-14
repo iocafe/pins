@@ -87,7 +87,7 @@ static void tcd1304_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsPhoto *image;
+    pinsPhoto *photo;
     staticCameraState *cs;
     pinsCamera *c;
     c = (pinsCamera*)prm;
