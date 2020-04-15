@@ -1,6 +1,6 @@
 # iocafe pins library - interface to GPIO, ADC/DAC, PWM, etc. 
 
-<b>DRAFTING/PLANNING STAGE, NOT FOR SERIOUS USE.</b>
+15.4.2020 status: The pins library is in raw prototype status which can be used for ESP32 with iocom. 
 
 Function of the "pins" is to:
 - Define hardware/platform independent API to GPIO, analogs, PWM, etc.
