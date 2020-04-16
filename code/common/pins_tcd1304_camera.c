@@ -26,13 +26,15 @@
 
 #define TCD1304_MAX_PIN_PRM 14
 
+#define PINS_TCD1304_BUF_SZ (sizeof(iocBrickHdr) + TDC1304_DATA_SZ)
+
 typedef struct
 {
     pinsCamera *c;
     volatile os_short pos;
     volatile os_short processed_pos;
 
-    os_uchar buf[sizeof(iocBrickHdr) + TDC1304_DATA_SZ];
+    os_uchar buf[PINS_TCD1304_BUF_SZ];
 
     volatile os_boolean start_new_frame;
     volatile os_boolean frame_ready;
@@ -190,7 +192,7 @@ static os_long tcd1304_cam_get_parameter(
     switch (ix)
     {
         case PINS_CAM_MAX_IMAGE_SZ:
-            x = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
+            x = PINS_TCD1304_BUF_SZ;
             break;
 
         default:
@@ -216,12 +218,14 @@ static void tcd1304_finalize_camera_photo(
     photo->iface = c->iface;
     photo->camera = c;
     photo->buf = buf;
-    photo->buf_sz = sizeof(iocBrickHdr) + TDC1304_DATA_SZ;
+    photo->buf_sz = PINS_TCD1304_BUF_SZ;
     hdr = (iocBrickHdr*)buf;
     hdr->format = IOC_BYTE_BRICK;
-    hdr->width_low = (os_uchar)TDC1304_DATA_SZ;
-    hdr->width_high = (os_uchar)(TDC1304_DATA_SZ >> 8);
-    hdr->height_low = 1;
+    hdr->width[0] = (os_uchar)TDC1304_DATA_SZ;
+    hdr->width[1] = (os_uchar)(TDC1304_DATA_SZ >> 8);
+    hdr->height[0] = 1;
+    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
+    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
 
     photo->data = buf + sizeof(iocBrickHdr);
     photo->data_sz = TDC1304_DATA_SZ;
