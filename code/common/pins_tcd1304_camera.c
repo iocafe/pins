@@ -42,6 +42,10 @@ typedef struct
     os_int igc_on_pulse_setting;
     os_int igc_off_pulse_setting;
 
+#if PINS_SIMULATED_INTERRUPTS
+    PinInterruptConf loopback_int_conf;
+#endif
+
     /* Pin parameters.
      */
     os_ushort sh_prm_count;
@@ -276,6 +280,7 @@ int dummy = 0, xsum = 0, xn = 0;
                         max_pos = TDC1304_DATA_SZ;
                     }
 
+                    x >>= 4;
                     while (processed_pos < max_pos) {
                         cs->buf[sizeof(iocBrickHdr) + processed_pos++] = x;
                     }
@@ -294,8 +299,8 @@ int dummy = 0, xsum = 0, xn = 0;
                     pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
 
     if (++dummy > 100 && xn) {
-        osal_debug_error_int("HERE average ",  xsum / xn);
-        osal_debug_error_int("HERE n ",  xn);
+//        osal_debug_error_int("HERE average ",  xsum / xn);
+//        osal_debug_error_int("HERE n ",  xn);
         dummy = 0;
     }
     xsum = xn = 0;
@@ -503,6 +508,9 @@ static void tcd1304_setup_camera_io_pins(
     cs->igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);
     cs->igc_loopback_pin.prm = cs->igc_loopback_pin_prm;
     cs->igc_loopback_pin.prm_n = (os_char)cs->igc_loopback_prm_count;
+#if PINS_SIMULATED_INTERRUPTS
+    cs->igc_loopback_pin.int_conf = &cs->loopback_int_conf;
+#endif
     pin_ll_setup(&cs->igc_loopback_pin, PINS_DEFAULT);
 
     /* Receive interrupts when pin does up.
