@@ -39,7 +39,7 @@ void pins_store_photo_to_brick(
     bytes = ioc_compress_brick(b->buf, b->buf_sz,
         photo->buf, photo->format, photo->w, photo->h, compression);
     ioc_set_brick_timestamp(b->buf);
-    ioc_set_brick_checksum(b->buf, b->buf_sz);
+    ioc_set_brick_checksum(b->buf, bytes);
 
     b->buf_n = bytes;
 }
