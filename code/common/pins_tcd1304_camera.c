@@ -431,7 +431,7 @@ static void tcd1304_setup_camera_io_pins(
     /* Determine bits to have approximately 0.1 us resolution.
      */
     bits = 16;
-    while ( sh_period_us / (1 << bits) < 0.1)
+    while ( sh_period_us / (1ULL << bits) < 0.1)
         bits --;
     max_pulse = 1 << bits;
 
