@@ -18,7 +18,8 @@
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
 #define TDC1304_TIMING_CLOCK_HZ 200000.0
-#define TDC1304_DATA_SZ (3694/2)
+// #define TDC1304_DATA_SZ (3694/2)
+#define TDC1304_DATA_SZ 3694
 
 #ifndef TDC1304_MAX_CAMERAS
 #define TDC1304_MAX_CAMERAS 1
@@ -100,7 +101,7 @@ static osalStatus tcd1304_cam_open(
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
 
-    c->integration_us = 1000;
+    c->integration_us = 2000;
     c->iface = &pins_tcd1304_camera_iface;
 
     /* We could support two TDC1304 cameras later on, we should check which static camera
