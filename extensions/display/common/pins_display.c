@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_display.c
+  @file    extensions/display/common/pins_display.c
   @brief   Display hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    23.3.2020
+  @date    21.4.2020
 
   Code shared by different display hardwares to connect to eosal network state, etc.
 

@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_camera.h
+  @file    extensions/camera/common/pins_camera.h
   @brief   Camera hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    30.3.2020
+  @date    21.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,

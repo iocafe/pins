@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_morse_text.c
+  @file    extensions/morse/common/pins_morse_text.c
   @brief   Convert morse code enum value to string.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    22.3.2020
+  @date    21.4.2020
 
   Reason why microcontroller is not connecting to network can be indicated by blinking a LED.
   Here we simply BLINK error number 1 - 9 as morse code. When there is no error (code is 0),
@@ -17,7 +17,7 @@
 
 ****************************************************************************************************
 */
-#include "pins.h"
+#include "pinsx.h"
 
 
 /**

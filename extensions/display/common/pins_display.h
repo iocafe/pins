@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_display.h
+  @file    extensions/display/common/pins_display.h
   @brief   Display hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    23.3.2020
+  @date    21.4.2020
 
   This header file function prototypes, defines and types to interface application with a
   specific display hardware wrapper. The application calls these functions and the

@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_to_iocom.c
+  @file    extensions/iocom/common/pins_to_iocom.c
   @brief   Functions for connecting IO pins and IOCOM signals.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    8.1.2020
+  @date    21.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,

@@ -4,7 +4,7 @@
   @brief   Pins library main header file.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    8.1.2020
+  @date    21.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -63,9 +63,6 @@ OSAL_C_HEADER_BEGINS
 #include "code/common/pins_basics.h"
 #include "code/common/pins_state.h"
 #include "code/common/pins_parameters.h"
-#include "code/common/pins_morse_code.h"
-#include "code/common/pins_display.h"
-#include "code/common/pins_camera.h"
 
 /* If C++ compilation, end the undecorated code.
  */

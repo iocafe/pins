@@ -22,3 +22,12 @@ Supported HW platforms/frameworks:
 - ESP32 is currently being tested/developed.
 
 https://github.com/iocafe/pins/blob/master/doc/190916-pins-library/190916-pins-library.pdf
+
+Note about folder names:
+- code: Base library code, this has about same functionality for all platforms
+- extensions: Extension code, support varies by platform
+- common: Common code for all platforms
+- simulation: Simulation code for Windows, Linux, etc. without actual IO.
+- duino: Common arduino API code, for Arduino, STM32duino and Teensyduino (not for ESP32)
+- arduino: Arduino specific code
+- esp32: ESP32 specific code

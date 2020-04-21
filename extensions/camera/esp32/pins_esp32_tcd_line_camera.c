@@ -1,10 +1,10 @@
 /**
 
-  @file    common/pins_tcd1304_camera.c
-  @brief   Camera hardware API.
+  @file    extensions/camera/esp32/pins_esp32_tdc_line_camera.c
+  @brief   TCD1304, etc, line camera driver implementation.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    2.4.2020
+  @date    21.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,

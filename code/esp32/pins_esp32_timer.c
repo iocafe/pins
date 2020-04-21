@@ -1,10 +1,10 @@
 /**
 
   @file    esp32/pins_esp32_timer.c
-  @brief   Interrups and handlers.
+  @brief   Timer interrups.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    1.4.2020
+  @date    21.4.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
