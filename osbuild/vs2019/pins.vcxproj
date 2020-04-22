@@ -20,30 +20,30 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common\pins_basics.h" />
-    <ClInclude Include="..\..\code\common\pins_camera.h" />
-    <ClInclude Include="..\..\code\common\pins_display.h" />
     <ClInclude Include="..\..\code\common\pins_gpio.h" />
-    <ClInclude Include="..\..\code\common\pins_morse_code.h" />
     <ClInclude Include="..\..\code\common\pins_parameters.h" />
     <ClInclude Include="..\..\code\common\pins_state.h" />
     <ClInclude Include="..\..\code\common\pins_timer.h" />
-    <ClInclude Include="..\..\code\common\pins_to_iocom.h" />
     <ClInclude Include="..\..\code\simulation\pins_hw_defs.h" />
+    <ClInclude Include="..\..\extensions\camera\common\pins_camera.h" />
+    <ClInclude Include="..\..\extensions\display\common\pins_display.h" />
+    <ClInclude Include="..\..\extensions\iocom\common\pins_to_iocom.h" />
+    <ClInclude Include="..\..\extensions\morse\common\pins_morse_code.h" />
     <ClInclude Include="..\..\pins.h" />
     <ClInclude Include="..\..\pinsx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\code\common\pins_camera.c" />
-    <ClCompile Include="..\..\code\common\pins_display.c" />
-    <ClCompile Include="..\..\code\common\pins_morse_code.c" />
-    <ClCompile Include="..\..\code\common\pins_morse_texts.c" />
     <ClCompile Include="..\..\code\common\pins_parameters.c" />
     <ClCompile Include="..\..\code\common\pins_state.c" />
-    <ClCompile Include="..\..\code\common\pins_tcd1304_camera.c" />
-    <ClCompile Include="..\..\code\common\pins_to_iocom.c" />
     <ClCompile Include="..\..\code\simulation\pins_basics.c" />
     <ClCompile Include="..\..\code\simulation\pins_interrupt.c" />
     <ClCompile Include="..\..\code\simulation\pins_timer.c" />
+    <ClCompile Include="..\..\extensions\camera\common\pins_camera.c" />
+    <ClCompile Include="..\..\extensions\camera\simulation\pins_sim_line_camera.c" />
+    <ClCompile Include="..\..\extensions\display\common\pins_display.c" />
+    <ClCompile Include="..\..\extensions\iocom\common\pins_to_iocom.c" />
+    <ClCompile Include="..\..\extensions\morse\common\pins_morse_code.c" />
+    <ClCompile Include="..\..\extensions\morse\common\pins_morse_texts.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
