@@ -17,7 +17,6 @@
 #include "driver/gpio.h"
 #endif
 
-
 /* Setup a pin as input.
  */
 void pin_gpio_setup_input(

@@ -49,7 +49,8 @@ void pins_ll_initialize(
   @anchor pin_ll_setup
 
   The pin_ll_setup() function...
-  @param   pin Pin to initialize.
+
+  @param   pin Pointer to pin structure to initialize.
   @param   flags Reserved for future, set 0 for now.
   @return  None.
 
@@ -91,10 +92,13 @@ void pin_ll_setup(
 /**
 ****************************************************************************************************
 
-  @brief Set IO pin state.
+  @brief Set HW pin state.
   @anchor pin_ll_set
 
   The pin_ll_set() function...
+
+  @param   pin Pointer to pin structure.
+  @param   x Value to set, for example 0 or 1 for digital output.
   @return  None.
 
 ****************************************************************************************************
@@ -141,11 +145,13 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
 /**
 ****************************************************************************************************
 
-  @brief Get IO pin state.
-  @anchor pin_get
+  @brief Get HW pin state.
+  @anchor pin_ll_get
 
-  The pin_ll_get() function...
-  @return  None.
+  The pin_ll_get() function gets IO pin state from hardware
+
+  @param   pin Pointer to pin structure.
+  @return  Pin state, for example 0 or 1 for digital input.
 
 ****************************************************************************************************
 */

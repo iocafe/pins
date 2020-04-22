@@ -13,28 +13,27 @@
 
 ****************************************************************************************************
 */
-// #include <Arduino.h>
 #include "pins.h"
 
 #ifdef ESP_PLATFORM
 #include "driver/ledc.h"
-// #include "driver/periph_ctrl.h"
 #endif
 
 
 /**
 ****************************************************************************************************
 
-  @brief Setup a pin as PWM.
+  @brief Configure a pin as PWM.
   @anchor pin_pwm_setup
+
+  The pin_pwm_setup() function...
 
   ESP32 note: Generate 1 MHz clock signal with ESP32,  note 24.3.2020/pekka
     LEDC peripheral can be used to generate clock signals between
        40 MHz (half of APB clock) and approximately 0.001 Hz.
        Please check the LEDC chapter in Technical Reference Manual.
 
-
-  The pin_pwm_setup() function...
+  @param   pin Pointer to the pin structure.
   @return  None.
 
 ****************************************************************************************************

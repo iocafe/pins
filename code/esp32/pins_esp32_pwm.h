@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 
-/* Setup a pin as PWM.
+/* Configure a pin as PWM.
  */
 void pin_pwm_setup(
     const Pin *pin);
