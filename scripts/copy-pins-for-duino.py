@@ -7,6 +7,7 @@
 from os import listdir, makedirs
 from os.path import isfile, isdir, join, splitext, exists
 from shutil import copyfile
+import sys
 
 def mymakedir(targetdir):
     if not exists(targetdir):
@@ -28,29 +29,29 @@ def copy_level_4(sourcedir,roottargetdir,targetdir):
                 t = join(roottargetdir, f)
                 copyfile(p, t)
 
-def copy_level_3(sourcedir,roottargetdir,targetdir):
+def copy_level_3(sourcedir,roottargetdir,targetdir, platforms):
     files = listdir(sourcedir)
     for f in files:
         p = join(sourcedir, f)
         if isdir(p):
-            if f == 'common' or f == 'arduino' or f == 'esp32':
+            if f in platforms:                
                 copy_level_4(sourcedir + '/' + f, roottargetdir, targetdir + '/' + f)
 
-def copy_level_2(sourcedir,roottargetdir,targetdir):
+def copy_level_2(sourcedir,roottargetdir,targetdir, platforms):
     files = listdir(sourcedir)
     for f in files:
         p = join(sourcedir, f)
         if isdir(p):
-            copy_level_3(sourcedir + '/' + f, roottargetdir, targetdir + '/' + f)
+            copy_level_3(sourcedir + '/' + f, roottargetdir, targetdir + '/' + f, platforms)
 
 def copy_info(f,sourcedir,targetdir):
-    infodir = sourcedir + '/build/arduino-library'
+    infodir = sourcedir + '/osbuild/duino-library'
     p = join(infodir, f)
     t = join(targetdir, f)
     if exists(p):
         copyfile(p, t)
 
-def copy_level_1(sourcedir,targetdir):
+def copy_level_1(sourcedir,targetdir, platforms):
     mymakedir(targetdir)
     files = listdir(sourcedir)
 
@@ -64,11 +65,32 @@ def copy_level_1(sourcedir,targetdir):
                 copyfile(p, t)
 
     # Copy code and extensions folders
-    copy_level_3(sourcedir + '/code', targetdir, targetdir + '/code')
-    copy_level_2(sourcedir + '/extensions', targetdir, targetdir + '/extensions')
+    copy_level_3(sourcedir + '/code', targetdir, targetdir + '/code', platforms)
+    copy_level_2(sourcedir + '/extensions', targetdir, targetdir + '/extensions', platforms)
 
     # Copy informative arduino files
     copy_info('library.json', sourcedir, targetdir)
     copy_info('library.properties', sourcedir, targetdir)
 
-copy_level_1("/coderoot/pins", "/coderoot/lib/arduino-platformio/pins")
+def mymain():
+    platforms = ["common"]
+    outdir = "/coderoot/lib/arduino-platformio/pins"
+    expectplatform = True
+    n = len(sys.argv)
+    for i in range(1, n):
+        if sys.argv[i][0] == "-":
+            if sys.argv[i][1] == "o":
+                expectplatform = False
+
+        else:
+            if expectplatform:
+                platforms.append(sys.argv[i])
+            else:
+                outdir = sys.argv[i];
+
+            expectplatform = True    
+
+    copy_level_1("/coderoot/pins", outdir, platforms)
+
+# Usage copy-pins-for-duino.py esp32 -o /coderoot/lib/esp32/pins
+mymain()
