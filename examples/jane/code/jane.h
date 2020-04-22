@@ -18,7 +18,7 @@
 
 /* Include header for the pins library. This includes also eosalx.h
  */
-#include "pins.hx"
+#include "pinsx.h"
 
 /* Include io definitions for "carol" hardware.
  */
