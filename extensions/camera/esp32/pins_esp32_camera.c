@@ -14,7 +14,15 @@
 
 ****************************************************************************************************
 */
+#include "pinsx.h"
+#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
+    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
+    PINS_CAMERA == PINS_AI_THINKER_CAMERA
+
 #include "esp_camera.h"
+#include <Arduino.h>
 
 //WROVER-KIT PIN Map
 #define CAM_PIN_PWDN    -1 //power down is not used
@@ -97,6 +105,8 @@ esp_err_t camera_capture(){
     esp_camera_fb_return(fb);
     return ESP_OK;
 }
+
+#if 0
 JPEG HTTP Capture
 #include "esp_camera.h"
 #include "esp_http_server.h"
@@ -262,3 +272,8 @@ esp_err_t bmp_httpd_handler(httpd_req_t *req){
     ESP_LOGI(TAG, "BMP: %uKB %ums", (uint32_t)(buf_len/1024), (uint32_t)((fr_end - fr_start)/1000));
     return res;
 }
+
+#endif
+
+
+#endif

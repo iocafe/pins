@@ -15,6 +15,27 @@
 ****************************************************************************************************
 */
 
+#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA
+  #define CAMERA_MODEL_WROVER_KIT
+#endif
+
+#if PINS_CAMERA == PINS_ESP_EYE_CAMERA
+  #define CAMERA_MODEL_ESP_EYE
+#endif
+
+#if PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA
+  #define CAMERA_MODEL_M5STACK_PSRAM
+#endif
+
+#if PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA
+  #define CAMERA_MODEL_M5STACK_WIDE
+#endif
+
+#if PINS_CAMERA == PINS_AI_THINKER_CAMERA
+  #define CAMERA_MODEL_AI_THINKER
+#endif
+
+
 #if defined(CAMERA_MODEL_WROVER_KIT)
 #define PWDN_GPIO_NUM    -1
 #define RESET_GPIO_NUM   -1

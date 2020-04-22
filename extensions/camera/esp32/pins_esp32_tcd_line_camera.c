@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 #define PINS_OS_INT_HANDLER_HDRS
-#include "pins.h"
+#include "pinsx.h"
 #if PINS_CAMERA == PINS_TDC1304_CAMERA
 
 #define TDC1304_TIMING_CLOCK_HZ 200000.0

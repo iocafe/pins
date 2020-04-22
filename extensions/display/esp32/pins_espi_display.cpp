@@ -13,7 +13,7 @@
 
 ****************************************************************************************************
 */
-#include "pins.h"
+#include "pinsx.h"
 #if PINS_DISPLAY == PINS_TFT_ESPI
 #include "Arduino.h"
 

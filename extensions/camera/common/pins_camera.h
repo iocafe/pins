@@ -18,6 +18,11 @@
  */
 #define PINS_NO_CAMERA 0
 #define PINS_TDC1304_CAMERA 1
+#define PINS_WROVER_KIT_CAMERA 10
+#define PINS_ESP_EYE_CAMERA 11
+#define PINS_M5STACK_PSRAM_CAMERA 12
+#define PINS_M5STACK_WIDE_CAMERA 13
+#define PINS_AI_THINKER_CAMERA 14
 
 /* If no camera defined for build, set 0
  */

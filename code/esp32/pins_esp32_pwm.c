@@ -14,11 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
-
-#ifdef ESP_PLATFORM
 #include "driver/ledc.h"
-#endif
-
 
 /**
 ****************************************************************************************************
@@ -41,7 +37,6 @@
 void pin_pwm_setup(
     const Pin *pin)
 {
-#ifdef ESP_PLATFORM
     os_int
         frequency_hz,
         resolution_bits,
@@ -82,10 +77,5 @@ void pin_pwm_setup(
     channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
     channel_config.hpoint = hpoint;
     ledc_channel_config(&channel_config);
-#else
-    /* ledcSetup(pin->bank, frequency_hz, resolution_bits);
-    ledcAttachPin(pin->addr, pin->bank);
-    ledcWrite(pin->bank, initial_duty); */
-#endif
 }
 

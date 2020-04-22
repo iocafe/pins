@@ -123,12 +123,8 @@ void pin_timer_attach_interrupt(
 void pin_timer_detach_interrupt(
     const struct Pin *pin)
 {
-#ifdef ESP_PLATFORM
     pin_timer_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
     pin_timer_control_interrupt(pin);
-#else
-    detachInterrupt(pin->addr);
-#endif
 }
 
 
