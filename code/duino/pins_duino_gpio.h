@@ -1,6 +1,6 @@
 /**
 
-  @file    esp32/pins_esp32_gpio.h
+  @file    duino/pins_duino_gpio.h
   @brief   GPIO pins.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -13,7 +13,6 @@
 
 ****************************************************************************************************
 */
-#include "driver/gpio.h"
 
 /* Setup a pin as input.
  */

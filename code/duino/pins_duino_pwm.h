@@ -1,7 +1,7 @@
 /**
 
-  @file    esp32/pins_esp32_gpio.h
-  @brief   GPIO pins.
+  @file    duino/pins_duino_pwm.h
+  @brief   ESP32 pulse width modulation.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    21.4.2020
@@ -13,25 +13,8 @@
 
 ****************************************************************************************************
 */
-#include "driver/gpio.h"
 
-/* Setup a pin as input.
+/* Configure a pin as PWM.
  */
-void pin_gpio_setup_input(
+void pin_pwm_setup(
     const Pin *pin);
-
-/* Setup a pin as output.
- */
-void pin_gpio_setup_output(
-    const Pin *pin);
-
-/* Attach an interrupt to a GPIO pin.
- */
-void pin_gpio_attach_interrupt(
-    const struct Pin *pin,
-    pinInterruptParams *prm);
-
-/* Detach interrupt from GPIO pin.
- */
-void pin_gpio_detach_interrupt(
-    const struct Pin *pin);

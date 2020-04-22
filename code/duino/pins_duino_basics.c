@@ -1,6 +1,6 @@
 /**
 
-  @file    esp32/pins_esp32_basics.c
+  @file    duino/pins_duino_basics.c
   @brief   Pins library basic functionality.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -13,12 +13,11 @@
 
 ****************************************************************************************************
 */
+// #include <Arduino.h>
 #include "pins.h"
-#include "code/esp32/pins_esp32_gpio.h"
-#include "code/esp32/pins_esp32_pwm.h"
+#include "code/duino/pins_duino_gpio.h"
+#include "code/duino/pins_duino_pwm.h"
 
-#include "driver/ledc.h"
-#include "driver/periph_ctrl.h"
 
 /**
 ****************************************************************************************************
@@ -106,17 +105,14 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
     if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_OUTPUT:
-            gpio_set_level(pin->addr, x);
+            digitalWrite(pin->addr, x);
             break;
 
         case PIN_PWM:
-            /* Not thread safe: PWM channel duty must be modified only from one thread at a time.
-             */
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, pin->bank, (uint32_t)x);
-            ledc_update_duty(LEDC_HIGH_SPEED_MODE, pin->bank);
+            ledcWrite(pin->bank, x);
             break;
 
-    case PIN_ANALOG_OUTPUT:
+        case PIN_ANALOG_OUTPUT:
             dacWrite(pin->bank, x);
             break;
 

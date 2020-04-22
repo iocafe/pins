@@ -1,6 +1,6 @@
 /**
 
-  @file    esp32/pins_esp32_gpio.c
+  @file    duino/pins_duino_gpio.c
   @brief   GPIO pins.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -14,8 +14,6 @@
 ****************************************************************************************************
 */
 #include "pins.h"
-
-#include "driver/gpio.h"
 
 /* Forward referred static functions.
  */
@@ -48,16 +46,10 @@ static void pin_gpio_control_interrupt(
 void pin_gpio_setup_input(
     const Pin *pin)
 {
-    gpio_config_t io_conf;
-    os_memclear(&io_conf, sizeof(io_conf));
-
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = 1ULL << pin->addr;
-    io_conf.pull_down_en = pin_get_prm(pin, PIN_PULL_DOWN);
-    io_conf.pull_up_en = pin_get_prm(pin, PIN_PULL_UP);
-    gpio_config(&io_conf);
+    in mode = INPUT;
+    if (pin_get_prm(pin, PIN_PULL_UP)) mode = INPUT_PULLUP;
+    if (pin_get_prm(pin, PIN_PULL_DOWN)) mode = INPUT_PULLDOWN;
+    pinMode(pin->addr, mode);
 }
 
 
@@ -77,14 +69,7 @@ void pin_gpio_setup_input(
 void pin_gpio_setup_output(
     const Pin *pin)
 {
-    gpio_config_t io_conf;
-    os_memclear(&io_conf, sizeof(io_conf));
-
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    //bit mask of the pins that you want to set,e.g.GPIO18/19
-    io_conf.pin_bit_mask = 1ULL << pin->addr;
-    gpio_config(&io_conf);
+    pinMode(pin->addr, OUTPUT);
 }
 
 
@@ -111,32 +96,17 @@ void pin_gpio_attach_interrupt(
     const struct Pin *pin,
     pinInterruptParams *prm)
 {
-    gpio_int_type_t itype;
-    gpio_num_t addr;
-    os_boolean enable;
-    addr = (gpio_num_t)pin->addr;
-
-    /* gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL); */
-    gpio_isr_handler_add(addr, prm->int_handler_func, NULL);
+    int mode;
 
     switch (prm->flags & PINS_INT_CHANGE)
     {
-        case PINS_INT_FALLING: itype = GPIO_INTR_NEGEDGE; break;
-        case PINS_INT_RISING:  itype = GPIO_INTR_POSEDGE; break;
+        case PINS_INT_FALLING: mode = FALLING; break;
+        case PINS_INT_RISING:  mode = RISING; break;
         default:
-        case PINS_INT_CHANGE: itype = GPIO_INTR_ANYEDGE; break;
+        case PINS_INT_CHANGE: mode = CHANGE; break;
     }
-    gpio_set_intr_type(addr, itype);
 
-    /* Start listening for global interrupt enable functions.
-       It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
-     */
-    pin_set_prm(pin, PIN_INTERRUPT_ENABLED, 0);
-    enable = osal_add_interrupt_to_list(pin_gpio_global_interrupt_control, (void*)pin);
-    pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
-    pin_gpio_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-
-    pin_gpio_control_interrupt(pin);
+    attachInterrupt(pin->addr, prm->int_handler_func, mode);
 }
 
 
@@ -157,11 +127,7 @@ void pin_gpio_attach_interrupt(
 void pin_gpio_detach_interrupt(
     const struct Pin *pin)
 {
-    pin_gpio_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-    pin_gpio_control_interrupt(pin);
-
-    // gpio_intr_disable(addr);
-    // gpio_isr_handler_remove(addr);
+    detachInterrupt(pin->addr);
 }
 
 

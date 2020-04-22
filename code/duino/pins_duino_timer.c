@@ -1,6 +1,6 @@
 /**
 
-  @file    esp32/pins_esp32_timer.c
+  @file    duino/pins_duino_timer.c
   @brief   Timer interrups.
   @author  Pekka Lehtikoski
   @version 1.0
@@ -54,6 +54,7 @@ void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
+#ifdef ESP_PLATFORM
     timer_config_t config;
     os_int timer_nr, timer_group, frequency_hz, divisor, target_count, count;
     const os_int hw_clock_frequency = 80000000; // 80 MHz
@@ -103,6 +104,27 @@ void pin_timer_attach_interrupt(
     pin_timer_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
 
     pin_timer_control_interrupt(pin);
+
+#else
+    hw_timer_t * t;
+    os_int timer_nr, frequency_hz, divisor;
+    const os_int hw_clock_frequency = 80000000; // 80 MHz
+
+    timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
+    frequency_hz = pin_get_frequency(pin, 50);
+
+    divisor = 1;
+    if (frequency_hz >= 1)
+    {
+        divisor = hw_clock_frequency / frequency_hz;
+    }
+    if (divisor < 2) divisor = 2;
+
+    t = timerBegin(timer_nr, 1, true);
+    timerAttachInterrupt(t, prm->int_handler_func, true);
+    timerAlarmWrite(t, divisor, true);
+    timerAlarmEnable(t);
+#endif
 }
 
 
@@ -123,12 +145,7 @@ void pin_timer_attach_interrupt(
 void pin_timer_detach_interrupt(
     const struct Pin *pin)
 {
-#ifdef ESP_PLATFORM
-    pin_timer_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-    pin_timer_control_interrupt(pin);
-#else
     detachInterrupt(pin->addr);
-#endif
 }
 
 
