@@ -66,20 +66,29 @@ static staticCameraState cam_state[TDC1304_MAX_CAMERAS];
 
 /* Forward referred static functions.
  */
+TIMER_INTERRUPT_HANDLER_PROTO(tcd1304_cam_1_on_timer);
+
 static void tcd1304_cam_task(
     void *prm,
     osalEvent done);
-
-static void tcd1304_cam_ll_start(
-    pinsCamera *c);
-
-static void tcd1304_cam_ll_stop(
-    pinsCamera *c);
 
 static void tcd1304_setup_camera_io_pins(
     pinsCamera *c);
 
 
+/**
+****************************************************************************************************
+
+  @brief Initialize global variables for cameras.
+  @anchor tcd1304_cam_initialize
+
+  The tcd1304_cam_initialize() clear global variables for the camera(s). This is necessary to
+  when running in microcontroller which doesn't clear memory during soft reboot.
+
+  @return  None
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_initialize(
     void)
 {
@@ -87,6 +96,21 @@ static void tcd1304_cam_initialize(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Open the camera, set it up.
+  @anchor tcd1304_cam_open
+
+  The tcd1304_cam_open() sets ip camera for use. It creates threads, events, etc, nedessary
+  for the camera. This function is called from  application trough camera interface
+  pins_tcd1304_camera_iface.open().
+
+  @param   c Pointer to the pin structure for the camera.
+  @return  None
+
+****************************************************************************************************
+*/
 static osalStatus tcd1304_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
@@ -136,6 +160,21 @@ static osalStatus tcd1304_cam_open(
     return OSAL_STATUS_FAILED;
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Close the camera (release resources).
+  @anchor tcd1304_cam_close
+
+  The tcd1304_cam_close() stops the video and releases any resources reserved for the camera.
+  This function is called from  application trough camera interface pins_tcd1304_camera_iface.close().
+
+  @param   c Pointer to the pin structure for the camera.
+  @return  None
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_close(
     pinsCamera *c)
 {
@@ -155,21 +194,79 @@ static void tcd1304_cam_close(
     }
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Start vido stream.
+  @anchor tcd1304_cam_start
+
+  The tcd1304_cam_start() starts the video. This function is called from  application trough
+  camera interface pins_tcd1304_camera_iface.start().
+
+  @param   c Pointer to the pin structure for the camera.
+  @return  None
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_start(
     pinsCamera *c)
 {
+    staticCameraState *cs;
+    pinTimerParams prm;
+
     tcd1304_setup_camera_io_pins(c);
-    tcd1304_cam_ll_start(c);
+
+    os_memclear(&prm, sizeof(prm));
+    prm.int_handler_func = tcd1304_cam_1_on_timer;
+
+    pin_timer_attach_interrupt(c->timer_pin, &prm);
+
+    cs = &cam_state[c->id];
+    cs->pos = 0;
+    cs->processed_pos = 0;
+    cs->start_new_frame = OS_FALSE;
+    cs->frame_ready = OS_FALSE;
+    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Stop vido stream.
+  @anchor tcd1304_cam_stop
+
+  The tcd1304_cam_stop() stops the video. This function is called from  application trough
+  camera interface pins_tcd1304_camera_iface.stop().
+
+  @param   c Pointer to the pin structure for the camera.
+  @return  None
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_stop(
     pinsCamera *c)
 {
-    tcd1304_cam_ll_stop(c);
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Set value of camera parameter.
+  @anchor tcd1304_cam_set_parameter
+
+  The tcd1304_cam_set_parameter() sets value of a camera parameter. This function is called from
+  application trough camera interface pins_tcd1304_camera_iface.set_parameter().
+
+  @param   c Pointer to the pin structure for the camera.
+  @param   ix Parameter index, see enumeration pinsCameraParamIx.
+  @param   x Parameter value.
+  @return  None
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_set_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix,
@@ -189,6 +286,21 @@ static void tcd1304_cam_set_parameter(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Get value of camera parameter.
+  @anchor tcd1304_cam_get_parameter
+
+  The tcd1304_cam_get_parameter() gets value of a camera parameter. This function is called from
+  application trough camera interface pins_tcd1304_camera_iface.get_parameter().
+
+  @param   c Pointer to the pin structure for the camera.
+  @param   ix Parameter index, see enumeration pinsCameraParamIx.
+  @return  Parameter value.
+
+****************************************************************************************************
+*/
 static os_long tcd1304_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
@@ -209,6 +321,21 @@ static os_long tcd1304_cam_get_parameter(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Set up pinsPhoto structure.
+  @anchor tcd1304_finalize_camera_photo
+
+  The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  image. Camera API passed photos to application callback with pointer to this photo structure.
+
+  @param   c Pointer to the pin structure for the camera.
+  @param   photo Pointer to photo structure to set up.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void tcd1304_finalize_camera_photo(
     pinsCamera *c,
     pinsPhoto *photo)
@@ -241,6 +368,20 @@ static void tcd1304_finalize_camera_photo(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Thread to process camera data.
+  @anchor tcd1304_cam_task
+
+  The tcd1304_cam_task() is high priority thread to process data from camera.
+
+  @param   prm Pointer to pinsCamera structure.
+  @param   done Even to be set to allow thread which created this one to proceed.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void tcd1304_cam_task(
     void *prm,
     osalEvent done)
@@ -313,6 +454,17 @@ int dummy = 0, xsum = 0, xn = 0;
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief IGC pin interrupt handler, rising edge.
+  @anchor tcd1304_cam_1_igc_end
+
+  The tcd1304_cam_1_igc_end() function is called shen IGC loopback input changes from 0 to 1,
+  ending the IGC pulse (0 = active). This triggers recording of the new data frame.
+
+****************************************************************************************************
+*/
 BEGIN_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
 #define ISR_CAM_IX 0
     cam_state[ISR_CAM_IX].start_new_frame = OS_TRUE;
@@ -320,6 +472,18 @@ BEGIN_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
 END_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
 
 
+/**
+****************************************************************************************************
+
+  @brief Timer interrupt handler.
+  @anchor tcd1304_cam_1_on_timer
+
+  The tcd1304_cam_1_on_timer() function is called at timer interrupt, typically something like
+  100kHz or 200kHz frequency. The function reads signal value from ADC number and/or triggers
+  camera task.
+
+****************************************************************************************************
+*/
 BEGIN_TIMER_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
 #define ISR_CAM_IX 0
     if (cam_state[ISR_CAM_IX].start_new_frame)
@@ -346,30 +510,24 @@ BEGIN_TIMER_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
 END_TIMER_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
 
 
-static void tcd1304_cam_ll_start(
-    pinsCamera *c)
-{
-    staticCameraState *cs;
-    pinTimerParams prm;
+/**
+****************************************************************************************************
 
-    os_memclear(&prm, sizeof(prm));
-    prm.int_handler_func = tcd1304_cam_1_on_timer;
+  @brief Append parameter to IO pin's parameter array (internal).
+  @anchor tcd1304_append_pin_parameter
 
-    pin_timer_attach_interrupt(c->timer_pin, &prm);
+  The tcd1304_append_pin_parameter() is helper function for tcd1304_setup_camera_io_pins() to
+  append a parameter to parameter array for an IO pin.
 
-    cs = &cam_state[c->id];
-    cs->pos = 0;
-    cs->processed_pos = 0;
-    cs->start_new_frame = OS_FALSE;
-    cs->frame_ready = OS_FALSE;
-    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
-}
+  @param   pin_prm Pointer to the parameter array for an IO pin.
+  @param   pin_prm_count Pointer to number of parameters in parameter array, incremented by
+           the function.
+  @param   Parameter index, see enumeration pinPrm.
+  @param   value Value for parameter to add.
+  @return  None.
 
-static void tcd1304_cam_ll_stop(
-        pinsCamera *c)
-{
-}
-
+****************************************************************************************************
+*/
 static void tcd1304_append_pin_parameter(
     os_ushort *pin_prm,
     os_ushort *pin_prm_count,
@@ -391,8 +549,25 @@ static void tcd1304_append_pin_parameter(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Configure IO pins needed for the CCD (internal).
+  @anchor tcd1304_setup_camera_io_pins
+
+  The tcd1304_setup_camera_io_pins() function configures PWMs to generate clock M, SH and IGC
+  signals for CCD. Then it configures input for looping back IGC to generate "start" interrupt
+  and sets up timer to generate interrupt at sampling frequency.
+
+  Typically pin numbers and timing parameters are set in JSON and stored within the structure c.
+
+  @param   c Pointer to the pin structure for the camera.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void tcd1304_setup_camera_io_pins(
-        pinsCamera *c)
+    pinsCamera *c)
 {
     staticCameraState *cs;
     pinInterruptParams iprm;
@@ -522,7 +697,8 @@ static void tcd1304_setup_camera_io_pins(
     pin_gpio_attach_interrupt(&cs->igc_loopback_pin, &iprm);
 }
 
-
+/* Camera interface (structure with function pointers, polymorphism)
+ */
 const pinsCameraInterface pins_tcd1304_camera_iface
 = {
     tcd1304_cam_initialize,

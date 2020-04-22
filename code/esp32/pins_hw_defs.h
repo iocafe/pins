@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -32,6 +32,9 @@ typedef void pin_interrupt_handler(void *arg);
 #ifdef PINS_OS_INT_HANDLER_HDRS
     #define PINS_LOCK_NAME(name) pins_lock_##name
 
+    #define PIN_INTERRUPT_HANDLER_PROTO(name) \
+        void IRAM_ATTR name(void *arg)
+
     #define BEGIN_PIN_INTERRUPT_HANDLER(name) \
     static portMUX_TYPE DRAM_ATTR PINS_LOCK_NAME(name) = portMUX_INITIALIZER_UNLOCKED; \
     void IRAM_ATTR name(void *arg) { \
@@ -39,6 +42,9 @@ typedef void pin_interrupt_handler(void *arg);
 
     #define END_PIN_INTERRUPT_HANDLER(name) \
         portEXIT_CRITICAL_ISR(&PINS_LOCK_NAME(name)); }
+
+    #define TIMER_INTERRUPT_HANDLER_PROTO(name) \
+        void IRAM_ATTR name(void *arg)
 
     #if IDF_VERSION_MAJOR >= 4
         /* esp-idf version 4

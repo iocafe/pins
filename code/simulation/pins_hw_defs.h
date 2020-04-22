@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -18,8 +18,10 @@
 typedef void pin_interrupt_handler(void);
 
 #ifdef PINS_OS_INT_HANDLER_HDRS
+#define PIN_INTERRUPT_HANDLER_PROTO(name) void name(void)
 #define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
 #define END_PIN_INTERRUPT_HANDLER(func_name) }
+#define TIMER_INTERRUPT_HANDLER_PROTO(name) void name(void)
 #define BEGIN_TIMER_INTERRUPT_HANDLER(func_name) void func_name() {
 #define END_TIMER_INTERRUPT_HANDLER(func_name) }
 #endif
