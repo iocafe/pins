@@ -470,7 +470,7 @@ static camera_config_t camera_config = {
     .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
 };
 
-esp_err_t camera_init(){
+esp_err_t pins_espcam_init(){
     //power up the camera if PWDN pin is defined
     if(CAM_PIN_PWDN != -1){
         pinMode(CAM_PIN_PWDN, OUTPUT);
@@ -487,7 +487,7 @@ esp_err_t camera_init(){
     return ESP_OK;
 }
 
-esp_err_t camera_capture(){
+esp_err_t pins_espcam_capture(){
     //acquire a frame
     camera_fb_t * fb = esp_camera_fb_get();
     if (!fb) {
