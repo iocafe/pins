@@ -125,7 +125,7 @@ static void make_morse_recipe(
     else if (code <= 0)
     {
         morse->recipe.time_ms[n++] = 100;
-        morse->recipe.time_ms[n++] = 2000;
+        morse->recipe.time_ms[n++] = 3000;
     }
 
     else if (code <= 5)
@@ -138,16 +138,16 @@ static void make_morse_recipe(
         morse->recipe.time_ms[n-1] = 600;
         for (i = code; i < 5; i++)
         {
-            morse->recipe.time_ms[n++] = 800;
+            morse->recipe.time_ms[n++] = 1200;
             morse->recipe.time_ms[n++] = 400;
         }
-        morse->recipe.time_ms[n-1] = 3000;
+        morse->recipe.time_ms[n-1] = 5000;
     }
     else if (code <= 10)
     {
         for (i = 5; i < code; i++)
         {
-            morse->recipe.time_ms[n++] = 800;
+            morse->recipe.time_ms[n++] = 1200;
             morse->recipe.time_ms[n++] = 400;
         }
         for (i = code; i < 10; i++)
@@ -155,7 +155,7 @@ static void make_morse_recipe(
             morse->recipe.time_ms[n++] = 200;
             morse->recipe.time_ms[n++] = 300;
         }
-        morse->recipe.time_ms[n-1] = 3000;
+        morse->recipe.time_ms[n-1] = 5000;
     }
     morse->recipe.n = n;
 
