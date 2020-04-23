@@ -34,3 +34,12 @@ void forward_signal_change_to_io_pins(
     os_int start_addr,
     os_int end_addr,
     os_ushort flags);
+
+/* Forward data data received from communication to IO pins.
+ */
+void pins_default_iocom_callback(
+    struct iocHandle *handle,
+    os_int start_addr,
+    os_int end_addr,
+    os_ushort flags,
+    void *context);
