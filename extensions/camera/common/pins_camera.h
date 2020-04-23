@@ -17,7 +17,7 @@
 /* Camera types supported by pins libeary
  */
 #define PINS_NO_CAMERA 0
-#define PINS_TDC1304_CAMERA 1
+#define PINS_TCD1304_CAMERA 1
 #define PINS_WROVER_KIT_CAMERA 10
 #define PINS_ESP_EYE_CAMERA 11
 #define PINS_M5STACK_PSRAM_CAMERA 12
@@ -28,7 +28,8 @@
  */
 #ifndef PINS_CAMERA
 // #define PINS_CAMERA PINS_NO_CAMERA
-#define PINS_CAMERA PINS_TDC1304_CAMERA
+// #define PINS_CAMERA PINS_TCD1304_CAMERA
+#define PINS_CAMERA PINS_AI_THINKER_CAMERA
 #endif
 
 /* If we got a camera
@@ -87,18 +88,17 @@ typedef void pinsCameraCallbackFunc(
  */
 typedef struct pinsCameraParams
 {
-    /** Camera interface (structure of camera implementation function pointers).
-     */
-    // const struct pinsCameraInterface *iface;
-
     /** Pointer to callback function and application specific content pointer to pass
         to the callback function..
      */
     pinsCameraCallbackFunc *callback_func;
     void *callback_context;
 
-#if PINS_CAMERA == PINS_TDC1304_CAMERA
+    /** Pointer to camera's pin structure.
+     */
     const struct Pin *camera_pin;
+
+#if PINS_CAMERA == PINS_TCD1304_CAMERA
     const struct Pin *timer_pin;
 #endif
 }
@@ -154,21 +154,24 @@ typedef struct pinsCamera
      */
     os_long integration_us;
 
-#if PINS_CAMERA == PINS_TDC1304_CAMERA
+    /** Pointer to camera's pin structure.
+     */
     const struct Pin *camera_pin;
+
+#if PINS_CAMERA == PINS_TCD1304_CAMERA
     const struct Pin *timer_pin;
 #endif
 }
 pinsCamera;
 
 
-/** 
+/**
 ****************************************************************************************************
 
   Stream Interface structure.
 
-  The interface structure contains set of function pointers. These function pointers point 
-  generally to functions which do implemen a specific stream. The functions pointer can also 
+  The interface structure contains set of function pointers. These function pointers point
+  generally to functions which do implemen a specific stream. The functions pointer can also
   point to default implementations in osal_stream.c.
 
 ****************************************************************************************************
@@ -182,11 +185,11 @@ typedef struct pinsCameraInterface
 
     /* Open a camera.
      */
-	osalStatus (*open)(
+    osalStatus (*open)(
         pinsCamera *c,
         const pinsCameraParams *prm);
 
-	void (*close)(
+    void (*close)(
         pinsCamera *c);
 
     void (*start)(
@@ -198,7 +201,7 @@ typedef struct pinsCameraInterface
     /* void (*trig)(
         pinsCamera *c); */
 
-	void (*set_parameter)(
+    void (*set_parameter)(
         pinsCamera *c,
         pinsCameraParamIx ix,
         os_long x);
@@ -210,10 +213,20 @@ typedef struct pinsCameraInterface
 pinsCameraInterface;
 
 
-#if PINS_CAMERA == PINS_TDC1304_CAMERA
+#if PINS_CAMERA == PINS_TCD1304_CAMERA
   extern const pinsCameraInterface pins_tcd1304_camera_iface;
   #define PINS_CAMERA_IFACE pins_tcd1304_camera_iface
 #endif
+
+#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
+    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
+    PINS_CAMERA == PINS_AI_THINKER_CAMERA
+  extern const pinsCameraInterface pins_esp32_camera_iface;
+  #define PINS_CAMERA_IFACE pins_esp32_camera_iface
+#endif
+
 
 void pins_store_photo_to_brick(
     pinsPhoto *photo,

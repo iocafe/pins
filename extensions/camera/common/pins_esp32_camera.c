@@ -21,10 +21,47 @@
     PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
     PINS_CAMERA == PINS_AI_THINKER_CAMERA
 
+#ifdef ESP_PLATFORM
 #include "esp_camera.h"
+// #include <Arduino.h>
+#endif
 #include "extensions/camera/esp32/pins_esp32_camera_pins.h"
 
-#include <Arduino.h>
+
+#ifndef PINS_ESPCAM_MAX_CAMERAS
+#define PINS_ESPCAM_MAX_CAMERAS 1
+#endif
+
+// #define TCD1304_MAX_PIN_PRM 14
+
+#define PINS_ESPCAM_MAX_DATA_SZ (800 * 600 * 3)
+#define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
+
+typedef struct
+{
+    pinsCamera *c;
+/*     volatile os_short pos;
+    volatile os_short processed_pos;
+
+    os_uchar buf[PINS_ESPCAM_BUF_SZ];
+
+    volatile os_boolean start_new_frame;
+    volatile os_boolean frame_ready;
+
+*/
+    /* Pin parameters.
+     */
+/*     os_ushort sh_prm_count;
+    os_ushort sh_pin_prm[TCD1304_MAX_PIN_PRM];
+*/
+    /** Signal input and timing output pins.
+     */
+//    Pin stribe_pin, trig_pin;
+}
+staticCameraState;
+
+static staticCameraState cam_state[PINS_ESPCAM_MAX_CAMERAS];
+
 
 /* Alternate pin names to match either example code.
  */
@@ -49,6 +86,13 @@
 #define CAM_PIN_PCLK    PCLK_GPIO_NUM
 
 
+/* Forward referred static functions.
+ */
+static void esp32_cam_task(
+    void *prm,
+    osalEvent done);
+
+
 /**
 ****************************************************************************************************
 
@@ -65,7 +109,7 @@
 static void esp32_cam_initialize(
     void)
 {
-    os_memclear(cam_state, TDC1304_MAX_CAMERAS * sizeof(staticCameraState));
+    os_memclear(cam_state, PINS_ESPCAM_MAX_CAMERAS * sizeof(staticCameraState));
 }
 
 
@@ -94,19 +138,18 @@ static osalStatus esp32_cam_open(
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
-    c->timer_pin = prm->timer_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
 
     c->integration_us = 2000;
     c->iface = &pins_esp32_camera_iface;
 
-    /* We could support two TDC1304 cameras later on, we should check which static camera
+    /* We could support two PINS_ESPCAM cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
     for (id = 0; cam_state[id].c; id++)
     {
-        if (id >= TDC1304_MAX_CAMERAS - 1)
+        if (id >= PINS_ESPCAM_MAX_CAMERAS - 1)
         {
             osal_debug_error("esp32_cam_open: Maximum number of cameras used");
             return OSAL_STATUS_FAILED;
@@ -186,21 +229,13 @@ static void esp32_cam_start(
     pinsCamera *c)
 {
     staticCameraState *cs;
-    pinTimerParams prm;
-
-    tcd1304_setup_camera_io_pins(c);
-
-    os_memclear(&prm, sizeof(prm));
-    prm.int_handler_func = esp32_cam_1_on_timer;
-
-    pin_timer_attach_interrupt(c->timer_pin, &prm);
 
     cs = &cam_state[c->id];
-    cs->pos = 0;
+/*     cs->pos = 0;
     cs->processed_pos = 0;
     cs->start_new_frame = OS_FALSE;
     cs->frame_ready = OS_FALSE;
-    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
+    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting); */
 }
 
 
@@ -282,7 +317,7 @@ static os_long esp32_cam_get_parameter(
     switch (ix)
     {
         case PINS_CAM_MAX_IMAGE_SZ:
-            x = PINS_TCD1304_BUF_SZ;
+            x = PINS_ESPCAM_BUF_SZ;
             break;
 
         default:
@@ -317,25 +352,26 @@ static void tcd1304_finalize_camera_photo(
     os_uchar *buf;
 
     os_memclear(photo, sizeof(pinsPhoto));
-    buf = cam_state[c->id].buf;
-    os_memclear(buf, sizeof(iocBrickHdr));
+buf = OS_NULL;
+    // buf = cam_state[c->id].buf;
+    // os_memclear(buf, sizeof(iocBrickHdr));
 
     photo->iface = c->iface;
     photo->camera = c;
     photo->buf = buf;
-    photo->buf_sz = PINS_TCD1304_BUF_SZ;
+    photo->buf_sz = PINS_ESPCAM_BUF_SZ;
     hdr = (iocBrickHdr*)buf;
     hdr->format = IOC_BYTE_BRICK;
-    hdr->width[0] = (os_uchar)TDC1304_DATA_SZ;
-    hdr->width[1] = (os_uchar)(TDC1304_DATA_SZ >> 8);
+    hdr->width[0] = (os_uchar)PINS_ESPCAM_MAX_DATA_SZ;
+    hdr->width[1] = (os_uchar)(PINS_ESPCAM_MAX_DATA_SZ >> 8);
     hdr->height[0] = 1;
-    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
-    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
+    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)PINS_ESPCAM_BUF_SZ;
+    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(PINS_ESPCAM_BUF_SZ >> 8);
 
     photo->data = buf + sizeof(iocBrickHdr);
-    photo->data_sz = TDC1304_DATA_SZ;
-    photo->byte_w = TDC1304_DATA_SZ;
-    photo->w = TDC1304_DATA_SZ;
+    photo->data_sz = PINS_ESPCAM_MAX_DATA_SZ;
+    photo->byte_w = PINS_ESPCAM_MAX_DATA_SZ;
+    photo->w = PINS_ESPCAM_MAX_DATA_SZ;
     photo->h = 1;
     photo->format = hdr->format;
 }
@@ -362,49 +398,17 @@ static void esp32_cam_task(
     pinsPhoto photo;
     staticCameraState *cs;
     pinsCamera *c;
-    os_int x;
-    os_short pos, processed_pos, max_pos;
 
     c = (pinsCamera*)prm;
     cs = &cam_state[c->id];
 
     osal_event_set(done);
 
-int dummy = 0, xsum = 0, xn = 0;
-
     while (!c->stop_thread && osal_go())
     {
         if (osal_event_wait(c->camera_event, 2017) != OSAL_STATUS_TIMEOUT)
         {
-            if (!cs->frame_ready)
-            {
-                pos = cs->pos;
-                processed_pos = cs->processed_pos;
-
-                if (processed_pos < TDC1304_DATA_SZ)
-                {
-                    x = pin_ll_get(&cs->in_pin);
-                    // x = local_adc1_read_test(cam_state[c->id].in_pin.addr);
-
-                    if (processed_pos == 0) {
-                        pin_ll_set(&cs->igc_pin, cs->igc_off_pulse_setting);
-                    }
-
-                    max_pos = pos;
-                    if (max_pos > TDC1304_DATA_SZ) {
-                        max_pos = TDC1304_DATA_SZ;
-                    }
-
-                    x >>= 4;
-                    while (processed_pos < max_pos) {
-                        cs->buf[sizeof(iocBrickHdr) + processed_pos++] = x;
-                    }
-                    xsum += x;
-                    xn ++;
-                    cs->processed_pos = processed_pos;
-                }
-
-                if (pos > TDC1304_DATA_SZ + 30) // + 30 SLACK
+            /*    if (pos > PINS_ESPCAM_MAX_DATA_SZ + 30) // + 30 SLACK
                 {
                     tcd1304_finalize_camera_photo(c, &photo);
                     c->callback_func(&photo, c->callback_context);
@@ -413,15 +417,9 @@ int dummy = 0, xsum = 0, xn = 0;
                     cs->processed_pos = 0;
                     pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
 
-    if (++dummy > 100 && xn) {
-//        osal_debug_error_int("HERE average ",  xsum / xn);
-//        osal_debug_error_int("HERE n ",  xn);
-        dummy = 0;
-    }
-    xsum = xn = 0;
-
                 }
             }
+            */
         }
     }
 }
@@ -440,7 +438,7 @@ const pinsCameraInterface pins_esp32_camera_iface
     esp32_cam_get_parameter
 };
 
-
+#ifdef ESP_PLATFORM
 static camera_config_t camera_config = {
     .pin_pwdn  = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
@@ -503,7 +501,7 @@ esp_err_t camera_capture(){
     esp_camera_fb_return(fb);
     return ESP_OK;
 }
-
+#endif
 
 #if 0
 JPEG HTTP Capture

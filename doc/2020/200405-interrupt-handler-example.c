@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_TDC1304_CAMERA
+#if PINS_CAMERA == PINS_TCD1304_CAMERA
 
 #define TDC1304_DATA_CLOCK_HZ 250000.0
 #define TDC1304_MIN_DATA_CLOCKS 4000.0
