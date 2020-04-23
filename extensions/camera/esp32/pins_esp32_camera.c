@@ -22,26 +22,31 @@
     PINS_CAMERA == PINS_AI_THINKER_CAMERA
 
 #include "esp_camera.h"
+#include "extensions/camera/esp32/pins_esp32_camera_pins.h"
+
 #include <Arduino.h>
 
-//WROVER-KIT PIN Map
-#define CAM_PIN_PWDN    -1 //power down is not used
-#define CAM_PIN_RESET   -1 //software reset will be performed
-#define CAM_PIN_XCLK    21
-#define CAM_PIN_SIOD    26
-#define CAM_PIN_SIOC    27
+/* Alternate pin names to match either example code.
+ */
+#define CAM_PIN_PWDN    PWDN_GPIO_NUM
+#define CAM_PIN_RESET   RESET_GPIO_NUM
 
-#define CAM_PIN_D7      35
-#define CAM_PIN_D6      34
-#define CAM_PIN_D5      39
-#define CAM_PIN_D4      36
-#define CAM_PIN_D3      19
-#define CAM_PIN_D2      18
-#define CAM_PIN_D1       5
-#define CAM_PIN_D0       4
-#define CAM_PIN_VSYNC   25
-#define CAM_PIN_HREF    23
-#define CAM_PIN_PCLK    22
+#define CAM_PIN_XCLK    XCLK_GPIO_NUM
+#define CAM_PIN_SIOD    SIOD_GPIO_NUM
+#define CAM_PIN_SIOC    SIOC_GPIO_NUM
+
+#define CAM_PIN_D7      Y9_GPIO_NUM
+#define CAM_PIN_D6      Y8_GPIO_NUM
+#define CAM_PIN_D5      Y7_GPIO_NUM
+#define CAM_PIN_D4      Y6_GPIO_NUM
+#define CAM_PIN_D3      Y5_GPIO_NUM
+#define CAM_PIN_D2      Y4_GPIO_NUM
+#define CAM_PIN_D1      Y3_GPIO_NUM
+#define CAM_PIN_D0      Y2_GPIO_NUM
+
+#define CAM_PIN_VSYNC   VSYNC_GPIO_NUM
+#define CAM_PIN_HREF    HREF_GPIO_NUM
+#define CAM_PIN_PCLK    PCLK_GPIO_NUM
 
 
 /**
@@ -292,7 +297,7 @@ static os_long esp32_cam_get_parameter(
 /**
 ****************************************************************************************************
 
-  @brief Set up pinsPhoto structure.
+  @brief Set up "pinsPhoto" structure.
   @anchor tcd1304_finalize_camera_photo
 
   The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
@@ -422,6 +427,20 @@ int dummy = 0, xsum = 0, xn = 0;
 }
 
 
+/* Camera interface (structure with function pointers, polymorphism)
+ */
+const pinsCameraInterface pins_esp32_camera_iface
+= {
+    esp32_cam_initialize,
+    esp32_cam_open,
+    esp32_cam_close,
+    esp32_cam_start,
+    esp32_cam_stop,
+    esp32_cam_set_parameter,
+    esp32_cam_get_parameter
+};
+
+
 static camera_config_t camera_config = {
     .pin_pwdn  = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
@@ -484,6 +503,7 @@ esp_err_t camera_capture(){
     esp_camera_fb_return(fb);
     return ESP_OK;
 }
+
 
 #if 0
 JPEG HTTP Capture
