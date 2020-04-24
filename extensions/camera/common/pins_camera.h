@@ -98,9 +98,9 @@ typedef struct pinsCameraParams
      */
     const struct Pin *camera_pin;
 
-#if PINS_CAMERA == PINS_TCD1304_CAMERA
+    /** Pointer to camera timer's pin structure. OS_NULL if not needed.
+     */
     const struct Pin *timer_pin;
-#endif
 }
 pinsCameraParams;
 
