@@ -26,4 +26,5 @@ typedef void pin_interrupt_handler(void);
 #define END_TIMER_INTERRUPT_HANDLER(func_name) }
 #endif
 
+#define PINS_SIMULATION 1
 #define PINS_SIMULATED_INTERRUPTS 1

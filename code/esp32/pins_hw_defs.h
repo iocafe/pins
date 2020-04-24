@@ -80,4 +80,5 @@ typedef void pin_interrupt_handler(void *arg);
 
 /* No simulated interrupts, we got real ones.
  */
+#define PINS_SIMULATION 0
 #define PINS_SIMULATED_INTERRUPTS 0
