@@ -228,9 +228,9 @@ static void esp32_cam_close(
 static void esp32_cam_start(
     pinsCamera *c)
 {
-    staticCameraState *cs;
+    // staticCameraState *cs;
 
-    cs = &cam_state[c->id];
+    // cs = &cam_state[c->id];
 /*     cs->pos = 0;
     cs->processed_pos = 0;
     cs->start_new_frame = OS_FALSE;
@@ -344,6 +344,7 @@ static os_long esp32_cam_get_parameter(
 
 ****************************************************************************************************
 */
+#if 0
 static void tcd1304_finalize_camera_photo(
     pinsCamera *c,
     pinsPhoto *photo)
@@ -375,6 +376,7 @@ buf = OS_NULL;
     photo->h = 1;
     photo->format = hdr->format;
 }
+#endif
 
 
 /**
@@ -395,12 +397,12 @@ static void esp32_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsPhoto photo;
-    staticCameraState *cs;
+    // pinsPhoto photo;
+    //  staticCameraState *cs;
     pinsCamera *c;
 
     c = (pinsCamera*)prm;
-    cs = &cam_state[c->id];
+    // cs = &cam_state[c->id];
 
     osal_event_set(done);
 
@@ -423,6 +425,8 @@ static void esp32_cam_task(
         }
     }
 }
+
+
 
 
 /* Camera interface (structure with function pointers, polymorphism)
