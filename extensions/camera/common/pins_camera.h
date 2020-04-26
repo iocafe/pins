@@ -27,9 +27,7 @@
 /* If no camera defined for build, set 0
  */
 #ifndef PINS_CAMERA
-// #define PINS_CAMERA PINS_NO_CAMERA
-// #define PINS_CAMERA PINS_TCD1304_CAMERA
-#define PINS_CAMERA PINS_AI_THINKER_CAMERA
+#define PINS_CAMERA PINS_NO_CAMERA
 #endif
 
 /* If we got a camera

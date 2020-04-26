@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-
+#if PINS_CAMERA
 
 void pins_store_photo_to_brick(
     pinsPhoto *photo,
@@ -43,3 +43,4 @@ void pins_store_photo_to_brick(
 
     b->buf_n = bytes;
 }
+#endif

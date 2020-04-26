@@ -32,8 +32,6 @@
 void pins_ll_initialize(
     void)
 {
-    periph_module_enable(PERIPH_LEDC_MODULE);
-    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 }
 
 
@@ -109,11 +107,11 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
             break;
 
         case PIN_PWM:
-            ledcWrite(pin->bank, x);
+            /* ledcWrite(pin->bank, x); */
             break;
 
         case PIN_ANALOG_OUTPUT:
-            dacWrite(pin->bank, x);
+            /* dacWrite(pin->bank, x); */
             break;
 
         case PIN_INPUT:
@@ -147,7 +145,8 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
              */
             if (pin->prm) {
                 if (pin_get_prm(pin, PIN_TOUCH)) {
-                    return touchRead(pin->addr);
+                    /* return touchRead(pin->addr); */
+                    return 0;
                 }
             }
 

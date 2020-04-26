@@ -46,9 +46,9 @@ static void pin_gpio_control_interrupt(
 void pin_gpio_setup_input(
     const Pin *pin)
 {
-    in mode = INPUT;
+    int mode = INPUT;
     if (pin_get_prm(pin, PIN_PULL_UP)) mode = INPUT_PULLUP;
-    if (pin_get_prm(pin, PIN_PULL_DOWN)) mode = INPUT_PULLDOWN;
+    /* if (pin_get_prm(pin, PIN_PULL_DOWN)) mode = INPUT_PULLDOWN; */
     pinMode(pin->addr, mode);
 }
 
@@ -223,7 +223,7 @@ static void pin_gpio_control_interrupt(
     {
         if ((x & PIN_GPIO_PIN_INTERRUPTS_ENABLED) == 0)
         {
-            gpio_intr_enable((gpio_num_t)(pin->addr));
+            /* gpio_intr_enable((gpio_num_t)(pin->addr)); */
             x |= PIN_GPIO_PIN_INTERRUPTS_ENABLED;
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
         }
@@ -232,21 +232,9 @@ static void pin_gpio_control_interrupt(
     {
         if (x & PIN_GPIO_PIN_INTERRUPTS_ENABLED)
         {
-            gpio_intr_disable((gpio_num_t)(pin->addr));
+            /* gpio_intr_disable((gpio_num_t)(pin->addr)); */
             x &= ~PIN_GPIO_PIN_INTERRUPTS_ENABLED;
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
         }
     }
 }
-
-
-/* int IRAM_ATTR local_adc1_read_test(int channel) {
-    uint16_t adc_value;
-    SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
-    while (SENS.sar_slave_addr1.meas_status != 0);
-    SENS.sar_meas_start1.meas1_start_sar = 0;
-    SENS.sar_meas_start1.meas1_start_sar = 1;
-    while (SENS.sar_meas_start1.meas1_done_sar == 0);
-    adc_value = SENS.sar_meas_start1.meas1_data_sar;
-    return adc_value;
-} */
