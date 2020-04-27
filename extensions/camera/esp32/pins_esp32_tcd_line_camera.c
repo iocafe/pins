@@ -13,7 +13,7 @@
 
 ****************************************************************************************************
 */
-#define PINS_OS_INT_HANDLER_HDRS
+#define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
 #if PINS_CAMERA == PINS_TCD1304_CAMERA
 
