@@ -198,9 +198,9 @@ static void pin_gpio_global_interrupt_control(
 ****************************************************************************************************
 
   @brief Helper function to modify PIN_INTERRUPT_ENABLED bits.
-  @anchor pin_gpio_global_interrupt_control
+  @anchor pin_gpio_set_interrupt_enable_flag
 
-  The pin_gpio_global_interrupt_control() function is helper function to
+  The pin_gpio_set_interrupt_enable_flag() function is helper function to
   set or clear a bit in PIN_INTERRUPT_ENABLED parameter.
 
   Bit PIN_GLOBAL_INTERRUPTS_ENABLED indicates that interrupts are globally enabled

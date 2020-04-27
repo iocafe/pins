@@ -1,5 +1,5 @@
 # pins-to-c.py 27.3.2020/pekka
-# Converts hardware IO specification(s) written in JSON to C source and header files. 
+# Converts hardware IO specification(s) written in JSON to C source and header files.
 import json
 import os
 import sys
@@ -9,16 +9,16 @@ pin_types = {
     "outputs" : "PIN_OUTPUT",
     "analog_inputs" : "PIN_ANALOG_INPUT",
     "analog_outputs" : "PIN_ANALOG_OUTPUT",
-    "pwm" : "PIN_PWM", 
+    "pwm" : "PIN_PWM",
     "spi" : "PIN_SPI",
     "timers" : "PIN_TIMER",
     "cameras" : "PIN_CAMERA",
     "uart" : "PIN_UART"}
 
 prm_type_list = {
-    "pull-up": "PIN_PULL_UP", 
-    "pull-down": "PIN_PULL_DOWN", 
-    "touch": "PIN_TOUCH", 
+    "pull-up": "PIN_PULL_UP",
+    "pull-down": "PIN_PULL_DOWN",
+    "touch": "PIN_TOUCH",
     "frequency": "PIN_FREQENCY",
     "frequency-kHz": "PIN_FREQENCY_KHZ",
     "resolution": "PIN_RESOLUTION",
@@ -35,7 +35,7 @@ prm_type_list = {
     "rx": "PIN_RX",
     "tx": "PIN_TX",
     "tc": "PIN_TRANSMITTER_CTRL",
-    "speed": "PIN_SPEED", 
+    "speed": "PIN_SPEED",
     "pin-a": "PIN_A",
     "pin-b": "PIN_B",
     "pin-c": "PIN_C",
@@ -46,7 +46,7 @@ prm_type_list = {
     "bank-c": "PIN_C_BANK",
     "bank-d": "PIN_D_BANK",
     "bank-e": "PIN_E_BANK",
-    "min": "PIN_MIN", 
+    "min": "PIN_MIN",
     "max": "PIN_MAX"}
 
 def start_c_files():
@@ -78,20 +78,20 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":
             if c_prm_list != "":
-                c_prm_list = c_prm_list + ", "    
-                            
+                c_prm_list = c_prm_list + ", "
+
             c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
 
             if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
 
         elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group':
-            print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")                
+            print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")
 
     if c_prm_list_has_interrupt == False and pin_type == 'timers':
         c_prm_list_has_interrupt = True
         if c_prm_list != "":
-            c_prm_list = c_prm_list + ", "    
+            c_prm_list = c_prm_list + ", "
         c_prm_list = c_prm_list + "PIN_INTERRUPT_ENABLED, 1"
 
     # If we have C parameters, write to C file
@@ -140,7 +140,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         else:
             known_groups[group] = full_pin_name
             g = "&" + g
-            
+
         ccontent += g
 
     if pin_name in signallist:
@@ -175,8 +175,8 @@ def write_linked_list_heads():
             cfile.write("\n/* Application's pin groups (linked list heads) */\n")
             hfile.write("\n/* Application's pin groups (linked list heads) */\n")
             isfirst = False
-        cfile.write("const Pin *" + varname + " = &" + value + ";\n")
-        hfile.write("extern const Pin *" + varname + ";\n")
+        cfile.write("OS_FLASH_MEM Pin *" + varname + " = &" + value + ";\n")
+        hfile.write("extern OS_FLASH_MEM_H Pin *" + varname + ";\n")
 
 def process_pin(pin_type, pin_attr):
     global device_name, ccontent
@@ -187,9 +187,9 @@ def process_pin(pin_type, pin_attr):
         print("'name' not found for pin in " + device_name + " " + pin_type)
         exit()
 
-    if pin_nr == 1:        
+    if pin_nr == 1:
         ccontent += ', &' + prefix + '.' + pin_type + '.' + pin_name + '}, /* ' + pin_type + ' */\n'
-    pin_nr = pin_nr + 1        
+    pin_nr = pin_nr + 1
 
     write_pin_to_c_header(pin_name)
     write_pin_to_c_source(pin_type, pin_name, pin_attr)
@@ -198,7 +198,7 @@ def count_pins(pins):
     count = 0
     for pin in pins:
         count = count + 1
-    return count        
+    return count
 
 def process_group_block(group):
     global nro_groups, group_nr, ccontent, c_prm_comment_written
@@ -245,7 +245,7 @@ def count_groups(groups):
     count = 0
     for group in groups:
         count = count + 1
-    return count        
+    return count
 
 def list_signals_in_mblk(mblk, device_name):
     global signallist
@@ -304,7 +304,7 @@ def process_io_device(io):
     group_nr = 1;
 
     ccontent = "\n/* " + device_name.upper() + " IO configuration structure */\n"
-    ccontent += 'const ' + prefix + '_t ' + prefix + ' =\n{'
+    ccontent += 'OS_FLASH_MEM ' + prefix + '_t ' + prefix + ' =\n{'
 
     known_groups = {}
 
@@ -312,11 +312,11 @@ def process_io_device(io):
         process_group_block(group)
 
     ccontent += '};\n\n'
-    cfile.write(ccontent)        
+    cfile.write(ccontent)
 
     list_name = prefix + "_group_list"
     cfile.write('/* List of pin type groups */\n')
-    cfile.write('static const PinGroupHdr *' + list_name + '[] =\n{\n  ')
+    cfile.write('static OS_FLASH_MEM PinGroupHdr * OS_FLASH_MEM ' + list_name + '[] =\n{\n  ')
     isfirst = True
     for p in pin_group_list:
         if not isfirst:
@@ -326,18 +326,18 @@ def process_io_device(io):
     cfile.write('\n};\n\n')
 
     cfile.write('/* ' + device_name.upper() + ' IO configuration top header structure */\n')
-    cfile.write('const IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
+    cfile.write('OS_FLASH_MEM IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
 
     hfile.write('}\n' + prefix + '_t;\n\n')
 
     hfile.write("/* " + device_name.upper() + " IO configuration top header structure */\n")
-    hfile.write('extern const IoPinsHdr ' + prefix + '_' + 'hdr;\n\n')
+    hfile.write('extern OS_FLASH_MEM_H IoPinsHdr ' + prefix + '_' + 'hdr;\n\n')
 
     hfile.write("/* Global " + device_name.upper() + " IO configuration structure */\n")
-    hfile.write('extern const ' + prefix + '_t ' + prefix + ';\n')
+    hfile.write('extern OS_FLASH_MEM_H ' + prefix + '_t ' + prefix + ';\n')
 
     write_linked_list_heads()
-    
+
     hfile.write("\n/* Name defines for pins and application pin groups (use ifdef to check if HW has pin) */\n")
     for d in define_list:
         hfile.write('#define ' +d + '\n')
@@ -356,7 +356,7 @@ def process_source_file(path):
 
     else:
         printf ("Opening file " + path + " failed")
-            
+
 def mymain():
     global cfilepath, hfilepath, signalspath
 
