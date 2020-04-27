@@ -20,8 +20,6 @@
 pin_to_iocom_t *pin_to_iocom_func = OS_NULL;
 
 
-
-
 /**
 ****************************************************************************************************
 
@@ -39,14 +37,14 @@ void pins_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags)
 {
-    const PinGroupHdr **group;
+    const PinGroupHdr * const *group;
     const Pin *pin;
     os_short gcount, pcount;
 
     pins_ll_initialize();
 
     gcount = pins_hdr->n_groups;
-    group =  pins_hdr->group;
+    group = pins_hdr->group;
 
     while (gcount--)
     {
