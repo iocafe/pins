@@ -40,6 +40,7 @@
     <ClCompile Include="..\..\code\simulation\pins_timer.c" />
     <ClCompile Include="..\..\extensions\camera\common\pins_camera.c" />
     <ClCompile Include="..\..\extensions\camera\simulation\pins_sim_line_camera.c" />
+    <ClCompile Include="..\..\extensions\camera\windows\pins_windows_camera.c" />
     <ClCompile Include="..\..\extensions\display\common\pins_display.c" />
     <ClCompile Include="..\..\extensions\iocom\common\pins_to_iocom.c" />
     <ClCompile Include="..\..\extensions\morse\common\pins_morse_code.c" />

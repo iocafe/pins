@@ -23,6 +23,7 @@
 #define PINS_M5STACK_PSRAM_CAMERA 12
 #define PINS_M5STACK_WIDE_CAMERA 13
 #define PINS_AI_THINKER_CAMERA 14
+#define PINS_USB_CAMERA 20
 
 /* If no camera defined for build, set 0
  */
