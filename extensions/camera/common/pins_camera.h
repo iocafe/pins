@@ -226,6 +226,10 @@ pinsCameraInterface;
   #define PINS_CAMERA_IFACE pins_esp32_camera_iface
 #endif
 
+#if PINS_CAMERA == PINS_USB_CAMERA
+  extern const pinsCameraInterface pins_usb_camera_iface;
+  #define PINS_CAMERA_IFACE pins_usb_camera_iface
+#endif
 
 void pins_store_photo_to_brick(
     pinsPhoto *photo,
