@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ep_usbcamera_test", "ep_usbcamera_test.vcxproj", "{723B258A-51C6-4B40-9CB9-B1D122AE157E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D} = {03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ep_usbcamera", "..\..\..\ep_usbcamera\osbuild\vs2019\ep_usbcamera.vcxproj", "{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Debug|x64.ActiveCfg = Debug|x64
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Debug|x64.Build.0 = Debug|x64
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Debug|x86.ActiveCfg = Debug|Win32
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Debug|x86.Build.0 = Debug|Win32
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Release|x64.ActiveCfg = Release|x64
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Release|x64.Build.0 = Release|x64
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Release|x86.ActiveCfg = Release|Win32
+		{723B258A-51C6-4B40-9CB9-B1D122AE157E}.Release|x86.Build.0 = Release|Win32
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Debug|x64.ActiveCfg = Debug|x64
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Debug|x64.Build.0 = Debug|x64
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Debug|x86.ActiveCfg = Debug|Win32
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Debug|x86.Build.0 = Debug|Win32
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x64.ActiveCfg = Release|x64
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x64.Build.0 = Release|x64
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x86.ActiveCfg = Release|Win32
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EEFB20F2-EFF5-4628-BF20-0BB930E67238}
+	EndGlobalSection
+EndGlobal
