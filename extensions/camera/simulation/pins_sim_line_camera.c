@@ -99,6 +99,34 @@ static void tcd1304_cam_initialize(
 /**
 ****************************************************************************************************
 
+  @brief Get information about available cameras.
+  @anchor esp32_enumerate_cameras
+
+  The esp32_enumerate_cameras() function returns number of cameras currently available
+  and optionally camera information. 
+
+  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if 
+           only number of available cameras is needed. The enumerate_cameras function can 
+           also set the camera_info pointer to OS_NULL if it doesn't provide any camera 
+           information.
+           If information structure is returned, it must be released by calling
+           pins_release_camera_info() function.
+           
+  @return  Number of available cameras
+
+****************************************************************************************************
+*/
+static os_int tcd1304_cam_enumerate_cameras(
+    pinsCameraInfo **camera_info)
+{
+    if (camera_info) *camera_info = OS_NULL;
+    return 1;
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Open the camera, set it up.
   @anchor tcd1304_cam_open
 
@@ -106,8 +134,8 @@ static void tcd1304_cam_initialize(
   for the camera. This function is called from  application trough camera interface
   pins_tcd1304_camera_iface.open().
 
-  @param   c Pointer to the pin structure for the camera.
-  @return  None
+  @param   c Pointer to camera structure.
+  @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
 
 ****************************************************************************************************
 */
@@ -117,7 +145,7 @@ static osalStatus tcd1304_cam_open(
 {
     staticCameraState *cs;
     osalThreadOptParams opt;
-    os_int id;
+    os_int camera_nr;
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
@@ -131,18 +159,19 @@ static osalStatus tcd1304_cam_open(
     /* We could support two TDC1304 cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
-    for (id = 0; cam_state[id].c; id++)
+    /* Make sure that camera state structure is free (camera not already open)
+       amd set up camera state.
+     */
+    c->camera_nr = camera_nr;
+    if (cam_state[camera_nr].c || (os_uint)camera_nr >= PINS_ESPCAM_MAX_CAMERAS)
     {
-        if (id >= TDC1304_MAX_CAMERAS - 1)
-        {
-            osal_debug_error("tcd1304_cam_open: Maximum number of cameras used");
-            return OSAL_STATUS_FAILED;
-        }
+        osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
+        return OSAL_STATUS_FAILED;
     }
-    cs = &cam_state[id];
+    cs = &cam_state[camera_nr];
     os_memclear(cs, sizeof(staticCameraState));
     cs->c = c;
-    c->id = id;
+    c->camera_nr = camera_nr;
 
     /* Create event to trigger the thread.
      */
@@ -157,7 +186,7 @@ static osalStatus tcd1304_cam_open(
     opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(tcd1304_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 
-    return OSAL_STATUS_FAILED;
+    return OSAL_SUCCESS;
 }
 
 
@@ -170,7 +199,7 @@ static osalStatus tcd1304_cam_open(
   The tcd1304_cam_close() stops the video and releases any resources reserved for the camera.
   This function is called from  application trough camera interface pins_tcd1304_camera_iface.close().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -204,7 +233,7 @@ static void tcd1304_cam_close(
   The tcd1304_cam_start() starts the video. This function is called from  application trough
   camera interface pins_tcd1304_camera_iface.start().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -222,7 +251,7 @@ static void tcd1304_cam_start(
 
     pin_timer_attach_interrupt(c->timer_pin, &prm);
 
-    cs = &cam_state[c->id];
+    cs = &cam_state[c->camera_nr];
     cs->pos = 0;
     cs->processed_pos = 0;
     cs->start_new_frame = OS_FALSE;
@@ -240,7 +269,7 @@ static void tcd1304_cam_start(
   The tcd1304_cam_stop() stops the video. This function is called from  application trough
   camera interface pins_tcd1304_camera_iface.stop().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -260,7 +289,7 @@ static void tcd1304_cam_stop(
   The tcd1304_cam_set_parameter() sets value of a camera parameter. This function is called from
   application trough camera interface pins_tcd1304_camera_iface.set_parameter().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
   @param   x Parameter value.
   @return  None
@@ -295,7 +324,7 @@ static void tcd1304_cam_set_parameter(
   The tcd1304_cam_get_parameter() gets value of a camera parameter. This function is called from
   application trough camera interface pins_tcd1304_camera_iface.get_parameter().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
   @return  Parameter value.
 
@@ -330,7 +359,7 @@ static os_long tcd1304_cam_get_parameter(
   The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
   @return  None.
 
@@ -344,7 +373,7 @@ static void tcd1304_finalize_camera_photo(
     os_uchar *buf;
 
     os_memclear(photo, sizeof(pinsPhoto));
-    buf = cam_state[c->id].buf;
+    buf = cam_state[c->camera_nr].buf;
     os_memclear(buf, sizeof(iocBrickHdr));
 
     photo->iface = c->iface;
@@ -393,7 +422,7 @@ static void tcd1304_cam_task(
     os_short pos, processed_pos, max_pos;
 
     c = (pinsCamera*)prm;
-    cs = &cam_state[c->id];
+    cs = &cam_state[c->camera_nr];
 
     osal_event_set(done);
 
@@ -411,7 +440,7 @@ int dummy = 0, xsum = 0, xn = 0;
                 if (processed_pos < TDC1304_DATA_SZ)
                 {
                     x = pin_ll_get(&cs->in_pin);
-                    // x = local_adc1_read_test(cam_state[c->id].in_pin.addr);
+                    // x = local_adc1_read_test(cam_state[c->camera_nr].in_pin.addr);
 
                     if (processed_pos == 0) {
                         pin_ll_set(&cs->igc_pin, cs->igc_off_pulse_setting);
@@ -561,7 +590,7 @@ static void tcd1304_append_pin_parameter(
 
   Typically pin numbers and timing parameters are set in JSON and stored within the structure c.
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None.
 
 ****************************************************************************************************
@@ -587,7 +616,7 @@ static void tcd1304_setup_camera_io_pins(
         igc_pulse_setting,
         sh_delay_setting;
 
-    cs = &cam_state[c->id];
+    cs = &cam_state[c->camera_nr];
 
     /* Camera analog video signal input.
      */
@@ -702,6 +731,7 @@ static void tcd1304_setup_camera_io_pins(
 const pinsCameraInterface pins_tcd1304_camera_iface
 = {
     tcd1304_cam_initialize,
+    tcd1304_cam_enumerate_cameras,
     tcd1304_cam_open,
     tcd1304_cam_close,
     tcd1304_cam_start,

@@ -36,7 +36,9 @@
 #if PINS_CAMERA
 
 struct pinsCameraInterface;
+struct pinsCameraInfo;
 struct pinsCamera;
+struct PinsCameraExt;
 
 /** Camera photo as received by camera callback function.
  */
@@ -87,6 +89,10 @@ typedef void pinsCameraCallbackFunc(
  */
 typedef struct pinsCameraParams
 {
+    /** Camera number, the first camera is camera number 0.
+     */
+    os_int camera_nr;
+
     /** Pointer to callback function and application specific content pointer to pass
         to the callback function..
      */
@@ -104,6 +110,20 @@ typedef struct pinsCameraParams
 pinsCameraParams;
 
 
+/** Camera information structure.
+ */
+typedef struct pinsCameraInfo
+{
+    /** Camera number, the first camera is camera number 0.
+     */
+    os_int camera_nr;
+
+    /** Pointer to information about next camera.
+     */
+    struct pinsCameraInfo *next;
+}
+pinsCameraInfo;
+
 /** Enumeration of camera parameters which can be modified.
 
     - PINS_CAM_INTEGRATION_US: Set integration time
@@ -114,7 +134,6 @@ typedef enum pinsCameraParamIx
 {
     PINS_CAM_INTEGRATION_US,
     PINS_CAM_MAX_IMAGE_SZ
-//     PINS_CAM_FLAGH_NS
 }
 pinsCameraParamIx;
 
@@ -145,9 +164,9 @@ typedef struct pinsCamera
      */
     volatile os_boolean stop_thread;
 
-    /** Camera identifier, used internally by implementation.
+    /** Camera number, the first camera is camera number 0.
      */
-    os_int id;
+    os_int camera_nr;
 
     /** Camera parameters.
      */
@@ -157,9 +176,13 @@ typedef struct pinsCamera
      */
     const struct Pin *camera_pin;
 
-#if PINS_CAMERA == PINS_TCD1304_CAMERA
+    /* Camera timer pin. OS_NULL if not used by the wrapper.
+     */
     const struct Pin *timer_pin;
-#endif
+
+    /* Camera wrapper specific extended camera data. OS_NULL if not used by the wrapper.
+     */
+    struct PinsCameraExt *ext;
 }
 pinsCamera;
 
@@ -181,6 +204,9 @@ typedef struct pinsCameraInterface
      */
     void (*initialize)(
         void);
+
+    os_int (*enumerate_cameras)(
+        pinsCameraInfo **camera_info);
 
     /* Open a camera.
      */
@@ -231,9 +257,16 @@ pinsCameraInterface;
   #define PINS_CAMERA_IFACE pins_usb_camera_iface
 #endif
 
-void pins_store_photo_to_brick(
-    pinsPhoto *photo,
+/* Store a photo as a "brick" within brick buffer for communication.
+ */
+void pins_store_photo_as_brick(
+    const pinsPhoto *photo,
     iocBrickBuffer *b,
     iocBrickCompression compression);
+
+/* Release camera information chain.
+ */
+void pins_release_camera_info(
+    pinsCameraInfo *camera_info);
 
 #endif

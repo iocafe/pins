@@ -18,13 +18,11 @@
 #include "pinsx.h"
 #if PINS_DISPLAY
 
-
 /** Forward referred static functions.
  */
 static void display_net_state_notification_handler(
     struct osalNetworkState *net_state,
     void *context);
-
 
 
 /**

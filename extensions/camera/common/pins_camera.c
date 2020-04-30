@@ -16,8 +16,24 @@
 #include "pinsx.h"
 #if PINS_CAMERA
 
-void pins_store_photo_to_brick(
-    pinsPhoto *photo,
+/**
+****************************************************************************************************
+
+   @brief Store a photo as a "brick" within brick buffer for communication.
+   @anchor pins_store_photo_as_brick
+
+   The pins_store_photo_as_brick() function... 
+
+   @param photo Pointer to photo to store. The photo is not modified by this function.
+   @param b Pointer to brick buffer into which to store the photo as "brick".
+   @param compression Should photo be compressed by this function and is so how? See enumeration
+          iocBrickCompression.
+   @return None.
+
+****************************************************************************************************
+*/
+void pins_store_photo_as_brick(
+    const pinsPhoto *photo,
     iocBrickBuffer *b,
     iocBrickCompression compression)
 {
@@ -43,4 +59,34 @@ void pins_store_photo_to_brick(
 
     b->buf_n = bytes;
 }
+
+
+/**
+****************************************************************************************************
+
+   @brief Release camera information chain.
+   @anchor pins_release_camera_info
+
+   The pins_release_camera_info() function... 
+
+   @param camera_info Pointer to first item in camera info chain.
+   @return None.
+
+****************************************************************************************************
+*/
+/* 
+ */
+void pins_release_camera_info(
+    pinsCameraInfo *camera_info)
+{
+    pinsCameraInfo *next_camera_info;
+
+    while (camera_info)
+    {
+        next_camera_info = camera_info->next;
+        os_free(camera_info, sizeof(pinsCameraInfo));
+        camera_info = next_camera_info;
+    }
+}
+
 #endif

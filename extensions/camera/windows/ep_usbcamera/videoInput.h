@@ -1,7 +1,5 @@
 #pragma once
-
 #include <guiddef.h>
-
 
 struct IMFMediaSource;
 
@@ -9,17 +7,11 @@ struct IMFMediaSource;
 struct MediaType
 {
 	unsigned int MF_MT_FRAME_SIZE;
-
 	unsigned int height;
-
 	unsigned int width;
-			
 	unsigned int MF_MT_YUV_MATRIX;
-	
 	unsigned int MF_MT_VIDEO_LIGHTING;
-	
 	unsigned int MF_MT_DEFAULT_STRIDE;
-	
 	unsigned int MF_MT_VIDEO_CHROMA_SITING;
 	
 	GUID MF_MT_AM_FORMAT_TYPE;
@@ -27,31 +19,18 @@ struct MediaType
 	wchar_t *pMF_MT_AM_FORMAT_TYPEName;
 	
 	unsigned int MF_MT_FIXED_SIZE_SAMPLES;
-	
 	unsigned int MF_MT_VIDEO_NOMINAL_RANGE;
-	
 	unsigned int MF_MT_FRAME_RATE;
-
 	unsigned int MF_MT_FRAME_RATE_low;
-	
 	unsigned int MF_MT_PIXEL_ASPECT_RATIO;
-
 	unsigned int MF_MT_PIXEL_ASPECT_RATIO_low;
-	
 	unsigned int MF_MT_ALL_SAMPLES_INDEPENDENT;
-	
 	unsigned int MF_MT_FRAME_RATE_RANGE_MIN;
-	
 	unsigned int MF_MT_FRAME_RATE_RANGE_MIN_low;
-	
 	unsigned int MF_MT_SAMPLE_SIZE;
-	
 	unsigned int MF_MT_VIDEO_PRIMARIES;
-	
 	unsigned int MF_MT_INTERLACE_MODE;
-	
 	unsigned int MF_MT_FRAME_RATE_RANGE_MAX;
-	
 	unsigned int MF_MT_FRAME_RATE_RANGE_MAX_low;
 
 	GUID MF_MT_MAJOR_TYPE;
@@ -71,15 +50,10 @@ struct MediaType
 struct Parametr
 {
 	long CurrentValue;
-
 	long Min;
-	
 	long Max;
-	
 	long Step;
-	
 	long Default; 
-	
 	long Flag;
 
 	Parametr();
@@ -98,7 +72,6 @@ struct CamParametrs
         Parametr WhiteBalance;
         Parametr BacklightCompensation;
         Parametr Gain;
-
 
 		Parametr Pan;
         Parametr Tilt;

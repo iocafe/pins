@@ -112,6 +112,34 @@ static void esp32_cam_initialize(
     os_memclear(cam_state, PINS_ESPCAM_MAX_CAMERAS * sizeof(staticCameraState));
 }
 
+/**
+****************************************************************************************************
+
+  @brief Get information about available cameras.
+  @anchor esp32_enumerate_cameras
+
+  The esp32_enumerate_cameras() function returns number of cameras currently available
+  and optionally camera information. 
+
+  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if 
+           only number of available cameras is needed. The enumerate_cameras function can 
+           also set the camera_info pointer to OS_NULL if it doesn't provide any camera 
+           information.
+           If information structure is returned, it must be released by calling
+           pins_release_camera_info() function.
+
+  @return  Number of available cameras
+
+****************************************************************************************************
+*/
+static os_int esp32_enumerate_cameras(
+    pinsCameraInfo **camera_info)
+{
+    if (camera_info) *camera_info = OS_NULL;
+    return 1;
+}
+
+
 
 /**
 ****************************************************************************************************
@@ -123,8 +151,8 @@ static void esp32_cam_initialize(
   for the camera. This function is called from  application trough camera interface
   pins_esp32_camera_iface.open().
 
-  @param   c Pointer to the pin structure for the camera.
-  @return  None
+  @param   c Pointer to camera structure.
+  @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
 
 ****************************************************************************************************
 */
@@ -134,7 +162,7 @@ static osalStatus esp32_cam_open(
 {
     staticCameraState *cs;
     osalThreadOptParams opt;
-    os_int id;
+    os_int camera_nr;
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
@@ -147,18 +175,16 @@ static osalStatus esp32_cam_open(
     /* We could support two PINS_ESPCAM cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
-    for (id = 0; cam_state[id].c; id++)
+    camera_nr = prm->camera_nr;
+    if (cam_state[camera_nr].c || (os_uint)camera_nr >= PINS_ESPCAM_MAX_CAMERAS)
     {
-        if (id >= PINS_ESPCAM_MAX_CAMERAS - 1)
-        {
-            osal_debug_error("esp32_cam_open: Maximum number of cameras used");
-            return OSAL_STATUS_FAILED;
-        }
+        osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
+        return OSAL_STATUS_FAILED;
     }
-    cs = &cam_state[id];
+    cs = &cam_state[camera_nr];
     os_memclear(cs, sizeof(staticCameraState));
     cs->c = c;
-    c->id = id;
+    c->camera_nr = camera_nr;
 
     /* Create event to trigger the thread.
      */
@@ -173,7 +199,7 @@ static osalStatus esp32_cam_open(
     opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 
-    return OSAL_STATUS_FAILED;
+    return OSAL_SUCCESS;
 }
 
 
@@ -186,7 +212,7 @@ static osalStatus esp32_cam_open(
   The esp32_cam_close() stops the video and releases any resources reserved for the camera.
   This function is called from  application trough camera interface pins_esp32_camera_iface.close().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -220,7 +246,7 @@ static void esp32_cam_close(
   The esp32_cam_start() starts the video. This function is called from  application trough
   camera interface pins_esp32_camera_iface.start().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -230,7 +256,7 @@ static void esp32_cam_start(
 {
     // staticCameraState *cs;
 
-    // cs = &cam_state[c->id];
+    // cs = &cam_state[c->camera_nr];
 /*     cs->pos = 0;
     cs->processed_pos = 0;
     cs->start_new_frame = OS_FALSE;
@@ -248,7 +274,7 @@ static void esp32_cam_start(
   The esp32_cam_stop() stops the video. This function is called from  application trough
   camera interface pins_esp32_camera_iface.stop().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
@@ -268,7 +294,7 @@ static void esp32_cam_stop(
   The esp32_cam_set_parameter() sets value of a camera parameter. This function is called from
   application trough camera interface pins_esp32_camera_iface.set_parameter().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
   @param   x Parameter value.
   @return  None
@@ -303,7 +329,7 @@ static void esp32_cam_set_parameter(
   The esp32_cam_get_parameter() gets value of a camera parameter. This function is called from
   application trough camera interface pins_esp32_camera_iface.get_parameter().
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
   @return  Parameter value.
 
@@ -338,7 +364,7 @@ static os_long esp32_cam_get_parameter(
   The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
-  @param   c Pointer to the pin structure for the camera.
+  @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
   @return  None.
 
@@ -354,7 +380,7 @@ static void tcd1304_finalize_camera_photo(
 
     os_memclear(photo, sizeof(pinsPhoto));
 buf = OS_NULL;
-    // buf = cam_state[c->id].buf;
+    // buf = cam_state[c->camera_nr].buf;
     // os_memclear(buf, sizeof(iocBrickHdr));
 
     photo->iface = c->iface;
@@ -402,7 +428,7 @@ static void esp32_cam_task(
     pinsCamera *c;
 
     c = (pinsCamera*)prm;
-    // cs = &cam_state[c->id];
+    // cs = &cam_state[c->camera_nr];
 
     osal_event_set(done);
 
@@ -434,6 +460,7 @@ static void esp32_cam_task(
 const pinsCameraInterface pins_esp32_camera_iface
 = {
     esp32_cam_initialize,
+    esp32_enumerate_cameras,
     esp32_cam_open,
     esp32_cam_close,
     esp32_cam_start,
