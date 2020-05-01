@@ -21,6 +21,7 @@
 
 struct iocRoot;
 struct iocHandle;
+struct iocDeviceHdr;
 
 /* Connect pins to IOCOM library
  */
@@ -33,6 +34,7 @@ void forward_signal_change_to_io_pins(
     struct iocHandle *handle,
     os_int start_addr,
     os_int end_addr,
+    const struct iocDeviceHdr *device_hdr,
     os_ushort flags);
 
 /* Forward data data received from communication to IO pins.

@@ -44,6 +44,7 @@ void pins_default_iocom_callback(
      */
     if (flags & IOC_MBLK_CALLBACK_RECEIVE)
     {
-        forward_signal_change_to_io_pins(handle, start_addr, end_addr, flags);
+        forward_signal_change_to_io_pins(handle, start_addr, end_addr,
+            (const struct iocDeviceHdr*)context, flags);
     }
 }

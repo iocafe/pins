@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -95,9 +95,10 @@ void forward_signal_change_to_io_pins(
     struct iocHandle *handle,
     os_int start_addr,
     os_int end_addr,
+    const struct iocDeviceHdr *device_hdr,
     os_ushort flags)
 {
-    const iocDeviceHdr *device_hdr;
+    // const iocDeviceHdr *device_hdr;
     const iocMblkSignalHdr *mblk_signal_hdr;
     iocMblkSignalHdr **mblk_signal_hdrs;
     const Pin *pin;
@@ -111,7 +112,12 @@ void forward_signal_change_to_io_pins(
     if ((handle->flags & IOC_MBLK_DOWN) == 0 ||
          (flags & IOC_MBLK_CALLBACK_RECEIVE) == 0) return;
 
-    device_hdr = handle->root->device_signal_hdr;
+    // device_hdr = handle->root->device_signal_hdr;
+    if (device_hdr == OS_NULL)
+    {
+        osal_debug_error("forward_signal: NULL device signal header");
+        return;
+    }
 
     mblk_signal_hdrs = device_hdr->mblk_hdr;
     n_mblk_hdrs = device_hdr->n_mblk_hdrs;
