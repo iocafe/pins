@@ -20,7 +20,7 @@
 #define PINS_DEFAULT 0
 
 struct iocRoot;
-struct iocHandle *handle;
+struct iocHandle;
 
 /* Connect pins to IOCOM library
  */
