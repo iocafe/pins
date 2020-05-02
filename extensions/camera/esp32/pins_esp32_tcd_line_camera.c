@@ -103,15 +103,15 @@ static void tcd1304_cam_initialize(
   @anchor esp32_enumerate_cameras
 
   The esp32_enumerate_cameras() function returns number of cameras currently available
-  and optionally camera information. 
+  and optionally camera information.
 
-  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if 
-           only number of available cameras is needed. The enumerate_cameras function can 
-           also set the camera_info pointer to OS_NULL if it doesn't provide any camera 
+  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if
+           only number of available cameras is needed. The enumerate_cameras function can
+           also set the camera_info pointer to OS_NULL if it doesn't provide any camera
            information.
            If information structure is returned, it must be released by calling
            pins_release_camera_info() function.
-           
+
   @return  Number of available cameras
 
 ****************************************************************************************************
@@ -378,7 +378,7 @@ static void tcd1304_finalize_camera_photo(
     photo->buf = buf;
     photo->buf_sz = PINS_TCD1304_BUF_SZ;
     hdr = (iocBrickHdr*)buf;
-    hdr->format = IOC_BYTE_BRICK;
+    hdr->format = IOC_RGB24_BRICK;
     hdr->width[0] = (os_uchar)TDC1304_DATA_SZ;
     hdr->width[1] = (os_uchar)(TDC1304_DATA_SZ >> 8);
     hdr->height[0] = 1;
