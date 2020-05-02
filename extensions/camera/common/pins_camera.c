@@ -38,13 +38,16 @@ void pins_store_photo_as_brick(
     iocBrickCompression compression)
 {
     os_memsz bytes;
+    osalStatus s;
 
    /* If we have not allocated brick buffer, do it
      */
-    if (b->buf_sz == 0)
+    bytes = photo->buf_sz;
+    if (bytes > b->buf_alloc_sz)
     {
-        ioc_allocate_brick_buffer(b,
-            photo->iface->get_parameter(photo->camera, PINS_CAM_MAX_IMAGE_SZ));
+        if (bytes < 1024) bytes = 1024;
+        s = ioc_allocate_brick_buffer(b, bytes);
+        if (s) return;
     }
 
     b->buf_n = 0;

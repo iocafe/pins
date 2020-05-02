@@ -133,7 +133,7 @@ pinsCameraInfo;
 typedef enum pinsCameraParamIx
 {
     PINS_CAM_INTEGRATION_US,
-    PINS_CAM_MAX_IMAGE_SZ
+    PINS_CAM_MAX_BUF_SZ
 }
 pinsCameraParamIx;
 

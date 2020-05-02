@@ -18,7 +18,7 @@
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
- #define PINS_ESPCAM_MAX_DATA_SZ (800 * 600 * 3)
+ #define PINS_ESPCAM_MAX_DATA_SZ (3000 * 2000 * 3)
  #define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
 
 
@@ -286,7 +286,7 @@ static os_long usb_cam_get_parameter(
     os_long x;
     switch (ix)
     {
-        case PINS_CAM_MAX_IMAGE_SZ:
+        case PINS_CAM_MAX_BUF_SZ:
             x = PINS_ESPCAM_BUF_SZ;
             break;
 
@@ -345,7 +345,7 @@ static void usb_cam_finalize_camera_photo(
 
     photo->data = buf + sizeof(iocBrickHdr);
     photo->byte_w = c->ext->w * c->ext->bytes_per_pix;
-    photo->data_sz = photo->byte_w * c->ext->h;
+    photo->data_sz = photo->byte_w * (os_memsz)c->ext->h;
     photo->w = w;
     photo->h = h;
     photo->format = hdr->format;
