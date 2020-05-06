@@ -334,7 +334,7 @@ static os_long tcd1304_cam_get_parameter(
     os_long x;
     switch (ix)
     {
-        case PINS_CAM_MAX_IMAGE_SZ:
+        case PINS_CAM_MAX_BUF_SZ:
             x = PINS_TCD1304_BUF_SZ;
             break;
 

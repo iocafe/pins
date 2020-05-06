@@ -18,6 +18,7 @@
 #include "code/esp32/pins_esp32_gpio.h"
 #include "code/esp32/pins_esp32_pwm.h"
 
+#include "Arduino.h"
 #include "driver/ledc.h"
 #include "driver/periph_ctrl.h"
 

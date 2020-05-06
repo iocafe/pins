@@ -23,7 +23,7 @@
 
 #ifdef ESP_PLATFORM
 #include "esp_camera.h"
-// #include <Arduino.h>
+#include "Arduino.h"
 #endif
 #include "extensions/camera/esp32/pins_esp32_camera_pins.h"
 
@@ -119,11 +119,11 @@ static void esp32_cam_initialize(
   @anchor esp32_enumerate_cameras
 
   The esp32_enumerate_cameras() function returns number of cameras currently available
-  and optionally camera information. 
+  and optionally camera information.
 
-  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if 
-           only number of available cameras is needed. The enumerate_cameras function can 
-           also set the camera_info pointer to OS_NULL if it doesn't provide any camera 
+  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if
+           only number of available cameras is needed. The enumerate_cameras function can
+           also set the camera_info pointer to OS_NULL if it doesn't provide any camera
            information.
            If information structure is returned, it must be released by calling
            pins_release_camera_info() function.
@@ -342,7 +342,7 @@ static os_long esp32_cam_get_parameter(
     os_long x;
     switch (ix)
     {
-        case PINS_CAM_MAX_IMAGE_SZ:
+        case PINS_CAM_MAX_BUF_SZ:
             x = PINS_ESPCAM_BUF_SZ;
             break;
 
