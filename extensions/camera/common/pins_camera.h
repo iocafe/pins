@@ -31,6 +31,14 @@
 #define PINS_CAMERA PINS_NO_CAMERA
 #endif
 
+/* Define default compression for transferring camera images.
+ */
+#if PINS_CAMERA == PINS_USB_CAMERA
+#define PINS_DEFAULT_CAM_IMG_COMPR IOC_NORMAL_JPEG
+#else
+#define PINS_DEFAULT_CAM_IMG_COMPR IOC_UNCOMPRESSED_BRICK
+#endif
+
 /* If we got a camera
  */
 #if PINS_CAMERA
