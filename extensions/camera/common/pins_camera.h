@@ -33,6 +33,17 @@ struct iocBrickHdr;
 #define PINS_CAMERA PINS_NO_CAMERA
 #endif
 
+#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
+    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
+    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
+    PINS_CAMERA == PINS_AI_THINKER_CAMERA
+  #define PINS_IS_ESP32_CAMERA 1
+#else
+  #define PINS_IS_ESP32_CAMERA 0
+#endif
+
+
 /* Define default compression for transferring camera images.
  */
 #if PINS_CAMERA == PINS_USB_CAMERA
@@ -44,6 +55,7 @@ struct iocBrickHdr;
 /* If we got a camera
  */
 #if PINS_CAMERA
+
 
 struct pinsCameraInterface;
 struct pinsCameraInfo;
@@ -251,11 +263,7 @@ pinsCameraInterface;
   #define PINS_CAMERA_IFACE pins_tcd1304_camera_iface
 #endif
 
-#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
-    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
-    PINS_CAMERA == PINS_AI_THINKER_CAMERA
+#if PINS_IS_ESP32_CAMERA
   extern const pinsCameraInterface pins_esp32_camera_iface;
   #define PINS_CAMERA_IFACE pins_esp32_camera_iface
 #endif
@@ -278,3 +286,4 @@ void pins_release_camera_info(
     pinsCameraInfo *camera_info);
 
 #endif
+

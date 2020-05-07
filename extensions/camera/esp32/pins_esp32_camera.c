@@ -15,11 +15,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
-    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
-    PINS_CAMERA == PINS_AI_THINKER_CAMERA
+#if PINS_IS_ESP32_CAMERA
 
 #ifdef ESP_PLATFORM
 #include "esp_camera.h"
@@ -416,13 +412,15 @@ static void esp32_cam_task(
                     digitalWrite(CAM_PIN_PWDN, LOW);
                 }
 
+osal_debug_error("Here 1")                ;
+
                 err = esp_camera_init(&camera_config);
                 if (err != ESP_OK) {
-                }
-                else {
                     osal_debug_error("ESP32 camera init failed");
                     goto goon;
                 }
+
+osal_debug_error("Here 2")                ;
 
                 sens = esp_camera_sensor_get();
                 //initial sensors are flipped vertically and colors are a bit saturated
@@ -434,6 +432,8 @@ static void esp32_cam_task(
                 //drop down frame size for higher initial frame rate
                 sens->set_framesize(sens, FRAMESIZE_QVGA);
 
+                osal_debug_error("Here 3")                ;
+
                 initialized = OS_TRUE;
             }
             else {
@@ -442,7 +442,9 @@ static void esp32_cam_task(
         }
         else
         {
+osal_debug_error("Here 4")                ;
             fb = esp_camera_fb_get();
+osal_debug_error("Here 5")                ;
             if (fb == OS_NULL) {
                 osal_debug_error("ESP32 camera capture failed");
                 initialized = OS_FALSE;
