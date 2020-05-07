@@ -316,20 +316,18 @@ static void usb_cam_finalize_camera_photo(
 {
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_uchar *buf;
     os_int alloc_sz, w, h;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
     photo.hdr = &hdr;
 
-    buf = c->ext->buf;
     w = c->ext->w;
     h = c->ext->h;
 
     photo.iface = c->iface;
     photo.camera = c;
-    photo.data = buf;
+    photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
     photo.data_sz = photo.byte_w * h;
 

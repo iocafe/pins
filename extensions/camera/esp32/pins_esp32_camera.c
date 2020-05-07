@@ -93,9 +93,8 @@ static camera_config_t camera_config = {
 
 /* Forward referred static functions.
  */
+static void esp32_cam_stop(pinsCamera *c);
 static void esp32_cam_task(void *prm, osalEvent done);
-static esp_err_t pins_espcam_init(void);
-static esp_err_t pins_espcam_capture(void);
 
 
 /**
@@ -219,7 +218,7 @@ static void esp32_cam_start(
     opt.thread_name = "espcam";
     opt.pin_to_core = OS_TRUE;
     opt.pin_to_core_nr = 0;
-    c->camera_thread = osal_thread_create(usb_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
+    c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
 
@@ -340,37 +339,33 @@ static void esp32_cam_finalize_camera_photo(
     pinsCamera *c,
     camera_fb_t *fb)
 {
-    pinsPhoto photo,
+    pinsPhoto photo;
     iocBrickHdr hdr;
-    os_uchar *buf;
-    os_int buf_sz, w, h;
+    os_int alloc_sz, w, h;
 
     os_memclear(&photo, sizeof(pinsPhoto));
-    buf = fb->buf;
+    os_memclear(&hdr, sizeof(iocBrickHdr));
+    photo.hdr = &hdr;
+
     w = fb->width;
     h = fb->height;
-    buf_sz = w * h * c->ext->bytes_per_pix + sizeof(iocBrickHdr);
-    buf_sz = fb->len;
+
+    photo.iface = c->iface;
+    photo.camera = c;
+    photo.data = fb->buf;
+    photo.format = OSAL_RGB24;
+    photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
+    photo.data_sz = photo.byte_w * h;
+    photo.w = w;
+    photo.h = h;
 
 //    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
-    photo->iface = c->iface;
-    photo->camera = c;
-    photo->buf = buf;
-    photo->buf_sz = buf_sz;
-
-    hdr->alloc_sz[0] = (os_uchar)buf_sz;
-    hdr->alloc_sz[1] = (os_uchar)(buf_sz >> 8);
-    hdr->alloc_sz[2] = (os_uchar)(buf_sz >> 16);
-    hdr->alloc_sz[3] = (os_uchar)(buf_sz >> 24);
-    photo->hdr = hdr;
-
-    photo->data = buf + sizeof(iocBrickHdr);
-    photo->byte_w = c->ext->w * c->ext->bytes_per_pix;
-    photo->data_sz = photo->byte_w * (os_memsz)c->ext->h;
-    photo->w = w;
-    photo->h = h;
-    photo->format = hdr->format;
+    alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
+    hdr.alloc_sz[0] = (os_uchar)alloc_sz;
+    hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
+    hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
+    hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
 
     c->callback_func(&photo, c->callback_context);
 }
@@ -400,11 +395,10 @@ static void esp32_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsPhoto photo;
     pinsCamera *c;
     camera_fb_t *fb;
-    esp_err_t s;
     os_timer error_retry_timer = 0;
+    esp_err_t err;
     os_boolean initialized = OS_FALSE;
     c = (pinsCamera*)prm;
 
@@ -421,7 +415,7 @@ static void esp32_cam_task(
                     digitalWrite(CAM_PIN_PWDN, LOW);
                 }
 
-                esp_err_t err = esp_camera_init(&camera_config);
+                err = esp_camera_init(&camera_config);
                 if (err == ESP_OK) {
                     initialized = OS_TRUE;
                 }
@@ -430,7 +424,7 @@ static void esp32_cam_task(
                 }
             }
             else {
-                os_slee(300);
+                os_sleep(300);
             }
         }
         else
@@ -441,7 +435,7 @@ static void esp32_cam_task(
                 initialized = OS_FALSE;
             }
             else {
-                usb_cam_finalize_camera_photo(c, &photo, fb);
+                esp32_cam_finalize_camera_photo(c, fb);
                 esp_camera_fb_return(fb);
             }
         }
