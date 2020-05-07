@@ -210,10 +210,10 @@ static void esp32_cam_start(
     osalThreadOptParams opt;
     if (c->camera_thread) return;
     os_memclear(&opt, sizeof(opt));
-    opt.priority = OSAL_THREAD_PRIORITY_LOW;
+    opt.priority = OSAL_THREAD_PRIORITY_NORMAL;
     opt.thread_name = "espcam";
-    opt.pin_to_core = OS_TRUE;
-    opt.pin_to_core_nr = 0;
+    // opt.pin_to_core = OS_TRUE;
+    // opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
@@ -355,6 +355,8 @@ static void esp32_cam_finalize_camera_photo(
     photo.w = w;
     photo.h = h;
 
+    osal_debug_error_int("Here PHOTO", w)                ;
+
 //    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
@@ -363,7 +365,7 @@ static void esp32_cam_finalize_camera_photo(
     hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
     hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
 
-    c->callback_func(&photo, c->callback_context);
+    // c->callback_func(&photo, c->callback_context);
 }
 
 
@@ -397,7 +399,9 @@ static void esp32_cam_task(
     os_timer error_retry_timer = 0;
     esp_err_t err;
     os_boolean initialized = OS_FALSE;
+
     c = (pinsCamera*)prm;
+    osal_event_set(done);
 
     while (!c->stop_thread && osal_go())
     {
@@ -412,15 +416,11 @@ static void esp32_cam_task(
                     digitalWrite(CAM_PIN_PWDN, LOW);
                 }
 
-osal_debug_error("Here 1")                ;
-
                 err = esp_camera_init(&camera_config);
                 if (err != ESP_OK) {
                     osal_debug_error("ESP32 camera init failed");
                     goto goon;
                 }
-
-osal_debug_error("Here 2")                ;
 
                 sens = esp_camera_sensor_get();
                 //initial sensors are flipped vertically and colors are a bit saturated
@@ -432,7 +432,7 @@ osal_debug_error("Here 2")                ;
                 //drop down frame size for higher initial frame rate
                 sens->set_framesize(sens, FRAMESIZE_QVGA);
 
-                osal_debug_error("Here 3")                ;
+osal_debug_error("Here CAM INITIALIZED");
 
                 initialized = OS_TRUE;
             }
@@ -442,9 +442,9 @@ osal_debug_error("Here 2")                ;
         }
         else
         {
-osal_debug_error("Here 4")                ;
+os_sleep(10);
+goto goon;
             fb = esp_camera_fb_get();
-osal_debug_error("Here 5")                ;
             if (fb == OS_NULL) {
                 osal_debug_error("ESP32 camera capture failed");
                 initialized = OS_FALSE;

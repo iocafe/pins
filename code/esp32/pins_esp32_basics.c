@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 #define PINS_OS_INT_HANDLER_HDRS 1
-#include "pins.h"
+#include "pinsx.h"
 #include "code/esp32/pins_esp32_gpio.h"
 #include "code/esp32/pins_esp32_pwm.h"
 
