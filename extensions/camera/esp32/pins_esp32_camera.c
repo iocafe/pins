@@ -27,42 +27,6 @@
 #endif
 #include "extensions/camera/esp32/pins_esp32_camera_pins.h"
 
-
-#ifndef PINS_ESPCAM_MAX_CAMERAS
-#define PINS_ESPCAM_MAX_CAMERAS 1
-#endif
-
-// #define TCD1304_MAX_PIN_PRM 14
-
-#define PINS_ESPCAM_MAX_DATA_SZ (800 * 600 * 3)
-#define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
-
-typedef struct
-{
-    pinsCamera *c;
-/*     volatile os_short pos;
-    volatile os_short processed_pos;
-
-    os_uchar buf[PINS_ESPCAM_BUF_SZ];
-
-    volatile os_boolean start_new_frame;
-    volatile os_boolean frame_ready;
-
-*/
-    /* Pin parameters.
-     */
-/*     os_ushort sh_prm_count;
-    os_ushort sh_pin_prm[TCD1304_MAX_PIN_PRM];
-*/
-    /** Signal input and timing output pins.
-     */
-//    Pin stribe_pin, trig_pin;
-}
-staticCameraState;
-
-static staticCameraState cam_state[PINS_ESPCAM_MAX_CAMERAS];
-
-
 /* Alternate pin names to match either example code.
  */
 #define CAM_PIN_PWDN    PWDN_GPIO_NUM
@@ -85,12 +49,53 @@ static staticCameraState cam_state[PINS_ESPCAM_MAX_CAMERAS];
 #define CAM_PIN_HREF    HREF_GPIO_NUM
 #define CAM_PIN_PCLK    PCLK_GPIO_NUM
 
+static camera_config_t camera_config = {
+    .pin_pwdn  = CAM_PIN_PWDN,
+    .pin_reset = CAM_PIN_RESET,
+    .pin_xclk = CAM_PIN_XCLK,
+    .pin_sscb_sda = CAM_PIN_SIOD,
+    .pin_sscb_scl = CAM_PIN_SIOC,
+
+    .pin_d7 = CAM_PIN_D7,
+    .pin_d6 = CAM_PIN_D6,
+    .pin_d5 = CAM_PIN_D5,
+    .pin_d4 = CAM_PIN_D4,
+    .pin_d3 = CAM_PIN_D3,
+    .pin_d2 = CAM_PIN_D2,
+    .pin_d1 = CAM_PIN_D1,
+    .pin_d0 = CAM_PIN_D0,
+    .pin_vsync = CAM_PIN_VSYNC,
+    .pin_href = CAM_PIN_HREF,
+    .pin_pclk = CAM_PIN_PCLK,
+
+    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+
+    .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
+    .frame_size = FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+
+    .jpeg_quality = 12, //0-63 lower number means higher quality
+    .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
+};
+
+
+#ifndef PINS_ESPCAM_MAX_CAMERAS
+#define PINS_ESPCAM_MAX_CAMERAS 1
+#endif
+
+// #define esp32_cam_MAX_PIN_PRM 14
+
+#define PINS_ESPCAM_MAX_DATA_SZ (800 * 600 * 3)
+#define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
+
 
 /* Forward referred static functions.
  */
-static void esp32_cam_task(
-    void *prm,
-    osalEvent done);
+static void esp32_cam_task(void *prm, osalEvent done);
+static esp_err_t pins_espcam_init(void);
+static esp_err_t pins_espcam_capture(void);
 
 
 /**
@@ -99,8 +104,8 @@ static void esp32_cam_task(
   @brief Initialize global variables for cameras.
   @anchor esp32_cam_initialize
 
-  The esp32_cam_initialize() clear global variables for the camera(s). This is necessary to
-  when running in microcontroller which doesn't clear memory during soft reboot.
+  The esp32_cam_initialize() clear global variables for the camera(s). So far the function does
+  nothing for ESP32 camera.
 
   @return  None
 
@@ -109,8 +114,8 @@ static void esp32_cam_task(
 static void esp32_cam_initialize(
     void)
 {
-    os_memclear(cam_state, PINS_ESPCAM_MAX_CAMERAS * sizeof(staticCameraState));
 }
+
 
 /**
 ****************************************************************************************************
@@ -118,8 +123,8 @@ static void esp32_cam_initialize(
   @brief Get information about available cameras.
   @anchor esp32_enumerate_cameras
 
-  The esp32_enumerate_cameras() function returns number of cameras currently available
-  and optionally camera information.
+  The esp32_enumerate_cameras() function returns always 1 as number of cameras currently
+  available and in future optionally camera information.
 
   @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if
            only number of available cameras is needed. The enumerate_cameras function can
@@ -128,7 +133,7 @@ static void esp32_cam_initialize(
            If information structure is returned, it must be released by calling
            pins_release_camera_info() function.
 
-  @return  Number of available cameras
+  @return  Number of available cameras, we return always one.
 
 ****************************************************************************************************
 */
@@ -140,16 +145,14 @@ static os_int esp32_enumerate_cameras(
 }
 
 
-
 /**
 ****************************************************************************************************
 
   @brief Open the camera, set it up.
   @anchor esp32_cam_open
 
-  The esp32_cam_open() sets ip camera for use. It creates threads, events, etc, nedessary
-  for the camera. This function is called from  application trough camera interface
-  pins_esp32_camera_iface.open().
+  The esp32_cam_open() sets ip camera for use. This function is called from  application trough
+  camera interface pins_esp32_camera_iface.open().
 
   @param   c Pointer to camera structure.
   @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
@@ -160,45 +163,11 @@ static osalStatus esp32_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
-    staticCameraState *cs;
-    osalThreadOptParams opt;
-    os_int camera_nr;
-
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
-
-    c->integration_us = 2000;
     c->iface = &pins_esp32_camera_iface;
-
-    /* We could support two PINS_ESPCAM cameras later on, we should check which static camera
-       structure is free, etc. Now one only.
-     */
-    camera_nr = prm->camera_nr;
-    if (cam_state[camera_nr].c || (os_uint)camera_nr >= PINS_ESPCAM_MAX_CAMERAS)
-    {
-        osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
-        return OSAL_STATUS_FAILED;
-    }
-    cs = &cam_state[camera_nr];
-    os_memclear(cs, sizeof(staticCameraState));
-    cs->c = c;
-    c->camera_nr = camera_nr;
-
-    /* Create event to trigger the thread.
-     */
-    c->camera_event = osal_event_create();
-
-    /* Create thread that transfers camera frames.
-     */
-    os_memclear(&opt, sizeof(opt));
-    opt.priority = OSAL_THREAD_PRIORITY_TIME_CRITICAL;
-    opt.thread_name = "tcd1304";
-    opt.pin_to_core = OS_TRUE;
-    opt.pin_to_core_nr = 0;
-    c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
-
     return OSAL_SUCCESS;
 }
 
@@ -210,7 +179,7 @@ static osalStatus esp32_cam_open(
   @anchor esp32_cam_close
 
   The esp32_cam_close() stops the video and releases any resources reserved for the camera.
-  This function is called from  application trough camera interface pins_esp32_camera_iface.close().
+  This function is called from application trough camera interface pins_esp32_camera_iface.close().
 
   @param   c Pointer to camera structure.
   @return  None
@@ -220,20 +189,7 @@ static osalStatus esp32_cam_open(
 static void esp32_cam_close(
     pinsCamera *c)
 {
-    if (c->camera_thread)
-    {
-        c->stop_thread = OS_TRUE;
-        osal_event_set(c->camera_event);
-        osal_thread_join(c->camera_thread);
-        c->stop_thread = OS_FALSE;
-        c->camera_thread = OS_NULL;
-    }
-
-    if (c->camera_event)
-    {
-        osal_event_delete(c->camera_event);
-        c->camera_event = OS_NULL;
-    }
+    esp32_cam_stop(c);
 }
 
 
@@ -243,8 +199,10 @@ static void esp32_cam_close(
   @brief Start vido stream.
   @anchor esp32_cam_start
 
-  The esp32_cam_start() starts the video. This function is called from  application trough
+  The esp32_cam_start() starts the video. This function is called from application trough
   camera interface pins_esp32_camera_iface.start().
+
+  - Create thread that transfers camera frames.
 
   @param   c Pointer to camera structure.
   @return  None
@@ -254,14 +212,14 @@ static void esp32_cam_close(
 static void esp32_cam_start(
     pinsCamera *c)
 {
-    // staticCameraState *cs;
-
-    // cs = &cam_state[c->camera_nr];
-/*     cs->pos = 0;
-    cs->processed_pos = 0;
-    cs->start_new_frame = OS_FALSE;
-    cs->frame_ready = OS_FALSE;
-    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting); */
+    osalThreadOptParams opt;
+    if (c->camera_thread) return;
+    os_memclear(&opt, sizeof(opt));
+    opt.priority = OSAL_THREAD_PRIORITY_LOW;
+    opt.thread_name = "espcam";
+    opt.pin_to_core = OS_TRUE;
+    opt.pin_to_core_nr = 0;
+    c->camera_thread = osal_thread_create(usb_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
 
@@ -271,8 +229,10 @@ static void esp32_cam_start(
   @brief Stop vido stream.
   @anchor esp32_cam_stop
 
-  The esp32_cam_stop() stops the video. This function is called from  application trough
+  The esp32_cam_stop() stops the video. This function is called from application trough
   camera interface pins_esp32_camera_iface.stop().
+
+  - Stops thread that transfers camera frames.
 
   @param   c Pointer to camera structure.
   @return  None
@@ -282,6 +242,12 @@ static void esp32_cam_start(
 static void esp32_cam_stop(
     pinsCamera *c)
 {
+    if (c->camera_thread == OS_NULL) return;
+
+    c->stop_thread = OS_TRUE;
+    osal_thread_join(c->camera_thread);
+    c->stop_thread = OS_FALSE;
+    c->camera_thread = OS_NULL;
 }
 
 
@@ -359,9 +325,9 @@ static os_long esp32_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor tcd1304_finalize_camera_photo
+  @anchor esp32_cam_finalize_camera_photo
 
-  The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The esp32_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   @param   c Pointer to camera structure.
@@ -370,39 +336,49 @@ static os_long esp32_cam_get_parameter(
 
 ****************************************************************************************************
 */
-#if 0
-static void tcd1304_finalize_camera_photo(
+static void esp32_cam_finalize_camera_photo(
     pinsCamera *c,
-    pinsPhoto *photo)
+    camera_fb_t *fb)
 {
-    iocBrickHdr *hdr;
+    pinsPhoto photo,
+    iocBrickHdr hdr;
     os_uchar *buf;
+    os_int buf_sz, w, h;
 
-    os_memclear(photo, sizeof(pinsPhoto));
-buf = OS_NULL;
-    // buf = cam_state[c->camera_nr].buf;
-    // os_memclear(buf, sizeof(iocBrickHdr));
+    os_memclear(&photo, sizeof(pinsPhoto));
+    buf = fb->buf;
+    w = fb->width;
+    h = fb->height;
+    buf_sz = w * h * c->ext->bytes_per_pix + sizeof(iocBrickHdr);
+    buf_sz = fb->len;
+
+//    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
     photo->iface = c->iface;
     photo->camera = c;
     photo->buf = buf;
-    photo->buf_sz = PINS_ESPCAM_BUF_SZ;
-    hdr = (iocBrickHdr*)buf;
-    hdr->format = IOC_BYTE_BRICK;
-    hdr->width[0] = (os_uchar)PINS_ESPCAM_MAX_DATA_SZ;
-    hdr->width[1] = (os_uchar)(PINS_ESPCAM_MAX_DATA_SZ >> 8);
-    hdr->height[0] = 1;
-    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)PINS_ESPCAM_BUF_SZ;
-    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(PINS_ESPCAM_BUF_SZ >> 8);
+    photo->buf_sz = buf_sz;
+
+    hdr->format = IOC_RGB24_BRICK;
+    hdr->width[0] = (os_uchar)w;
+    hdr->width[1] = (os_uchar)(w >> 8);
+    hdr->height[0] = (os_uchar)h;
+    hdr->height[1] = (os_uchar)(h >> 8);
+    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)buf_sz;
+    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(buf_sz >> 8);
+    hdr->buf_sz[2] = hdr->alloc_sz[2] = (os_uchar)(buf_sz >> 16);
+    hdr->buf_sz[3] = hdr->alloc_sz[3] = (os_uchar)(buf_sz >> 24);
+    photo->hdr = hdr;
 
     photo->data = buf + sizeof(iocBrickHdr);
-    photo->data_sz = PINS_ESPCAM_MAX_DATA_SZ;
-    photo->byte_w = PINS_ESPCAM_MAX_DATA_SZ;
-    photo->w = PINS_ESPCAM_MAX_DATA_SZ;
-    photo->h = 1;
+    photo->byte_w = c->ext->w * c->ext->bytes_per_pix;
+    photo->data_sz = photo->byte_w * (os_memsz)c->ext->h;
+    photo->w = w;
+    photo->h = h;
     photo->format = hdr->format;
+
+    c->callback_func(&photo, c->callback_context);
 }
-#endif
 
 
 /**
@@ -411,7 +387,13 @@ buf = OS_NULL;
   @brief Thread to process camera data.
   @anchor esp32_cam_task
 
-  The esp32_cam_task() is high priority thread to process data from camera.
+  The usb_cam_task() thread to process data from camera.
+
+
+  ESP32 camera API functions
+  - esp_camera_init: Initialize camera.
+  - esp_camera_fb_get: Grab a frame.
+  - esp_camera_fb_return: Returns the frame buffer back to the driver for reuse.
 
   @param   prm Pointer to pinsCamera structure.
   @param   done Even to be set to allow thread which created this one to proceed.
@@ -423,36 +405,53 @@ static void esp32_cam_task(
     void *prm,
     osalEvent done)
 {
-    // pinsPhoto photo;
-    //  staticCameraState *cs;
+    pinsPhoto photo;
     pinsCamera *c;
-
+    camera_fb_t *fb;
+    esp_err_t s;
+    os_timer error_retry_timer = 0;
+    os_boolean initialized = OS_FALSE;
     c = (pinsCamera*)prm;
-    // cs = &cam_state[c->camera_nr];
-
-    osal_event_set(done);
 
     while (!c->stop_thread && osal_go())
     {
-        if (osal_event_wait(c->camera_event, 2017) != OSAL_STATUS_TIMEOUT)
+        if (!initialized)
         {
-            /*    if (pos > PINS_ESPCAM_MAX_DATA_SZ + 30) // + 30 SLACK
-                {
-                    tcd1304_finalize_camera_photo(c, &photo);
-                    c->callback_func(&photo, c->callback_context);
+            if (os_has_elapsed(&error_retry_timer, 1200))
+            {
+                os_get_timer(&error_retry_timer);
 
-                    cs->frame_ready = OS_TRUE;
-                    cs->processed_pos = 0;
-                    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
+                if (CAM_PIN_PWDN != -1) {
+                    pinMode(CAM_PIN_PWDN, OUTPUT);
+                    digitalWrite(CAM_PIN_PWDN, LOW);
+                }
 
+                esp_err_t err = esp_camera_init(&camera_config);
+                if (err == ESP_OK) {
+                    initialized = OS_TRUE;
+                }
+                else {
+                    osal_debug_error("ESP32 camera init failed");
                 }
             }
-            */
+            else {
+                os_slee(300);
+            }
+        }
+        else
+        {
+            fb = esp_camera_fb_get();
+            if (fb == OS_NULL) {
+                osal_debug_error("ESP32 camera capture failed");
+                initialized = OS_FALSE;
+            }
+            else {
+                usb_cam_finalize_camera_photo(c, &photo, fb);
+                esp_camera_fb_return(fb);
+            }
         }
     }
 }
-
-
 
 
 /* Camera interface (structure with function pointers, polymorphism)
@@ -468,240 +467,5 @@ const pinsCameraInterface pins_esp32_camera_iface
     esp32_cam_set_parameter,
     esp32_cam_get_parameter
 };
-
-#ifdef ESP_PLATFORM
-static camera_config_t camera_config = {
-    .pin_pwdn  = CAM_PIN_PWDN,
-    .pin_reset = CAM_PIN_RESET,
-    .pin_xclk = CAM_PIN_XCLK,
-    .pin_sscb_sda = CAM_PIN_SIOD,
-    .pin_sscb_scl = CAM_PIN_SIOC,
-
-    .pin_d7 = CAM_PIN_D7,
-    .pin_d6 = CAM_PIN_D6,
-    .pin_d5 = CAM_PIN_D5,
-    .pin_d4 = CAM_PIN_D4,
-    .pin_d3 = CAM_PIN_D3,
-    .pin_d2 = CAM_PIN_D2,
-    .pin_d1 = CAM_PIN_D1,
-    .pin_d0 = CAM_PIN_D0,
-    .pin_vsync = CAM_PIN_VSYNC,
-    .pin_href = CAM_PIN_HREF,
-    .pin_pclk = CAM_PIN_PCLK,
-
-    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
-    .xclk_freq_hz = 20000000,
-    .ledc_timer = LEDC_TIMER_0,
-    .ledc_channel = LEDC_CHANNEL_0,
-
-    .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
-
-    .jpeg_quality = 12, //0-63 lower number means higher quality
-    .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
-};
-
-esp_err_t pins_espcam_init(){
-    //power up the camera if PWDN pin is defined
-    if(CAM_PIN_PWDN != -1){
-        pinMode(CAM_PIN_PWDN, OUTPUT);
-        digitalWrite(CAM_PIN_PWDN, LOW);
-    }
-
-    //initialize the camera
-    esp_err_t err = esp_camera_init(&camera_config);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Camera Init Failed");
-        return err;
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t pins_espcam_capture(){
-    //acquire a frame
-    camera_fb_t * fb = esp_camera_fb_get();
-    if (!fb) {
-        ESP_LOGE(TAG, "Camera Capture Failed");
-        return ESP_FAIL;
-    }
-    //replace this with your own function
-    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
-
-    //return the frame buffer back to the driver for reuse
-    esp_camera_fb_return(fb);
-    return ESP_OK;
-}
-#endif
-
-#if 0
-JPEG HTTP Capture
-#include "esp_camera.h"
-#include "esp_http_server.h"
-#include "esp_timer.h"
-
-typedef struct {
-        httpd_req_t *req;
-        size_t len;
-} jpg_chunking_t;
-
-static size_t jpg_encode_stream(void * arg, size_t index, const void* data, size_t len){
-    jpg_chunking_t *j = (jpg_chunking_t *)arg;
-    if(!index){
-        j->len = 0;
-    }
-    if(httpd_resp_send_chunk(j->req, (const char *)data, len) != ESP_OK){
-        return 0;
-    }
-    j->len += len;
-    return len;
-}
-
-esp_err_t jpg_httpd_handler(httpd_req_t *req){
-    camera_fb_t * fb = NULL;
-    esp_err_t res = ESP_OK;
-    size_t fb_len = 0;
-    int64_t fr_start = esp_timer_get_time();
-
-    fb = esp_camera_fb_get();
-    if (!fb) {
-        ESP_LOGE(TAG, "Camera capture failed");
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-    res = httpd_resp_set_type(req, "image/jpeg");
-    if(res == ESP_OK){
-        res = httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=capture.jpg");
-    }
-
-    if(res == ESP_OK){
-        if(fb->format == PIXFORMAT_JPEG){
-            fb_len = fb->len;
-            res = httpd_resp_send(req, (const char *)fb->buf, fb->len);
-        } else {
-            jpg_chunking_t jchunk = {req, 0};
-            res = frame2jpg_cb(fb, 80, jpg_encode_stream, &jchunk)?ESP_OK:ESP_FAIL;
-            httpd_resp_send_chunk(req, NULL, 0);
-            fb_len = jchunk.len;
-        }
-    }
-    esp_camera_fb_return(fb);
-    int64_t fr_end = esp_timer_get_time();
-    ESP_LOGI(TAG, "JPG: %uKB %ums", (uint32_t)(fb_len/1024), (uint32_t)((fr_end - fr_start)/1000));
-    return res;
-}
-JPEG HTTP Stream
-#include "esp_camera.h"
-#include "esp_http_server.h"
-#include "esp_timer.h"
-
-#define PART_BOUNDARY "123456789000000000000987654321"
-static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
-static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
-static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
-
-esp_err_t jpg_stream_httpd_handler(httpd_req_t *req){
-    camera_fb_t * fb = NULL;
-    esp_err_t res = ESP_OK;
-    size_t _jpg_buf_len;
-    uint8_t * _jpg_buf;
-    char * part_buf[64];
-    static int64_t last_frame = 0;
-    if(!last_frame) {
-        last_frame = esp_timer_get_time();
-    }
-
-    res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE);
-    if(res != ESP_OK){
-        return res;
-    }
-
-    while(true){
-        fb = esp_camera_fb_get();
-        if (!fb) {
-            ESP_LOGE(TAG, "Camera capture failed");
-            res = ESP_FAIL;
-            break;
-        }
-        if(fb->format != PIXFORMAT_JPEG){
-            bool jpeg_converted = frame2jpg(fb, 80, &_jpg_buf, &_jpg_buf_len);
-            if(!jpeg_converted){
-                ESP_LOGE(TAG, "JPEG compression failed");
-                esp_camera_fb_return(fb);
-                res = ESP_FAIL;
-            }
-        } else {
-            _jpg_buf_len = fb->len;
-            _jpg_buf = fb->buf;
-        }
-
-        if(res == ESP_OK){
-            res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
-        }
-        if(res == ESP_OK){
-            size_t hlen = snprintf((char *)part_buf, 64, _STREAM_PART, _jpg_buf_len);
-
-            res = httpd_resp_send_chunk(req, (const char *)part_buf, hlen);
-        }
-        if(res == ESP_OK){
-            res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
-        }
-        if(fb->format != PIXFORMAT_JPEG){
-            free(_jpg_buf);
-        }
-        esp_camera_fb_return(fb);
-        if(res != ESP_OK){
-            break;
-        }
-        int64_t fr_end = esp_timer_get_time();
-        int64_t frame_time = fr_end - last_frame;
-        last_frame = fr_end;
-        frame_time /= 1000;
-        ESP_LOGI(TAG, "MJPG: %uKB %ums (%.1ffps)",
-            (uint32_t)(_jpg_buf_len/1024),
-            (uint32_t)frame_time, 1000.0 / (uint32_t)frame_time);
-    }
-
-    last_frame = 0;
-    return res;
-}
-BMP HTTP Capture
-#include "esp_camera.h"
-#include "esp_http_server.h"
-#include "esp_timer.h"
-
-esp_err_t bmp_httpd_handler(httpd_req_t *req){
-    camera_fb_t * fb = NULL;
-    esp_err_t res = ESP_OK;
-    int64_t fr_start = esp_timer_get_time();
-
-    fb = esp_camera_fb_get();
-    if (!fb) {
-        ESP_LOGE(TAG, "Camera capture failed");
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-
-    uint8_t * buf = NULL;
-    size_t buf_len = 0;
-    bool converted = frame2bmp(fb, &buf, &buf_len);
-    esp_camera_fb_return(fb);
-    if(!converted){
-        ESP_LOGE(TAG, "BMP conversion failed");
-        httpd_resp_send_500(req);
-        return ESP_FAIL;
-    }
-
-    res = httpd_resp_set_type(req, "image/x-windows-bmp")
-       || httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=capture.bmp")
-       || httpd_resp_send(req, (const char *)buf, buf_len);
-    free(buf);
-    int64_t fr_end = esp_timer_get_time();
-    ESP_LOGI(TAG, "BMP: %uKB %ums", (uint32_t)(buf_len/1024), (uint32_t)((fr_end - fr_start)/1000));
-    return res;
-}
-
-#endif
-
 
 #endif

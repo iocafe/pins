@@ -102,9 +102,8 @@ static os_int usb_cam_enumerate_cameras(
   @brief Open the camera, set it up.
   @anchor usb_cam_open
 
-  The usb_cam_open() sets ip camera for use. It creates threads, events, etc, nedessary
-  for the camera. This function is called from  application trough camera interface
-  pins_usb_camera_iface.open().
+  The usb_cam_open() sets ip camera for use. This function is called from application trough 
+  camera interface pins_usb_camera_iface.open().
 
   @param   c Pointer to camera structure.
   @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
@@ -148,7 +147,7 @@ static osalStatus usb_cam_open(
   @anchor usb_cam_close
 
   The usb_cam_close() stops the video and releases any resources reserved for the camera.
-  This function is called from  application trough camera interface pins_usb_camera_iface.close().
+  This function is called from application trough camera interface pins_usb_camera_iface.close().
 
   @param   c Pointer to camera structure.
   @return  None
@@ -178,7 +177,7 @@ static void usb_cam_close(
   @brief Start vido stream.
   @anchor usb_cam_start
 
-  The usb_cam_start() starts the video. This function is called from  application trough
+  The usb_cam_start() starts the video. This function is called from application trough
   camera interface pins_usb_camera_iface.start().
 
   @param   c Pointer to camera structure.
@@ -209,7 +208,7 @@ static void usb_cam_start(
   @brief Stop vido stream.
   @anchor usb_cam_stop
 
-  The usb_cam_stop() stops the video. This function is called from  application trough
+  The usb_cam_stop() stops the video. This function is called from application trough
   camera interface pins_usb_camera_iface.stop().
 
   @param   c Pointer to camera structure.
@@ -455,6 +454,7 @@ static void usb_cam_task(
                  usb_cam_finalize_camera_photo(c, &photo);
                  c->callback_func(&photo, c->callback_context);
              }
+            os_timeslice();
                    
             /* if(c == 49) 
             {

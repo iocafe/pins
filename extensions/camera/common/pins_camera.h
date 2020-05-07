@@ -14,6 +14,8 @@
 ****************************************************************************************************
 */
 
+struct iocBrickHdr;
+
 /* Camera types supported by pins libeary
  */
 #define PINS_NO_CAMERA 0
@@ -60,11 +62,9 @@ typedef struct pinsPhoto
      */
     struct pinsCamera *camera;
 
-    /** Image buffer and buffer size in bytes. Image buffer starts with
-        flat iocBrickHdr followed by photo pixel data.
+    /** Header structure, used to pass information for.
      */
-    os_uchar *buf;
-    os_memsz buf_sz;
+    struct iocBrickHdr *hdr;
 
     /** Image pixel data.
      */
