@@ -397,6 +397,7 @@ static void esp32_cam_task(
 {
     pinsCamera *c;
     camera_fb_t *fb;
+    sensor_t *sens;
     os_timer error_retry_timer = 0;
     esp_err_t err;
     os_boolean initialized = OS_FALSE;
@@ -416,12 +417,24 @@ static void esp32_cam_task(
                 }
 
                 err = esp_camera_init(&camera_config);
-                if (err == ESP_OK) {
-                    initialized = OS_TRUE;
+                if (err != ESP_OK) {
                 }
                 else {
                     osal_debug_error("ESP32 camera init failed");
+                    goto goon;
                 }
+
+                sens = esp_camera_sensor_get();
+                //initial sensors are flipped vertically and colors are a bit saturated
+                /* if (s->id.PID == OV3660_PID) {
+                  s->set_vflip(s, 1);//flip it back
+                  s->set_brightness(s, 1);//up the blightness just a bit
+                  s->set_saturation(s, -2);//lower the saturation
+                } */
+                //drop down frame size for higher initial frame rate
+                sens->set_framesize(sens, FRAMESIZE_QVGA);
+
+                initialized = OS_TRUE;
             }
             else {
                 os_sleep(300);
@@ -439,6 +452,7 @@ static void esp32_cam_task(
                 esp_camera_fb_return(fb);
             }
         }
+goon:;
     }
 }
 
