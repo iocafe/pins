@@ -42,7 +42,7 @@ void pins_store_photo_as_brick(
 
    /* If we have not allocated brick buffer, do it
      */
-    bytes = photo->buf_sz;
+    bytes = photo->data_sz + sizeof(iocBrickHdr);
     if (bytes > b->buf_alloc_sz)
     {
         if (bytes < 1024) bytes = 1024;
@@ -56,7 +56,7 @@ void pins_store_photo_as_brick(
     /* Compress brick data, set timestamp and calculate checksum Set current position to zero
      */
     bytes = ioc_compress_brick(b->buf, b->buf_sz,
-        photo->buf, photo->format, photo->w, photo->h, compression);
+        photo->hdr, photo->data, photo->format, photo->w, photo->h, compression);
     ioc_set_brick_timestamp(b->buf);
     ioc_set_brick_checksum(b->buf, bytes);
 

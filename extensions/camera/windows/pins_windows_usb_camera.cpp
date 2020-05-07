@@ -18,8 +18,8 @@
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
- #define PINS_ESPCAM_MAX_DATA_SZ (3000 * 2000 * 3)
- #define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
+ #define PINS_USBCAM_MAX_DATA_SZ (3000 * 2000 * 3)
+ #define PINS_USBCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_USBCAM_MAX_DATA_SZ)
 
 
 /* Wrapper specific extensions to PinsCamera structure
@@ -120,11 +120,9 @@ static osalStatus usb_cam_open(
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
-
-    c->integration_us = 2000;
     c->iface = &pins_usb_camera_iface;
 
-    /* We could support two PINS_ESPCAM cameras later on, we should check which static camera
+    /* We could support two PINS_USBCAM cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
     camera_nr = prm->camera_nr;
@@ -286,7 +284,7 @@ static os_long usb_cam_get_parameter(
     switch (ix)
     {
         case PINS_CAM_MAX_BUF_SZ:
-            x = PINS_ESPCAM_BUF_SZ;
+            x = PINS_USBCAM_BUF_SZ;
             break;
 
         default:
@@ -314,40 +312,38 @@ static os_long usb_cam_get_parameter(
 ****************************************************************************************************
 */
 static void usb_cam_finalize_camera_photo(
-    pinsCamera *c,
-    pinsPhoto *photo)
+    pinsCamera *c)
 {
-    iocBrickHdr *hdr;
+    pinsPhoto photo;
+    iocBrickHdr hdr;
     os_uchar *buf;
-    os_int buf_sz, w, h;
+    os_int alloc_sz, w, h;
 
-    os_memclear(photo, sizeof(pinsPhoto));
+    os_memclear(&photo, sizeof(pinsPhoto));
+    os_memclear(&hdr, sizeof(iocBrickHdr));
+    photo.hdr = &hdr;
+
     buf = c->ext->buf;
     w = c->ext->w;
     h = c->ext->h;
-    buf_sz = w * h * c->ext->bytes_per_pix + sizeof(iocBrickHdr);
 
-    photo->iface = c->iface;
-    photo->camera = c;
-    photo->buf = buf;
-    photo->buf_sz = buf_sz;
-    hdr = (iocBrickHdr*)buf;
-    hdr->format = IOC_RGB24_BRICK;
-    hdr->width[0] = (os_uchar)w;
-    hdr->width[1] = (os_uchar)(w >> 8);
-    hdr->height[0] = (os_uchar)h;
-    hdr->height[1] = (os_uchar)(h >> 8);
-    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)buf_sz;
-    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(buf_sz >> 8);
-    hdr->buf_sz[2] = hdr->alloc_sz[2] = (os_uchar)(buf_sz >> 16);
-    hdr->buf_sz[3] = hdr->alloc_sz[3] = (os_uchar)(buf_sz >> 24);
+    photo.iface = c->iface;
+    photo.camera = c;
+    photo.data = buf;
+    photo.byte_w = w * c->ext->bytes_per_pix;
+    photo.data_sz = photo.byte_w * h;
 
-    photo->data = buf + sizeof(iocBrickHdr);
-    photo->byte_w = c->ext->w * c->ext->bytes_per_pix;
-    photo->data_sz = photo->byte_w * (os_memsz)c->ext->h;
-    photo->w = w;
-    photo->h = h;
-    photo->format = hdr->format;
+    alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
+    hdr.alloc_sz[0] = (os_uchar)alloc_sz;
+    hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
+    hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
+    hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
+
+    photo.w = w;
+    photo.h = h;
+    photo.format = OSAL_RGB24;
+
+    c->callback_func(&photo, c->callback_context);
 }
 
 static void usb_cam_stop_event(int deviceID, void *userData)
@@ -376,7 +372,7 @@ static osalStatus usb_cam_allocate_buffer(
 {
     os_int sz;
     
-    sz = c->ext->w * c->ext->h * c->ext->bytes_per_pix + sizeof(iocBrickHdr);
+    sz = c->ext->w * c->ext->h * c->ext->bytes_per_pix;
     if (sz > c->ext->alloc_sz)
     {
         if (c->ext->buf) {
@@ -411,7 +407,6 @@ static void usb_cam_task(
     void *prm,
     osalEvent done)
 {
-    pinsPhoto photo;
     pinsCamera *c;
     os_int camera_nr, nro_cameras;
 
@@ -450,9 +445,8 @@ static void usb_cam_task(
                      goto getout;
                  }
 
-                 VI->getPixels(camera_nr, c->ext->buf + sizeof(iocBrickHdr));
-                 usb_cam_finalize_camera_photo(c, &photo);
-                 c->callback_func(&photo, c->callback_context);
+                 VI->getPixels(camera_nr, c->ext->buf);
+                 usb_cam_finalize_camera_photo(c);
              }
             os_timeslice();
                    

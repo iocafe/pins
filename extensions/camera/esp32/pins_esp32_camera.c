@@ -359,15 +359,10 @@ static void esp32_cam_finalize_camera_photo(
     photo->buf = buf;
     photo->buf_sz = buf_sz;
 
-    hdr->format = IOC_RGB24_BRICK;
-    hdr->width[0] = (os_uchar)w;
-    hdr->width[1] = (os_uchar)(w >> 8);
-    hdr->height[0] = (os_uchar)h;
-    hdr->height[1] = (os_uchar)(h >> 8);
-    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)buf_sz;
-    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(buf_sz >> 8);
-    hdr->buf_sz[2] = hdr->alloc_sz[2] = (os_uchar)(buf_sz >> 16);
-    hdr->buf_sz[3] = hdr->alloc_sz[3] = (os_uchar)(buf_sz >> 24);
+    hdr->alloc_sz[0] = (os_uchar)buf_sz;
+    hdr->alloc_sz[1] = (os_uchar)(buf_sz >> 8);
+    hdr->alloc_sz[2] = (os_uchar)(buf_sz >> 16);
+    hdr->alloc_sz[3] = (os_uchar)(buf_sz >> 24);
     photo->hdr = hdr;
 
     photo->data = buf + sizeof(iocBrickHdr);

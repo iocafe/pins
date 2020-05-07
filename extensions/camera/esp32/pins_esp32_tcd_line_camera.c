@@ -378,12 +378,8 @@ static void tcd1304_finalize_camera_photo(
     photo->buf = buf;
     photo->buf_sz = PINS_TCD1304_BUF_SZ;
     hdr = (iocBrickHdr*)buf;
-    hdr->format = IOC_RGB24_BRICK;
-    hdr->width[0] = (os_uchar)TDC1304_DATA_SZ;
-    hdr->width[1] = (os_uchar)(TDC1304_DATA_SZ >> 8);
-    hdr->height[0] = 1;
-    hdr->buf_sz[0] = hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
-    hdr->buf_sz[1] = hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
+    hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
+    hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
 
     photo->data = buf + sizeof(iocBrickHdr);
     photo->data_sz = TDC1304_DATA_SZ;
