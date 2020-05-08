@@ -77,8 +77,6 @@ void pins_store_photo_as_brick(
 
 ****************************************************************************************************
 */
-/*
- */
 void pins_release_camera_info(
     pinsCameraInfo *camera_info)
 {

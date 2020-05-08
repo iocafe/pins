@@ -373,8 +373,6 @@ static void esp32_cam_finalize_camera_photo(
             photo.compression = IOC_UNCOMPRESSED_BRICK;
             break;
     }
-photo.format = OSAL_RGB24;
-photo.compression = IOC_NORMAL_JPEG;
     hdr.compression = (os_uchar)photo.compression;
 
     photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
@@ -455,8 +453,6 @@ static void esp32_cam_task(
                 //drop down frame size for higher initial frame rate
 //                sens->set_framesize(sens, FRAMESIZE_QVGA);
 
-osal_debug_error("Here CAM INITIALIZED");
-
                 initialized = OS_TRUE;
             }
             else {
@@ -466,7 +462,6 @@ osal_debug_error("Here CAM INITIALIZED");
         else
         {
             os_sleep(20);
-// goto goon;
             fb = esp_camera_fb_get();
             if (fb == OS_NULL) {
                 osal_debug_error("ESP32 camera capture failed");
