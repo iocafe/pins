@@ -64,7 +64,7 @@ static camera_config_t camera_config = {
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
 
-    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+     //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
     .xclk_freq_hz = 10000000, // 20000000,
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
@@ -357,29 +357,29 @@ static void esp32_cam_finalize_camera_photo(
 
     switch (fb->format)
     {
-    default:
+        default:
         case PIXFORMAT_JPEG:
-            photo.compression = IOC_NORMAL_JPEG;
-            hdr.compression = photo.compression;
             photo.format = OSAL_RGB24;
+            photo.compression = IOC_NORMAL_JPEG;
             break;
 
         case PIXFORMAT_GRAYSCALE:
             photo.format = OSAL_GRAYSCALE8;
+            photo.compression = IOC_UNCOMPRESSED_BRICK;
             break;
 
         case PIXFORMAT_RGB888:
             photo.format = OSAL_RGB24;
+            photo.compression = IOC_UNCOMPRESSED_BRICK;
             break;
     }
+photo.format = OSAL_RGB24;
+photo.compression = IOC_NORMAL_JPEG;
+    hdr.compression = (os_uchar)photo.compression;
 
     photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
     photo.w = w;
     photo.h = h;
-
-// osal_debug_error_int("Here PHOTO len=", fb->len);
-
-//    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
     alloc_sz = (os_int)(photo.byte_w * h + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
