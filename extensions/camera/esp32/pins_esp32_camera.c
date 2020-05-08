@@ -354,9 +354,6 @@ static void esp32_cam_finalize_camera_photo(
     photo.camera = c;
     photo.data = fb->buf;
     photo.data_sz = fb->len;
-    photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
-    photo.w = w;
-    photo.h = h;
 
     switch (fb->format)
     {
@@ -376,11 +373,15 @@ static void esp32_cam_finalize_camera_photo(
             break;
     }
 
+    photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
+    photo.w = w;
+    photo.h = h;
+
 // osal_debug_error_int("Here PHOTO len=", fb->len);
 
 //    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
-    alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
+    alloc_sz = (os_int)(photo.byte_w * h + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
     hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
     hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);

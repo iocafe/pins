@@ -71,11 +71,11 @@ static void usb_cam_initialize(
   @anchor usb_cam_enumerate_cameras
 
   The usb_cam_enumerate_cameras() function returns number of cameras currently available
-  and optionally camera information. 
+  and optionally camera information.
 
-  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if 
-           only number of available cameras is needed. The enumerate_cameras function can 
-           also set the camera_info pointer to OS_NULL if it doesn't provide any camera 
+  @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if
+           only number of available cameras is needed. The enumerate_cameras function can
+           also set the camera_info pointer to OS_NULL if it doesn't provide any camera
            information.
            If information structure is returned, it must be released by calling
            pins_release_camera_info() function.
@@ -89,7 +89,7 @@ static os_int usb_cam_enumerate_cameras(
 {
     os_int nro_cameras;
     videoInput *VI = &videoInput::getInstance();
-        
+
     if (camera_info) *camera_info = OS_NULL;
     nro_cameras = VI->listDevices();
     return nro_cameras;
@@ -102,7 +102,7 @@ static os_int usb_cam_enumerate_cameras(
   @brief Open the camera, set it up.
   @anchor usb_cam_open
 
-  The usb_cam_open() sets ip camera for use. This function is called from application trough 
+  The usb_cam_open() sets ip camera for use. This function is called from application trough
   camera interface pins_usb_camera_iface.open().
 
   @param   c Pointer to camera structure.
@@ -329,6 +329,7 @@ static void usb_cam_finalize_camera_photo(
     photo.camera = c;
     photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
+    photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * h;
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
@@ -339,7 +340,6 @@ static void usb_cam_finalize_camera_photo(
 
     photo.w = w;
     photo.h = h;
-    photo.format = OSAL_RGB24;
 
     c->callback_func(&photo, c->callback_context);
 }
@@ -347,7 +347,7 @@ static void usb_cam_finalize_camera_photo(
 static void usb_cam_stop_event(int deviceID, void *userData)
 {
     videoInput *VI = &videoInput::getInstance();
- 
+
     VI->closeDevice(deviceID);
 }
 
@@ -369,7 +369,7 @@ static osalStatus usb_cam_allocate_buffer(
     pinsCamera *c)
 {
     os_int sz;
-    
+
     sz = c->ext->w * c->ext->h * c->ext->bytes_per_pix;
     if (sz > c->ext->alloc_sz)
     {
@@ -413,7 +413,7 @@ static void usb_cam_task(
 
     camera_nr = c->camera_nr;
     videoInput *VI = &videoInput::getInstance();
- 
+
     while (!c->stop_thread && osal_go())
     {
         nro_cameras = VI->listDevices();
@@ -447,21 +447,21 @@ static void usb_cam_task(
                  usb_cam_finalize_camera_photo(c);
              }
             os_timeslice();
-                   
-            /* if(c == 49) 
+
+            /* if(c == 49)
             {
-                CamParametrs CP = VI->getParametrs(i-1);                        
-                CP.Brightness.CurrentValue = 128; 
-                CP.Brightness.Flag = 1; 
+                CamParametrs CP = VI->getParametrs(i-1);
+                CP.Brightness.CurrentValue = 128;
+                CP.Brightness.Flag = 1;
                 VI->setParametrs(i - 1, CP);
             }
- 
+
             if(!VI->isDeviceSetup(i - 1))
             {
                 break;
             } */
         }
- 
+
         VI->closeDevice(camera_nr);
 
 tryagain:
