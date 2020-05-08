@@ -70,10 +70,10 @@ static camera_config_t camera_config = {
     .ledc_channel = LEDC_CHANNEL_0,
 
     .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+    .frame_size = FRAMESIZE_QVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
 
     .jpeg_quality = 12, //0-63 lower number means higher quality
-    .fb_count = 2 //if more than one, i2s runs in continuous mode. Use only with JPEG
+    .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
 };
 
 
@@ -83,7 +83,7 @@ static camera_config_t camera_config = {
 
 // #define esp32_cam_MAX_PIN_PRM 14
 
-#define PINS_ESPCAM_MAX_DATA_SZ (800 * 600 * 3)
+#define PINS_ESPCAM_MAX_DATA_SZ (640 * 480 * 3)
 #define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
 
 
@@ -209,7 +209,6 @@ static void esp32_cam_start(
 {
     osalThreadOptParams opt;
     if (c->camera_thread) return;
-return ; //  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxjksdjhasd jkjasdkhsdijk HJKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
     os_memclear(&opt, sizeof(opt));
     opt.priority = OSAL_THREAD_PRIORITY_NORMAL;
     opt.thread_name = "espcam";
@@ -445,7 +444,7 @@ static void esp32_cam_task(
                     goto goon;
                 }
 
-                sens = esp_camera_sensor_get();
+//                sens = esp_camera_sensor_get();
                 //initial sensors are flipped vertically and colors are a bit saturated
                 /* if (s->id.PID == OV3660_PID) {
                   s->set_vflip(s, 1);//flip it back
@@ -453,7 +452,7 @@ static void esp32_cam_task(
                   s->set_saturation(s, -2);//lower the saturation
                 } */
                 //drop down frame size for higher initial frame rate
-                sens->set_framesize(sens, FRAMESIZE_QVGA);
+//                sens->set_framesize(sens, FRAMESIZE_QVGA);
 
 osal_debug_error("Here CAM INITIALIZED");
 
@@ -466,7 +465,7 @@ osal_debug_error("Here CAM INITIALIZED");
         else
         {
             os_sleep(20);
-goto goon;
+// goto goon;
             fb = esp_camera_fb_get();
             if (fb == OS_NULL) {
                 osal_debug_error("ESP32 camera capture failed");
