@@ -91,9 +91,11 @@ typedef struct pinsPhoto
      */
     os_int w, h;
 
-    /** Image format
+    /** Image format and compression. See enumerations osalBitmapFormat
+        and iocBrickCompression. Compression 0 is also uncompressed.
      */
     os_uchar format;
+    os_uchar compression;
 }
 pinsPhoto;
 

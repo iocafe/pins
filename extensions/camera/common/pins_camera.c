@@ -22,7 +22,7 @@
    @brief Store a photo as a "brick" within brick buffer for communication.
    @anchor pins_store_photo_as_brick
 
-   The pins_store_photo_as_brick() function... 
+   The pins_store_photo_as_brick() function...
 
    @param photo Pointer to photo to store. The photo is not modified by this function.
    @param b Pointer to brick buffer into which to store the photo as "brick".
@@ -43,9 +43,9 @@ void pins_store_photo_as_brick(
    /* If we have not allocated brick buffer, do it
      */
     bytes = photo->data_sz + sizeof(iocBrickHdr);
+    bytes |= 0xFFF;
     if (bytes > b->buf_alloc_sz)
     {
-        if (bytes < 1024) bytes = 1024;
         s = ioc_allocate_brick_buffer(b, bytes);
         if (s) return;
     }
@@ -56,7 +56,7 @@ void pins_store_photo_as_brick(
     /* Compress brick data, set timestamp and calculate checksum Set current position to zero
      */
     bytes = ioc_compress_brick(b->buf, b->buf_sz,
-        photo->hdr, photo->data, photo->format, photo->w, photo->h, compression);
+        photo->hdr, photo->data, photo->data_sz, photo->format, photo->w, photo->h, compression);
     ioc_set_brick_timestamp(b->buf);
     ioc_set_brick_checksum(b->buf, bytes);
 
@@ -70,14 +70,14 @@ void pins_store_photo_as_brick(
    @brief Release camera information chain.
    @anchor pins_release_camera_info
 
-   The pins_release_camera_info() function... 
+   The pins_release_camera_info() function...
 
    @param camera_info Pointer to first item in camera info chain.
    @return None.
 
 ****************************************************************************************************
 */
-/* 
+/*
  */
 void pins_release_camera_info(
     pinsCameraInfo *camera_info)

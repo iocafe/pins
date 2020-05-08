@@ -65,15 +65,15 @@ static camera_config_t camera_config = {
     .pin_pclk = CAM_PIN_PCLK,
 
     //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
-    .xclk_freq_hz = 20000000,
+    .xclk_freq_hz = 10000000, // 20000000,
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
 
     .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
 
     .jpeg_quality = 12, //0-63 lower number means higher quality
-    .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
+    .fb_count = 2 //if more than one, i2s runs in continuous mode. Use only with JPEG
 };
 
 
@@ -209,11 +209,13 @@ static void esp32_cam_start(
 {
     osalThreadOptParams opt;
     if (c->camera_thread) return;
+return ; //  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxjksdjhasd jkjasdkhsdijk HJKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
     os_memclear(&opt, sizeof(opt));
     opt.priority = OSAL_THREAD_PRIORITY_NORMAL;
     opt.thread_name = "espcam";
-    // opt.pin_to_core = OS_TRUE;
-    // opt.pin_to_core_nr = 0;
+    opt.stack_size = 8000;
+    opt.pin_to_core = OS_TRUE;
+    opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
@@ -325,6 +327,9 @@ static os_long esp32_cam_get_parameter(
   The esp32_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
+  Known ESP32 camera pixel formats: PIXFORMAT_RGB565, PIXFORMAT_YUV422, PIXFORMAT_GRAYSCALE,
+  PIXFORMAT_JPEG, PIXFORMAT_RGB888, PIXFORMAT_RAW, PIXFORMAT_RGB444, PIXFORMAT_RGB555.
+
   @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
   @return  None.
@@ -349,13 +354,30 @@ static void esp32_cam_finalize_camera_photo(
     photo.iface = c->iface;
     photo.camera = c;
     photo.data = fb->buf;
-    photo.format = OSAL_RGB24;
+    photo.data_sz = fb->len;
     photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
-    photo.data_sz = photo.byte_w * h;
     photo.w = w;
     photo.h = h;
 
-    osal_debug_error_int("Here PHOTO", w)                ;
+    switch (fb->format)
+    {
+    default:
+        case PIXFORMAT_JPEG:
+            photo.compression = IOC_NORMAL_JPEG;
+            hdr.compression = photo.compression;
+            photo.format = OSAL_RGB24;
+            break;
+
+        case PIXFORMAT_GRAYSCALE:
+            photo.format = OSAL_GRAYSCALE8;
+            break;
+
+        case PIXFORMAT_RGB888:
+            photo.format = OSAL_RGB24;
+            break;
+    }
+
+// osal_debug_error_int("Here PHOTO len=", fb->len);
 
 //    process_image(fb->width, fb->height, fb->format, fb->buf, fb->len);
 
@@ -365,7 +387,7 @@ static void esp32_cam_finalize_camera_photo(
     hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
     hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
 
-    // c->callback_func(&photo, c->callback_context);
+    c->callback_func(&photo, c->callback_context);
 }
 
 
@@ -402,6 +424,7 @@ static void esp32_cam_task(
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
+    os_get_timer(&error_retry_timer);
 
     while (!c->stop_thread && osal_go())
     {
@@ -442,7 +465,7 @@ osal_debug_error("Here CAM INITIALIZED");
         }
         else
         {
-os_sleep(10);
+            os_sleep(20);
 goto goon;
             fb = esp_camera_fb_get();
             if (fb == OS_NULL) {
