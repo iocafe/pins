@@ -62,7 +62,6 @@ OSAL_C_HEADER_BEGINS
 #endif
 #endif
 
-
 /* Include generic pins library headers.
  */
 #include "code/common/pins_gpio.h"

@@ -47,7 +47,7 @@ void initialize_display(
 {
     os_memclear(display, sizeof(PinsDisplay));
     display->root = root;
-    initialize_morse_code(&display->morse, OS_NULL, MORSE_DEFAULT);
+    initialize_morse_code(&display->morse, OS_NULL, OS_NULL, MORSE_DEFAULT);
     osal_add_network_state_notification_handler(display_net_state_notification_handler, display, 0);
 
     /* Call hardware/platform specific initialization code.

@@ -37,7 +37,8 @@ static void morse_net_state_notification_handler(
   within the structure.
 
   @param   morse Morse code structure.
-  @param   pin Pointer to pin configuration structure.
+  @param   pin Pin connected to the LED to blink. Pointer to pin configuration structure.
+  @param   Pin connected to the second LED to blink. OS_NULL if no second LED.
   @param   flags Zero for default operation, MORSE_LED_INVERTED to invert led output.
 
   @return  None.
@@ -47,10 +48,12 @@ static void morse_net_state_notification_handler(
 void initialize_morse_code(
     MorseCode *morse,
     const Pin *pin,
+    const Pin *pin2,
     os_boolean flags)
 {
     os_memclear(morse, sizeof(MorseCode));
     morse->pin = pin;
+    morse->pin2 = pin2;
     morse->prev_code = -1;
     morse->start_led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
 
@@ -193,6 +196,7 @@ os_boolean blink_morse_code(
         morse->pos = 0;
         morse->led_on = morse->start_led_on;
         if (morse->pin) pin_set(morse->pin, morse->led_on);
+        if (morse->pin2) pin_set(morse->pin2, morse->led_on);
     }
 
     if (timer == OS_NULL)

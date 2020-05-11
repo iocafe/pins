@@ -49,10 +49,13 @@ MorseRecipe;
 
 
 /* Morse code state structure.
+ * Pin connected to the LED to blink.
+   Pin connected to the second LED to blink. OS_NULL if no second LED.
  */
 typedef struct MorseCode
 {
     const Pin *pin;
+    const Pin *pin2;
     os_timer timer;
     os_int code;
     os_int prev_code;
@@ -76,6 +79,7 @@ MorseCode;
 void initialize_morse_code(
     MorseCode *morse,
     const Pin *pin,
+    const Pin *pin2,
     os_boolean flags);
 
 /* Set morse code to indicate by blinking the led.
