@@ -10,7 +10,7 @@ if platform.system() == 'Windows':
 else:
     MYPYTHON = 'python3'
     MYCODEROOT = '/coderoot'
-PINSTOC = MYPYTHON + ' ' + MYCODEROOT + '/pins/scripts/pins-to-c.py'
+PINSTOC = MYPYTHON + ' ' + MYCODEROOT + '/pins/scripts/pins_to_c.py'
 
 MYCONFIG = MYCODEROOT + '/pins/examples/' + MYAPP + '/config'
 MYINCLUDE = MYCONFIG + '/include/' + MYHW

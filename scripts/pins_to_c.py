@@ -1,4 +1,4 @@
-# pins-to-c.py 27.3.2020/pekka
+# pins_to_c.py 27.3.2020/pekka
 # Converts hardware IO specification(s) written in JSON to C source and header files.
 import json
 import os
@@ -53,9 +53,9 @@ def start_c_files():
     global cfile, hfile, cfilepath, hfilepath
     cfile = open(cfilepath, "w")
     hfile = open(hfilepath, "w")
-    cfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
+    cfile.write('/* This file is gerated by pins_to_c.py script, do not modify. */\n')
     cfile.write('#include "pins.h"\n')
-    hfile.write('/* This file is gerated by pins-to-c.py script, do not modify. */\n')
+    hfile.write('/* This file is gerated by pins_to_c.py script, do not modify. */\n')
     hfile.write('OSAL_C_HEADER_BEGINS\n\n')
 
 def finish_c_files():

@@ -1,4 +1,4 @@
-/* This file is gerated by pins-to-c.py script, do not modify. */
+/* This file is gerated by pins_to_c.py script, do not modify. */
 #include "pins.h"
 
 /* Parameters for inputs */
