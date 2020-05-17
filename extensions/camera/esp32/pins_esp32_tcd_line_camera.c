@@ -160,7 +160,7 @@ static osalStatus tcd1304_cam_open(
        structure is free, etc. Now one only.
      */
     camera_nr = prm->camera_nr;
-    if (cam_state[camera_nr].c || (os_uint)camera_nr >= PINS_ESPCAM_MAX_CAMERAS)
+    if (cam_state[camera_nr].c || (os_uint)camera_nr >= TDC1304_MAX_CAMERAS)
     {
         osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
         return OSAL_STATUS_FAILED;
@@ -366,7 +366,10 @@ static void tcd1304_finalize_camera_photo(
     pinsCamera *c,
     pinsPhoto *photo)
 {
-    iocBrickHdr *hdr;
+#if 0
+
+    CHECK CAMERA BUFFER USE CHANGES
+    iocBrickHdr hdr;
     os_uchar *buf;
 
     os_memclear(photo, sizeof(pinsPhoto));
@@ -377,7 +380,6 @@ static void tcd1304_finalize_camera_photo(
     photo->camera = c;
     photo->buf = buf;
     photo->buf_sz = PINS_TCD1304_BUF_SZ;
-    hdr = (iocBrickHdr*)buf;
     hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
     hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
 
@@ -387,6 +389,7 @@ static void tcd1304_finalize_camera_photo(
     photo->w = TDC1304_DATA_SZ;
     photo->h = 1;
     photo->format = hdr->format;
+#endif
 }
 
 
