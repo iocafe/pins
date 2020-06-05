@@ -27,10 +27,15 @@ struct iocBrickHdr;
 #define PINS_AI_THINKER_CAMERA 14
 #define PINS_USB_CAMERA 20
 
-/* If no camera defined for build, set 0
+/* If no camera defined for build, default to USB camera on windows
+   and to no camera on other platforms.
  */
 #ifndef PINS_CAMERA
-#define PINS_CAMERA PINS_NO_CAMERA
+  #if OSAL_WINDOWS
+    #define PINS_CAMERA PINS_USB_CAMERA
+  #else
+    #define PINS_CAMERA PINS_NO_CAMERA
+  #endif
 #endif
 
 #if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \

@@ -71,7 +71,7 @@ static void pin_to_iocom(
     /* Set the signal.
      */
     x = *(os_int*)pin->prm;
-    ioc_sets_int(s, x, OSAL_STATE_CONNECTED);
+    ioc_set(s, x);
 }
 
 
@@ -98,7 +98,6 @@ void forward_signal_change_to_io_pins(
     const struct iocDeviceHdr *device_hdr,
     os_ushort flags)
 {
-    // const iocDeviceHdr *device_hdr;
     const iocMblkSignalHdr *mblk_signal_hdr;
     iocMblkSignalHdr **mblk_signal_hdrs;
     const Pin *pin;
@@ -112,7 +111,6 @@ void forward_signal_change_to_io_pins(
     if ((handle->flags & IOC_MBLK_DOWN) == 0 ||
          (flags & IOC_MBLK_CALLBACK_RECEIVE) == 0) return;
 
-    // device_hdr = handle->root->device_signal_hdr;
     if (device_hdr == OS_NULL)
     {
         osal_debug_error("forward_signal: NULL device signal header");
@@ -148,7 +146,7 @@ void forward_signal_change_to_io_pins(
 
             if (ioc_is_my_address(signal, start_addr, end_addr))
             {
-                x = (os_int)ioc_gets_int(signal, &state_bits, IOC_SIGNAL_DEFAULT);
+                x = (os_int)ioc_get_ext(signal, &state_bits, IOC_SIGNAL_DEFAULT);
                 if (state_bits & OSAL_STATE_CONNECTED)
                 {
                     pin_ll_set(pin, x);
