@@ -38,6 +38,7 @@ void pins_store_photo_as_brick(
     iocBrickCompression compression)
 {
 #if IOC_BRICK_RING_BUFFER_SUPPORT
+    os_memsz bytes;
     osalStatus s;
 
    /* If we have not allocated brick buffer, do it
@@ -56,8 +57,8 @@ void pins_store_photo_as_brick(
 
     /* Compress brick data, set timestamp and calculate checksum Set current position to zero
      */
-    ioc_compress_brick(b,
-        photo->hdr, photo->data, photo->data_sz, photo->format, photo->w, photo->h, compression);
+    ioc_compress_brick(b, photo->hdr, photo->data, photo->data_sz, 
+        photo->format, photo->w, photo->h, compression);
 }
 
 
