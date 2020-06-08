@@ -13,7 +13,7 @@
 
 ****************************************************************************************************
 */
-#include "pins.h"
+#include "pinsx.h"
 #include <stdlib.h> /* for rand() */
 
 
@@ -31,7 +31,6 @@ void pins_ll_initialize(
     void)
 {
 }
-
 
 /**
 ****************************************************************************************************
@@ -51,6 +50,25 @@ void pin_ll_setup(
     os_int flags)
 {
 }
+
+
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Release any resources allocated for IO hardware "pin".
+  @anchor pin_ll_shutdown
+
+  @param   pin Pin to initialize.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pin_ll_shutdown(
+    const Pin *pin)
+{
+}
+#endif
 
 
 /**

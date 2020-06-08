@@ -34,6 +34,15 @@ void pins_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags);
 
+/* Shut down the hardware IO.
+ */
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+void pins_shutdown(
+    const IoPinsHdr *pins_hdr);
+#else
+    #define pins_shutdown(h)
+#endif
+
 /* Set IO pin state.
  */
 void pin_set(

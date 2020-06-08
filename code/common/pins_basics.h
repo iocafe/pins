@@ -154,6 +154,13 @@ void pin_ll_setup(
     const Pin *pin,
     os_int flags);
 
+/* Release any resources allocated for IO hardware "pin".
+ */
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+void pin_ll_shutdown(
+    const Pin *pin);
+#endif
+
 /* Set IO pin state.
  */
 void pin_ll_set(

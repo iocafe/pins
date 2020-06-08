@@ -89,6 +89,25 @@ void pin_ll_setup(
 }
 
 
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Release any resources allocated for IO hardware "pin".
+  @anchor pin_ll_shutdown
+
+  @param   pin Pin to initialize.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pin_ll_shutdown(
+    const Pin *pin)
+{
+}
+#endif
+
+
 /**
 ****************************************************************************************************
 

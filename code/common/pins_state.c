@@ -60,6 +60,46 @@ void pins_setup(
 }
 
 
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Shut down the hardware IO.
+  @anchor pins_setup
+
+  The pins_shutdown() function is called before program exits to stop io devices and release 
+  resources for them. For example: Windows USB camera needs to be shut down.
+
+  @param   pins_hdr Top level pins IO configuration structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_shutdown(
+    const IoPinsHdr *pins_hdr)
+{
+    const PinGroupHdr * const *group;
+    const Pin *pin;
+    os_short gcount, pcount;
+
+    gcount = pins_hdr->n_groups;
+    group = pins_hdr->group;
+
+    while (gcount--)
+    {
+        pcount = (*group)->n_pins;
+        pin = (*group)->pin;
+
+        while (pcount--) {
+            pin_ll_shutdown(pin++);
+        }
+
+        group++;
+    }
+}
+#endif
+
+
 /**
 ****************************************************************************************************
 
