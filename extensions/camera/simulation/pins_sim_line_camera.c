@@ -13,7 +13,7 @@
 
 ****************************************************************************************************
 */
-#define PINS_OS_INT_HANDLER_HDRS
+#define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
 #if PINS_CAMERA == PINS_TCD1304_CAMERA
 
@@ -162,8 +162,9 @@ static osalStatus tcd1304_cam_open(
     /* Make sure that camera state structure is free (camera not already open)
        amd set up camera state.
      */
+    camera_nr = 0;
     c->camera_nr = camera_nr;
-    if (cam_state[camera_nr].c || (os_uint)camera_nr >= PINS_ESPCAM_MAX_CAMERAS)
+    if (cam_state[camera_nr].c || (os_uint)camera_nr >= TDC1304_MAX_CAMERAS)
     {
         osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
         return OSAL_STATUS_FAILED;
@@ -378,14 +379,13 @@ static void tcd1304_finalize_camera_photo(
 
     photo->iface = c->iface;
     photo->camera = c;
-    photo->buf = buf;
-    photo->buf_sz = PINS_TCD1304_BUF_SZ;
+    photo->data = buf + sizeof(iocBrickHdr);
+    photo->data_sz = TDC1304_DATA_SZ;
     hdr = (iocBrickHdr*)buf;
     hdr->alloc_sz[0] = (os_uchar)PINS_TCD1304_BUF_SZ;
     hdr->alloc_sz[1] = (os_uchar)(PINS_TCD1304_BUF_SZ >> 8);
+    photo->hdr = hdr;
 
-    photo->data = buf + sizeof(iocBrickHdr);
-    photo->data_sz = TDC1304_DATA_SZ;
     photo->byte_w = TDC1304_DATA_SZ;
     photo->w = TDC1304_DATA_SZ;
     photo->h = 1;

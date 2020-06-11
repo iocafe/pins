@@ -163,6 +163,7 @@ static osalStatus esp32_cam_open(
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
     c->iface = &pins_esp32_camera_iface;
+    c->jpeg_quality = 12;
     return OSAL_SUCCESS;
 }
 
@@ -320,6 +321,30 @@ static os_long esp32_cam_get_parameter(
 /**
 ****************************************************************************************************
 
+  @brief Set JPEG compression quality.
+  @anchor esp32_cam_set_jpeg_quality
+
+  The esp32_cam_set_jpeg_quality() function is used when camera driver takes care of JPEG 
+  compression and we want to adjust compressed image size (inverse of quality) according
+  to brick buffer, etc size. 
+
+  @param   c Pointer to camera structure.
+  @param   quality JPEG compression quality 1 - 100.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void esp32_cam_set_jpeg_quality(
+    pinsCamera *c,
+    os_uchar quality)
+{
+    c->jpeg_quality = quality;
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Set up "pinsPhoto" structure.
   @anchor esp32_cam_finalize_camera_photo
 
@@ -342,6 +367,7 @@ static void esp32_cam_finalize_camera_photo(
     pinsPhoto photo;
     iocBrickHdr hdr;
     os_int alloc_sz, w, h;
+    os_uchar quality;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -476,7 +502,6 @@ goon:;
     }
 }
 
-
 /* Camera interface (structure with function pointers, polymorphism)
  */
 const pinsCameraInterface pins_esp32_camera_iface
@@ -488,7 +513,8 @@ const pinsCameraInterface pins_esp32_camera_iface
     esp32_cam_start,
     esp32_cam_stop,
     esp32_cam_set_parameter,
-    esp32_cam_get_parameter
+    esp32_cam_get_parameter,
+    esp32_cam_set_jpeg_quality
 };
 
 #endif

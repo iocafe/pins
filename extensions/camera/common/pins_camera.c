@@ -24,19 +24,20 @@
 
    The pins_store_photo_as_brick() function...
 
-   @param photo Pointer to photo to store. The photo is not modified by this function.
-   @param b Pointer to brick buffer into which to store the photo as "brick".
-   @param compression Should photo be compressed by this function and is so how? See enumeration
-          iocBrickCompression.
-   @return None.
+   @param   photo Pointer to photo to store. The photo is not modified by this function.
+   @param   b Pointer to brick buffer into which to store the photo as "brick".
+   @param   compression Should photo be compressed by this function and is so how? 
+   @return  None.
 
 ****************************************************************************************************
 */
 void pins_store_photo_as_brick(
     const pinsPhoto *photo,
     iocBrickBuffer *b,
-    iocBrickCompression compression)
+    os_uchar compression)
 {
+    os_char quality;
+
 #if IOC_BRICK_RING_BUFFER_SUPPORT
     os_memsz bytes;
     osalStatus s;
@@ -59,6 +60,16 @@ void pins_store_photo_as_brick(
      */
     ioc_compress_brick(b, photo->hdr, photo->data, photo->data_sz, 
         photo->format, photo->w, photo->h, compression);
+
+    /* If we are adjusting camera's JPEG compression quality accorting to compressed data size?
+     */
+    if (photo->iface != OS_NULL && photo->camera != OS_NULL) {
+        quality = ioc_get_jpeg_compression_quality(b);
+        if (quality > 0 && quality <= 100 && photo->iface->set_camera_jpeg_quality)
+        {
+            photo->iface->set_camera_jpeg_quality(photo->camera, quality);
+        }
+    }
 }
 
 

@@ -87,8 +87,7 @@ typedef struct pinsPhoto
      */
     os_int w, h;
 
-    /** Image format and compression. See enumerations osalBitmapFormat
-        and iocBrickCompression. Compression 0 is also uncompressed.
+    /** Image format and compression. Compression 0 is uncompressed.
      */
     os_uchar format;
     os_uchar compression;
@@ -182,6 +181,11 @@ typedef struct pinsCamera
      */
     volatile os_boolean stop_thread;
 
+    /* JPEG compression quality 1 - 100. and previous value for change checking.
+     */
+    volatile os_uchar jpeg_quality;
+    os_uchar prev_jpeg_quality;
+
     /** Camera number, the first camera is camera number 0.
      */
     os_int camera_nr;
@@ -252,6 +256,10 @@ typedef struct pinsCameraInterface
     os_long (*get_parameter)(
         pinsCamera *c,
         pinsCameraParamIx ix);
+
+    void (*set_camera_jpeg_quality)(
+        pinsCamera *c,
+        os_uchar quality);
 }
 pinsCameraInterface;
 
@@ -276,7 +284,7 @@ pinsCameraInterface;
 void pins_store_photo_as_brick(
     const pinsPhoto *photo,
     iocBrickBuffer *b,
-    iocBrickCompression compression);
+    os_uchar compression);
 
 /* Release camera information chain.
  */
