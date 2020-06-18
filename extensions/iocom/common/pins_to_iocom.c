@@ -83,6 +83,8 @@ static void pin_to_iocom(
   The forward_signal_change_to_io_pins function can be called by ioboard_fc_callback()
   to  function...
 
+  TO BE OBSOLETED
+
   @param   handle Memory block handle.
   @param   flags IOC_MBLK_CALLBACK_WRITE indicates change by local write,
            IOC_MBLK_CALLBACK_RECEIVE change by data received. Typically flags of communication
@@ -105,6 +107,8 @@ void forward_signal_change_to_io_pins(
     os_int n_signals, j, x;
     os_short n_mblk_hdrs, i;
     os_char state_bits;
+
+osal_debug_error("planning to OBSOLETE this function, replaced by more efficient system");
 
     /* If this memory block is not written by communication, no need to do anything.
      */
@@ -158,5 +162,37 @@ void forward_signal_change_to_io_pins(
         /* We found mathing memory block, no need to check further.
          */
         break;
+    }
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Forward signal change to IO.
+
+  The forward_signal_change_to_io_pin function can be called by communication callback to
+  forward IO pin state change to hardware IO pin.
+
+  @param   handle Memory block handle.
+  @param   reserved Reserved for future, set 0 for now.
+  @return  None.
+
+****************************************************************************************************
+*/
+void forward_signal_change_to_io_pin(
+    const iocSignal *sig,
+    os_int reserved)
+{
+    const Pin *pin;
+    os_int x;
+    os_char state_bits;
+
+    x = (os_int)ioc_get_ext(sig, &state_bits, IOC_SIGNAL_DEFAULT);
+    if (state_bits & OSAL_STATE_CONNECTED)
+    {
+        pin = (const Pin *)sig->ptr;
+        pin_ll_set(pin, x);
+        *(os_int*)pin->prm = x;
     }
 }

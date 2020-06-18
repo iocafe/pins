@@ -28,7 +28,7 @@ struct iocDeviceHdr;
 void pins_connect_iocom_library(
     const IoPinsHdr *pins_hdr);
 
-/* Forward signal change to IO.
+/* Forward signal change to IO. THIS FUNCTION WILL BE OBSOLETED, replaced by faster implementation
  */
 void forward_signal_change_to_io_pins(
     struct iocHandle *handle,
@@ -36,6 +36,12 @@ void forward_signal_change_to_io_pins(
     os_int end_addr,
     const struct iocDeviceHdr *device_hdr,
     os_ushort flags);
+
+/* Forward signal change to IO.
+ */
+void forward_signal_change_to_io_pin(
+    const iocSignal *sig,
+    os_int reserved);
 
 /* Forward data data received from communication to IO pins.
  */
