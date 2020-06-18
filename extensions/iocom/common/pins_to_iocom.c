@@ -188,6 +188,8 @@ void forward_signal_change_to_io_pin(
     os_int x;
     os_char state_bits;
 
+    osal_debug_assert(sig->flags & IOC_PIN_PTR);
+
     x = (os_int)ioc_get_ext(sig, &state_bits, IOC_SIGNAL_DEFAULT);
     if (state_bits & OSAL_STATE_CONNECTED)
     {
