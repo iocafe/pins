@@ -123,7 +123,7 @@ static osalStatus usb_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
-    os_int camera_nr;
+    os_int camera_nr, i;
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
@@ -142,6 +142,9 @@ static osalStatus usb_cam_open(
         return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
     }
     os_memclear(c->ext, sizeof(PinsCameraExt));
+    for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
+        c->ext->prm[i] = -1;
+    }
 
     return OSAL_SUCCESS;
 }
@@ -381,6 +384,7 @@ static osalStatus usb_cam_allocate_buffer(
     return OSAL_SUCCESS;
 }
 
+
 /**
 ****************************************************************************************************
 
@@ -459,27 +463,44 @@ tryagain:
 getout:;
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Write parameters to camera driver.
+  @anchor usb_cam_set_parameters
+
+  The usb_cam_set_parameters() function.... 
+
+  @param   c Pointer to pinsCamera structure.
+  @param   VI Video input device.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void usb_cam_set_parameters(
     pinsCamera *c,
     videoInput *VI)
 {
-    os_int camera_nr, x;
+    os_int camera_nr, x, y;
 
     c->ext->prm_changed = OS_FALSE;
     camera_nr = c->camera_nr;
 
     CamParametrs CP = VI->getParametrs(camera_nr);
-    x = 255 * (os_int)c->ext->prm[PINS_CAM_BRIGHTNESS] / 100;
-    if (x != CP.Brightness.CurrentValue)
+    x = c->ext->prm[PINS_CAM_BRIGHTNESS];
+    y = 255 * x / 100;
+    if (y != CP.Brightness.CurrentValue && x >= 0)
     {
         CP.Brightness.Flag = 1;
-        CP.Brightness.CurrentValue = x;
+        CP.Brightness.CurrentValue = y;
     }
-    x = 255 * (os_int)c->ext->prm[PINS_CAM_CONTRAST] / 100;
-    if (x != CP.Contrast.CurrentValue)
+    x = c->ext->prm[PINS_CAM_CONTRAST];
+    y = 255 * x / 100;
+    if (y != CP.Contrast.CurrentValue && x >= 0)
     {
         CP.Contrast.Flag = 1;
-        CP.Contrast.CurrentValue = x;
+        CP.Contrast.CurrentValue = y;
     }
     VI->setParametrs(camera_nr, CP);
 
