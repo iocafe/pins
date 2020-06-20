@@ -153,7 +153,9 @@ typedef enum pinsCameraParamIx
     PINS_CAM_MAX_BUF_SZ,
 
     PINS_CAM_BRIGHTNESS,
-    PINS_CAM_CONTRAST
+    PINS_CAM_CONTRAST,
+
+    PINS_NRO_CAMERA_PARAMS
 }
 pinsCameraParamIx;
 

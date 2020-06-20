@@ -31,6 +31,11 @@ typedef struct PinsCameraExt
     os_int w;
     os_int h;
     os_int bytes_per_pix;
+
+    os_int prm[PINS_NRO_CAMERA_PARAMS];
+    os_timer prm_timer;
+    volatile os_boolean prm_changed;
+
 }
 PinsCameraExt;
 
@@ -43,6 +48,10 @@ static void usb_cam_stop(
 static void usb_cam_task(
     void *prm,
     osalEvent done);
+
+static void usb_cam_set_parameters(
+    pinsCamera *c,
+    videoInput *VI);
 
 
 /**
@@ -247,17 +256,12 @@ static void usb_cam_set_parameter(
     pinsCameraParamIx ix,
     os_long x)
 {
-    switch (ix)
-    {
-        case PINS_CAM_INTEGRATION_US:
-            if (c->integration_us == x) return;
-            c->integration_us = x;
-            break;
-
-        default:
-            osal_debug_error("usb_cam_set_parameter: Unknown prm");
-            return;
-    }
+    osal_debug_assert(c);
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS || x < 0) return;
+    if ((os_int)c->ext->prm[ix] == x) return;
+    c->ext->prm[ix] = (os_int)x;
+    os_get_timer(&c->ext->prm_timer);
+    c->ext->prm_changed = OS_TRUE;
 }
 
 
@@ -280,19 +284,9 @@ static os_long usb_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
 {
-    os_long x;
-    switch (ix)
-    {
-        case PINS_CAM_MAX_BUF_SZ:
-            x = PINS_USBCAM_BUF_SZ;
-            break;
-
-        default:
-            x = -1;
-            break;
-    }
-
-    return x;
+    osal_debug_assert(c);
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS) return -1;
+    return c->ext->prm[ix];
 }
 
 
@@ -330,7 +324,7 @@ static void usb_cam_finalize_camera_photo(
     photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
     photo.format = OSAL_RGB24;
-    photo.data_sz = photo.byte_w * h;
+    photo.data_sz = photo.byte_w * (os_memsz)h;
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
@@ -448,18 +442,12 @@ static void usb_cam_task(
              }
             os_timeslice();
 
-            /* if(c == 49)
-            {
-                CamParametrs CP = VI->getParametrs(i-1);
-                CP.Brightness.CurrentValue = 128;
-                CP.Brightness.Flag = 1;
-                VI->setParametrs(i - 1, CP);
+            if (c->ext->prm_changed) {
+                if (os_has_elapsed(&c->ext->prm_timer, 50))
+                {
+                    usb_cam_set_parameters(c, VI);
+                }
             }
-
-            if(!VI->isDeviceSetup(i - 1))
-            {
-                break;
-            } */
         }
 
         VI->closeDevice(camera_nr);
@@ -469,6 +457,36 @@ tryagain:
     }
 
 getout:;
+}
+
+static void usb_cam_set_parameters(
+    pinsCamera *c,
+    videoInput *VI)
+{
+    os_int camera_nr, x;
+
+    c->ext->prm_changed = OS_FALSE;
+    camera_nr = c->camera_nr;
+
+    CamParametrs CP = VI->getParametrs(camera_nr);
+    x = 255 * (os_int)c->ext->prm[PINS_CAM_BRIGHTNESS] / 100;
+    if (x != CP.Brightness.CurrentValue)
+    {
+        CP.Brightness.Flag = 1;
+        CP.Brightness.CurrentValue = x;
+    }
+    x = 255 * (os_int)c->ext->prm[PINS_CAM_CONTRAST] / 100;
+    if (x != CP.Contrast.CurrentValue)
+    {
+        CP.Contrast.Flag = 1;
+        CP.Contrast.CurrentValue = x;
+    }
+    VI->setParametrs(camera_nr, CP);
+
+    if(!VI->isDeviceSetup(camera_nr))
+    {
+        // ?
+    } 
 }
 
 /* Camera interface (structure with function pointers, polymorphism)
