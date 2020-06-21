@@ -52,7 +52,8 @@ static void usb_cam_task(
 
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI);
+    videoInput *VI,
+    os_int camera_nr);
 
 
 /**
@@ -124,19 +125,13 @@ static osalStatus usb_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
-    os_int camera_nr, i;
+    os_int i;
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
     c->iface = &pins_usb_camera_iface;
-
-    /* We could support two PINS_USBCAM cameras later on, we should check which static camera
-       structure is free, etc. Now one only.
-     */
-    camera_nr = prm->camera_nr;
-    c->camera_nr = camera_nr;
 
     c->ext = (PinsCameraExt*)os_malloc(sizeof(PinsCameraExt), OS_NULL);
     if (c->ext == OS_NULL) {
@@ -268,9 +263,13 @@ static void usb_cam_set_parameter(
 
     switch (ix)
     {
+        case PINS_CAM_NR:
+        case PINS_CAM_FRAMERATE:
+            c->ext->reconfigure_camera = OS_TRUE;
+            break;
+
         case PINS_CAM_IMG_WIDTH:
         case PINS_CAM_IMG_HEIGHT:
-        case PINS_CAM_FRAMERATE:
             usb_cam_check_image_dims(c);
             c->ext->reconfigure_camera = OS_TRUE;
             break;
@@ -343,8 +342,7 @@ static void usb_cam_finalize_camera_photo(
 {
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_int alloc_sz, w, h, y, h2, count;
-    os_uchar *top, *bottom, u, *p;
+    os_int alloc_sz, w, h;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -360,6 +358,12 @@ static void usb_cam_finalize_camera_photo(
     photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
 
+#if 1
+    os_int y, h2, count;
+    os_uchar *top, *bottom, u, *p;
+
+    /* This can be done here or by VI->getPixels()
+     */
     /* Flip image, top to bottom.
      */
     os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
@@ -384,6 +388,7 @@ static void usb_cam_finalize_camera_photo(
             p += 3;
         }
     }
+#endif
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
@@ -465,18 +470,21 @@ static void usb_cam_task(
     c = (pinsCamera*)prm;
     osal_event_set(done);
 
-    camera_nr = c->camera_nr;
     videoInput *VI = &videoInput::getInstance();
 
     while (!c->stop_thread && osal_go())
     {
+        camera_nr = c->ext->prm[PINS_CAM_NR] - 1;
+        if (camera_nr < 0) camera_nr = 0;
+        c->camera_nr = camera_nr;
+
         nro_cameras = VI->listDevices();
         if(camera_nr >= nro_cameras) {
             osal_debug_error_int("usb_cam_task: Camera number too big", camera_nr);
             goto tryagain;
         }
 
-        usb_cam_set_parameters(c, VI);
+        usb_cam_set_parameters(c, VI, camera_nr);
 
         w = c->ext->prm[PINS_CAM_IMG_WIDTH];
         h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
@@ -501,7 +509,13 @@ static void usb_cam_task(
                      goto getout;
                  }
 
-                 VI->getPixels(camera_nr, c->ext->buf);
+                 /* Two last arguments are correction of RedAndBlue flipping flipRedAndBlue and vertical flipping flipImage
+                  */
+#if 1
+                 VI->getPixels(camera_nr, c->ext->buf, false, false);
+#else
+                 VI->getPixels(camera_nr, c->ext->buf, true, true);
+#endif
                  usb_cam_finalize_camera_photo(c);
             }
             os_timeslice();
@@ -516,7 +530,7 @@ static void usb_cam_task(
                     if (c->ext->reconfigure_camera) {
                         break;
                     }
-                    usb_cam_set_parameters(c, VI);
+                    usb_cam_set_parameters(c, VI, camera_nr);
                 }
             }
         }
@@ -524,6 +538,7 @@ static void usb_cam_task(
         /* VI->closeAllDevices(); */
         if (VI->isDeviceSetup(camera_nr))
         {
+            os_sleep(500);
             VI->closeDevice(camera_nr);
         } 
 
@@ -551,7 +566,8 @@ getout:;
 */
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI)
+    videoInput *VI,
+    os_int camera_nr)
 {
 #define PINCAM_SETPRM_MACRO(a, b) \
     x = c->ext->prm[b]; \
@@ -568,11 +584,10 @@ static void usb_cam_set_parameters(
         } \
     }
 
-    os_int camera_nr, x, y;
+    os_int x, y;
     os_double delta;
 
     c->ext->prm_changed = OS_FALSE;
-    camera_nr = c->camera_nr;
 
     CamParametrs CP = VI->getParametrs(camera_nr);
 

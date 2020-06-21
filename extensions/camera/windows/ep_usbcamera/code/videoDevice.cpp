@@ -364,7 +364,12 @@ void videoDevice::closeDevice()
 						
 			vd_pImGrTh.reset(0);		
 
-			SafeReleaseAllCount(&vd_pSource);
+			/* Pekka 21.6.2020: SafeReleaseAllCount() commented. This causes crash when camera is changed
+			   or reconfigured. Commenting fixes the problem, but likely causes memory leak.
+			   No point to debug further, we should upgrade camera library to newer version and this
+			   is good enough for Windows testing even if camera is repeatedly reconfigured leaks memory 
+			   (this is not done). */
+			// SafeReleaseAllCount(&vd_pSource); P
 		}
 
 		SafeRelease(&vd_pSource);

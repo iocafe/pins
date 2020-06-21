@@ -108,7 +108,8 @@ typedef struct pinsCameraParams
 {
     /** Camera number, the first camera is camera number 0.
      */
-    os_int camera_nr;
+    /* Moved to enumerated parameters 
+    os_int camera_nr; */
 
     /** Pointer to callback function and application specific content pointer to pass
         to the callback function..
@@ -149,6 +150,7 @@ pinsCameraInfo;
  */
 typedef enum pinsCameraParamIx
 {
+    PINS_CAM_NR,                /* Camera number. 1 is first camera (0 = any camera) */
     PINS_CAM_MAX_BUF_SZ,
     PINS_CAM_IMG_WIDTH,         /* Image width, pixels */
     PINS_CAM_IMG_HEIGHT,        /* Image height, pixels */
@@ -211,9 +213,9 @@ typedef struct pinsCamera
      */
     os_int camera_nr;
 
-    /** Camera parameters.
+    /** Camera parameters (should be obsoleted from here).
      */
-    os_long integration_us;
+    // os_long integration_us;
 
     /** Pointer to camera's pin structure.
      */
