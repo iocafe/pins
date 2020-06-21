@@ -33,7 +33,7 @@ typedef struct PinsCameraExt
     os_int prm[PINS_NRO_CAMERA_PARAMS];
     os_timer prm_timer;
     volatile os_boolean prm_changed;
-
+    volatile os_boolean reconfigure_camera;
 }
 PinsCameraExt;
 
@@ -41,6 +41,9 @@ PinsCameraExt;
 /* Forward referred static functions.
  */
 static void usb_cam_stop(
+    pinsCamera *c);
+
+static void usb_cam_check_image_dims(
     pinsCamera *c);
 
 static void usb_cam_task(
@@ -239,7 +242,7 @@ static void usb_cam_stop(
 /**
 ****************************************************************************************************
 
-  @brief Set value of camera parameter.
+  @brief Set camera parameter.
   @anchor usb_cam_set_parameter
 
   The usb_cam_set_parameter() sets value of a camera parameter. This function is called from
@@ -262,14 +265,43 @@ static void usb_cam_set_parameter(
     if ((os_int)c->ext->prm[ix] == x) return;
     c->ext->prm[ix] = (os_int)x;
     os_get_timer(&c->ext->prm_timer);
+
+    switch (ix)
+    {
+        case PINS_CAM_IMG_WIDTH:
+        case PINS_CAM_IMG_HEIGHT:
+        case PINS_CAM_FRAMERATE:
+            usb_cam_check_image_dims(c);
+            c->ext->reconfigure_camera = OS_TRUE;
+            break;
+
+        default:
+            break;
+    }
+
     c->ext->prm_changed = OS_TRUE;
+}
+
+
+static void usb_cam_check_image_dims(
+    pinsCamera *c)
+{
+    os_int w, h;
+
+    w = c->ext->prm[PINS_CAM_IMG_WIDTH];
+    if (w <= 160) { w = 160; h = 120; }
+    else if (w <= 320) { w = 320; h = 240; }
+    else if (w <= 640) { w = 640; h = 480; }
+    else { w = 800; h = 600; }
+    c->ext->prm[PINS_CAM_IMG_WIDTH] = w;
+    c->ext->prm[PINS_CAM_IMG_HEIGHT] = h;
 }
 
 
 /**
 ****************************************************************************************************
 
-  @brief Get value of camera parameter.
+  @brief Get camera parameter.
   @anchor usb_cam_get_parameter
 
   The usb_cam_get_parameter() gets value of a camera parameter. This function is called from
@@ -311,8 +343,8 @@ static void usb_cam_finalize_camera_photo(
 {
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_int alloc_sz, w, h, y, h2;
-    os_uchar *top, *bottom;
+    os_int alloc_sz, w, h, y, h2, count;
+    os_uchar *top, *bottom, u, *p;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -328,17 +360,29 @@ static void usb_cam_finalize_camera_photo(
     photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
 
-    /* Flip image */
+    /* Flip image, top to bottom.
+     */
     os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
     h2 = h/2;
-    for (y = 0; y<h2; y++)
-    {
+    for (y = 0; y<h2; y++) {
         top = photo.data + photo.byte_w * (size_t)y;
         bottom = photo.data + photo.byte_w * (size_t)(h - y - 1);
-
         os_memcpy(tmp, top, photo.byte_w);
         os_memcpy(top, bottom, photo.byte_w);
         os_memcpy(bottom, tmp, photo.byte_w);
+    }
+
+    /* BGR - RGB flip (RGB24 format).
+     */
+    for (y = 0; y<h; y++) {
+        p = photo.data + photo.byte_w * (size_t)y;
+        count = w;
+        while (count --) {
+            u = p[0]; 
+            p[0] = p[2];
+            p[2] = u;
+            p += 3;
+        }
     }
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
@@ -416,7 +460,7 @@ static void usb_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, nro_cameras;
+    os_int camera_nr, nro_cameras, w, h;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -432,15 +476,18 @@ static void usb_cam_task(
             goto tryagain;
         }
 
-        if(!VI->setupDevice(camera_nr, c->ext->prm[PINS_CAM_IMG_WIDTH], 
-            c->ext->prm[PINS_CAM_IMG_HEIGHT], c->ext->prm[PINS_CAM_FRAMERATE]))
+        usb_cam_set_parameters(c, VI);
+
+        w = c->ext->prm[PINS_CAM_IMG_WIDTH];
+        h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
+        if(!VI->setupDevice(camera_nr, w, h, c->ext->prm[PINS_CAM_FRAMERATE]))
         {
             osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
             goto tryagain;
         }
 
         VI->setEmergencyStopEvent(camera_nr, NULL, usb_cam_stop_event);
-
+        c->ext->reconfigure_camera = OS_FALSE;
         while (!c->stop_thread && osal_go())
         {
              if(VI->isFrameNew(camera_nr))
@@ -456,18 +503,29 @@ static void usb_cam_task(
 
                  VI->getPixels(camera_nr, c->ext->buf);
                  usb_cam_finalize_camera_photo(c);
-             }
+            }
             os_timeslice();
+
+            if(!VI->isDeviceSetup(camera_nr)) {
+                break;
+            }
 
             if (c->ext->prm_changed) {
                 if (os_has_elapsed(&c->ext->prm_timer, 50))
                 {
+                    if (c->ext->reconfigure_camera) {
+                        break;
+                    }
                     usb_cam_set_parameters(c, VI);
                 }
             }
         }
 
-        VI->closeDevice(camera_nr);
+        /* VI->closeAllDevices(); */
+        if (VI->isDeviceSetup(camera_nr))
+        {
+            VI->closeDevice(camera_nr);
+        } 
 
 tryagain:
         os_sleep(100);
