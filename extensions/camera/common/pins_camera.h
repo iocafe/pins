@@ -149,11 +149,27 @@ pinsCameraInfo;
  */
 typedef enum pinsCameraParamIx
 {
-    PINS_CAM_INTEGRATION_US,
     PINS_CAM_MAX_BUF_SZ,
+    PINS_CAM_IMG_WIDTH,         /* Image width, pixels */
+    PINS_CAM_IMG_HEIGHT,        /* Image height, pixels */
+    PINS_CAM_FRAMERATE,         /* Frame reate, pictures/second */
 
     PINS_CAM_BRIGHTNESS,
     PINS_CAM_CONTRAST,
+
+    PINS_CAM_HUE,
+    PINS_CAM_SATURATION,
+    PINS_CAM_SHARPNESS,
+    PINS_CAM_GAMMA,             /* 1000 * gamma value */
+    PINS_CAM_COLOR_ENABLE,
+    PINS_CAM_WHITE_BALANCE,
+    PINS_CAM_BACKLIGHT_COMPENSATION,
+    PINS_CAM_GAIN,
+
+    PINS_CAM_INTEGRATION_US, /* Same as exposure */
+    PINS_CAM_EXPOSURE,
+    PINS_CAM_IRIS,
+    PINS_CAM_FOCUS,
 
     PINS_NRO_CAMERA_PARAMS
 }

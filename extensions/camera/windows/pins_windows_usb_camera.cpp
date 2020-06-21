@@ -14,12 +14,10 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#include <malloc.h>
 #if PINS_CAMERA == PINS_USB_CAMERA
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
-
- #define PINS_USBCAM_MAX_DATA_SZ (3000 * 2000 * 3)
- #define PINS_USBCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_USBCAM_MAX_DATA_SZ)
 
 
 /* Wrapper specific extensions to PinsCamera structure
@@ -313,7 +311,8 @@ static void usb_cam_finalize_camera_photo(
 {
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_int alloc_sz, w, h;
+    os_int alloc_sz, w, h, y, h2;
+    os_uchar *top, *bottom;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -327,7 +326,20 @@ static void usb_cam_finalize_camera_photo(
     photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
     photo.format = OSAL_RGB24;
-    photo.data_sz = photo.byte_w * (os_memsz)h;
+    photo.data_sz = photo.byte_w * (size_t)h;
+
+    /* Flip image */
+    os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
+    h2 = h/2;
+    for (y = 0; y<h2; y++)
+    {
+        top = photo.data + photo.byte_w * (size_t)y;
+        bottom = photo.data + photo.byte_w * (size_t)(h - y - 1);
+
+        os_memcpy(tmp, top, photo.byte_w);
+        os_memcpy(top, bottom, photo.byte_w);
+        os_memcpy(bottom, tmp, photo.byte_w);
+    }
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
@@ -420,7 +432,8 @@ static void usb_cam_task(
             goto tryagain;
         }
 
-        if(!VI->setupDevice(camera_nr, 640, 480, 60))
+        if(!VI->setupDevice(camera_nr, c->ext->prm[PINS_CAM_IMG_WIDTH], 
+            c->ext->prm[PINS_CAM_IMG_HEIGHT], c->ext->prm[PINS_CAM_FRAMERATE]))
         {
             osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
             goto tryagain;
@@ -482,28 +495,45 @@ static void usb_cam_set_parameters(
     pinsCamera *c,
     videoInput *VI)
 {
+#define PINCAM_SETPRM_MACRO(a, b) \
+    x = c->ext->prm[b]; \
+    delta = CP.a.Max - CP.a.Min; \
+    if (delta > 0) \
+    { \
+        y = (os_int)(0.01 * delta * x + 0.5); \
+        if (y < CP.a.Min) y = CP.a.Min; \
+        if (y > CP.a.Max) y = CP.a.Max; \
+        if (y != CP.a.CurrentValue && x > 0) \
+        { \
+            CP.a.Flag = 1; \
+            CP.a.CurrentValue = y; \
+        } \
+    }
+
     os_int camera_nr, x, y;
+    os_double delta;
 
     c->ext->prm_changed = OS_FALSE;
     camera_nr = c->camera_nr;
 
     CamParametrs CP = VI->getParametrs(camera_nr);
-    x = c->ext->prm[PINS_CAM_BRIGHTNESS];
-    y = 255 * x / 100;
-    if (y != CP.Brightness.CurrentValue && x >= 0)
-    {
-        CP.Brightness.Flag = 1;
-        CP.Brightness.CurrentValue = y;
-    }
-    x = c->ext->prm[PINS_CAM_CONTRAST];
-    y = 255 * x / 100;
-    if (y != CP.Contrast.CurrentValue && x >= 0)
-    {
-        CP.Contrast.Flag = 1;
-        CP.Contrast.CurrentValue = y;
-    }
-    VI->setParametrs(camera_nr, CP);
 
+    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS) 
+    PINCAM_SETPRM_MACRO(Contrast, PINS_CAM_CONTRAST) 
+    PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE) 
+    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION) 
+
+    PINCAM_SETPRM_MACRO(Sharpness, PINS_CAM_SHARPNESS) 
+    PINCAM_SETPRM_MACRO(Gamma, PINS_CAM_GAMMA) 
+    PINCAM_SETPRM_MACRO(ColorEnable, PINS_CAM_COLOR_ENABLE) 
+    PINCAM_SETPRM_MACRO(WhiteBalance, PINS_CAM_WHITE_BALANCE) 
+    PINCAM_SETPRM_MACRO(BacklightCompensation, PINS_CAM_BACKLIGHT_COMPENSATION) 
+    PINCAM_SETPRM_MACRO(Gain, PINS_CAM_GAIN) 
+    PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE) 
+    PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS) 
+    PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)  
+
+    VI->setParametrs(camera_nr, CP);
     if(!VI->isDeviceSetup(camera_nr))
     {
         // ?
