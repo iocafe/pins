@@ -538,7 +538,7 @@ static void usb_cam_task(
         /* VI->closeAllDevices(); */
         if (VI->isDeviceSetup(camera_nr))
         {
-            os_sleep(500);
+            // os_sleep(500);
             VI->closeDevice(camera_nr);
         } 
 
