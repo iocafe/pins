@@ -271,11 +271,6 @@ static void esp32_cam_set_parameter(
 {
     switch (ix)
     {
-        case PINS_CAM_INTEGRATION_US:
-            if (c->integration_us == x) return;
-            c->integration_us = x;
-            break;
-
         default:
             osal_debug_error("esp32_cam_set_parameter: Unknown prm");
             return;
@@ -386,17 +381,17 @@ static void esp32_cam_finalize_camera_photo(
         default:
         case PIXFORMAT_JPEG:
             photo.format = OSAL_RGB24;
-            photo.compression = IOC_NORMAL_JPEG;
+            photo.compression = IOC_JPEG;
             break;
 
         case PIXFORMAT_GRAYSCALE:
             photo.format = OSAL_GRAYSCALE8;
-            photo.compression = IOC_UNCOMPRESSED_BRICK;
+            photo.compression = IOC_UNCOMPRESSED;
             break;
 
         case PIXFORMAT_RGB888:
             photo.format = OSAL_RGB24;
-            photo.compression = IOC_UNCOMPRESSED_BRICK;
+            photo.compression = IOC_UNCOMPRESSED;
             break;
     }
     hdr.compression = (os_uchar)photo.compression;
