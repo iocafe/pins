@@ -363,8 +363,7 @@ static void usb_cam_finalize_camera_photo(
     os_uchar *top, *bottom, u, *p;
 
     /* This can be done here or by VI->getPixels()
-     */
-    /* Flip image, top to bottom.
+       First flip image, top to bottom.
      */
     os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
     h2 = h/2;
@@ -535,10 +534,8 @@ static void usb_cam_task(
             }
         }
 
-        /* VI->closeAllDevices(); */
         if (VI->isDeviceSetup(camera_nr))
         {
-            // os_sleep(500);
             VI->closeDevice(camera_nr);
         } 
 
@@ -609,7 +606,6 @@ static void usb_cam_set_parameters(
     VI->setParametrs(camera_nr, CP);
     if(!VI->isDeviceSetup(camera_nr))
     {
-        // ?
     } 
 }
 
