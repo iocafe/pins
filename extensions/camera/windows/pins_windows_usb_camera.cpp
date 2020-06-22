@@ -291,7 +291,10 @@ static void usb_cam_check_image_dims(
     if (w <= 160) { w = 160; h = 120; }
     else if (w <= 320) { w = 320; h = 240; }
     else if (w <= 640) { w = 640; h = 480; }
-    else { w = 800; h = 600; }
+    else if (w <= 800) { w = 800; h = 600; }
+    else if (w <= 1024) { w = 1024; h = 768; }
+    else if (w <= 1280) { w = 1280; h = 800; }
+    else { w = 1920; h = 1080; }
     c->ext->prm[PINS_CAM_IMG_WIDTH] = w;
     c->ext->prm[PINS_CAM_IMG_HEIGHT] = h;
 }
