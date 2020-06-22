@@ -519,8 +519,6 @@ static void usb_cam_task(
             goto tryagain;
         }
 
-        usb_cam_set_parameters(c, VI, camera_nr);
-
         w = c->ext->prm[PINS_CAM_IMG_WIDTH];
         h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
         if(!VI->setupDevice(camera_nr, w, h, c->ext->prm[PINS_CAM_FRAMERATE]))
@@ -528,6 +526,8 @@ static void usb_cam_task(
             osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
             goto tryagain;
         }
+
+        usb_cam_set_parameters(c, VI, camera_nr);
 
         VI->setEmergencyStopEvent(camera_nr, NULL, usb_cam_stop_event);
         c->ext->reconfigure_camera = OS_FALSE;
@@ -544,7 +544,8 @@ static void usb_cam_task(
                      goto getout;
                  }
 
-                 /* Two last arguments are correction of RedAndBlue flipping flipRedAndBlue and vertical flipping flipImage
+                 /* Two last arguments are correction of RedAndBlue flipping 
+                    flipRedAndBlue and vertical flipping flipImage
                   */
 #if 1
                  VI->getPixels(camera_nr, c->ext->buf, false, false);
@@ -593,6 +594,9 @@ getout:;
 
   The usb_cam_set_parameters() function.... 
 
+  See VideoProcAmpProperty Enumeration for description of property values.
+  https://docs.microsoft.com/en-us/windows/win32/api/strmif/ne-strmif-videoprocampproperty
+
   @param   c Pointer to pinsCamera structure.
   @param   VI Video input device.
   @return  None.
@@ -614,10 +618,18 @@ static void usb_cam_set_parameters(
         if (y > CP.a.Max) y = CP.a.Max; \
         if (y != CP.a.CurrentValue && x > 0) \
         { \
-            CP.a.Flag = 1; \
+            CP.a.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
             CP.a.CurrentValue = y; \
         } \
     }
+
+#define PINCAM_SETPRM_MANUAL_MACRO(a, b) \
+    x = c->ext->prm[b]; \
+    if (x != CP.a.CurrentValue && x > 0) \
+    { \
+        CP.a.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
+        CP.a.CurrentValue = x; \
+    } 
 
     os_int x, y;
     os_double delta;
