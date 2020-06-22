@@ -20,6 +20,8 @@
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
 
+#define TESTSUM_N 20
+
 /* Wrapper specific extensions to PinsCamera structure
  */
 typedef struct PinsCameraExt
@@ -34,6 +36,8 @@ typedef struct PinsCameraExt
     os_timer prm_timer;
     volatile os_boolean prm_changed;
     volatile os_boolean reconfigure_camera;
+
+    os_ulong testsum[TESTSUM_N];
 }
 PinsCameraExt;
 
@@ -340,7 +344,7 @@ static os_long usb_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static void usb_cam_finalize_camera_photo(
+static osalStatus usb_cam_finalize_camera_photo(
     pinsCamera *c)
 {
     pinsPhoto photo;
@@ -362,8 +366,49 @@ static void usb_cam_finalize_camera_photo(
     photo.data_sz = photo.byte_w * (size_t)h;
 
 #if 1
-    os_int y, h2, count;
+    os_int y, h2, count, i;
     os_uchar *top, *bottom, u, *p;
+    os_ulong testsum = 1234;
+
+    /* BGR - RGB flip (RGB24 format).
+     */
+    for (y = 0; y<h; y++) {
+        p = photo.data + photo.byte_w * (size_t)y;
+        count = w;
+        while (count --) {
+            u = p[0]; 
+            p[0] = p[2];
+            p[2] = u;
+            testsum += *(os_uint*)p;
+            p += 3;
+        }
+    }
+
+    /* The USB camera can return same image multiple times and 
+       can get stuck showing one photo, workaround: detect and restart
+     */
+    for (i = TESTSUM_N - 1; i > 0; i--) {
+        c->ext->testsum[i] = c->ext->testsum[i-1];
+    }
+    c->ext->testsum[0] = testsum;
+    if (testsum == c->ext->testsum[1])
+    {
+        for (i = 1; i < TESTSUM_N; i++) {
+            if (testsum != c->ext->testsum[i]) break;
+        }
+
+        if (i > TESTSUM_N/2) {
+            os_sleep(100);
+        }
+
+        if (i >= TESTSUM_N && !c->ext->prm_changed) {
+            os_get_timer(&c->ext->prm_timer);
+            c->ext->reconfigure_camera = OS_TRUE;
+            c->ext->prm_changed = OS_TRUE;
+        } 
+
+        return OSAL_NOTHING_TO_DO;
+    }
 
     /* This can be done here or by VI->getPixels()
        First flip image, top to bottom.
@@ -377,19 +422,6 @@ static void usb_cam_finalize_camera_photo(
         os_memcpy(top, bottom, photo.byte_w);
         os_memcpy(bottom, tmp, photo.byte_w);
     }
-
-    /* BGR - RGB flip (RGB24 format).
-     */
-    for (y = 0; y<h; y++) {
-        p = photo.data + photo.byte_w * (size_t)y;
-        count = w;
-        while (count --) {
-            u = p[0]; 
-            p[0] = p[2];
-            p[2] = u;
-            p += 3;
-        }
-    }
 #endif
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
@@ -402,6 +434,7 @@ static void usb_cam_finalize_camera_photo(
     photo.h = h;
 
     c->callback_func(&photo, c->callback_context);
+    return OSAL_SUCCESS;
 }
 
 static void usb_cam_stop_event(int deviceID, void *userData)
@@ -518,7 +551,9 @@ static void usb_cam_task(
 #else
                  VI->getPixels(camera_nr, c->ext->buf, true, true);
 #endif
-                 usb_cam_finalize_camera_photo(c);
+                 if (usb_cam_finalize_camera_photo(c)) {
+                    os_timeslice();
+                 }
             }
             os_timeslice();
 
