@@ -86,11 +86,34 @@ static camera_config_t camera_config = {
 #define PINS_ESPCAM_MAX_DATA_SZ (640 * 480 * 3)
 #define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
 
+/* Wrapper specific extensions to PinsCamera structure
+ */
+typedef struct PinsCameraExt
+{
+    os_int prm[PINS_NRO_CAMERA_PARAMS];
+    os_timer prm_timer;
+    volatile os_boolean prm_changed;
+    volatile os_boolean reconfigure_camera;
+}
+PinsCameraExt;
+
+static PinsCameraExt camext;
+
 
 /* Forward referred static functions.
  */
-static void esp32_cam_stop(pinsCamera *c);
-static void esp32_cam_task(void *prm, osalEvent done);
+static void esp32_cam_stop(
+    pinsCamera *c);
+
+static void esp32_cam_check_dims_and_set_frame_size(
+    pinsCamera *c);
+
+static void esp32_cam_task(
+    void *prm,
+    osalEvent done);
+
+static void esp32_cam_set_parameters(
+    void);
 
 
 /**
@@ -164,6 +187,12 @@ static osalStatus esp32_cam_open(
     c->callback_context = prm->callback_context;
     c->iface = &pins_esp32_camera_iface;
     c->jpeg_quality = 12;
+
+    os_memclear(&camext, sizeof(PinsCameraExt));
+    for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
+        camext.prm[i] = -1;
+    }
+
     return OSAL_SUCCESS;
 }
 
@@ -269,12 +298,63 @@ static void esp32_cam_set_parameter(
     pinsCameraParamIx ix,
     os_long x)
 {
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS || x < 0) return;
+    if ((os_int)camext.prm[ix] == x) return;
+    camext.prm[ix] = (os_int)x;
+    os_get_timer(&camext.prm_timer);
+
     switch (ix)
     {
+        case PINS_CAM_NR:
+        case PINS_CAM_FRAMERATE:
+            camext.reconfigure_camera = OS_TRUE;
+            break;
+
+        case PINS_CAM_IMG_WIDTH:
+        case PINS_CAM_IMG_HEIGHT:
+            esp32_cam_check_dims_and_set_frame_size(c);
+            camext.reconfigure_camera = OS_TRUE;
+            break;
+
         default:
-            osal_debug_error("esp32_cam_set_parameter: Unknown prm");
-            return;
+            break;
     }
+
+    camext.prm_changed = OS_TRUE;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Check that image dimensions are valid for camera and select frame size.
+  @anchor esp32_cam_check_dims_and_set_frame_size
+
+  The esp32_cam_check_dims_and_set_frame_size() makes sure that image width is legimate and
+  selects closest supported image width. Then image height is forced to match the image width.
+  If multiple image heights are supported for given image with, one matching closest to current
+  height setting is selected.
+  The function also stores matching frame size in global camera_config structure.
+
+  @param   c Pointer to camera structure.
+  @return  None
+
+****************************************************************************************************
+*/
+static void esp32_cam_check_dims_and_set_frame_size(
+    pinsCamera *c)
+{
+    os_int w, h;
+
+    w = camext.prm[PINS_CAM_IMG_WIDTH];
+    if (w <= 320) { w = 320; h = 240; camera_config.frame_size = FRAMESIZE_QVGA; }
+    else if (w <= 640) { w = 640; h = 480; camera_config.frame_size = FRAMESIZE_VGA; }
+    else if (w <= 800) { w = 800; h = 600; camera_config.frame_size = FRAMESIZE_SGA; }
+    else if (w <= 1024) { w = 1024; h = 768; camera_config.frame_size = FRAMESIZE_XGA; }
+    else if (w <= 1280) { w = 1280; h = 1024; camera_config.frame_size = FRAMESIZE_SXGA; }
+    else { w = 1600; h = 1200; camera_config.frame_size = FRAMESIZE_UXGA; }
+    camext.prm[PINS_CAM_IMG_WIDTH] = w;
+    camext.prm[PINS_CAM_IMG_HEIGHT] = h;
 }
 
 
@@ -289,7 +369,7 @@ static void esp32_cam_set_parameter(
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
-  @return  Parameter value.
+  @return  Parameter value, -1 to indicate that parameter is not set or ix is out of range.
 
 ****************************************************************************************************
 */
@@ -297,19 +377,8 @@ static os_long esp32_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
 {
-    os_long x;
-    switch (ix)
-    {
-        case PINS_CAM_MAX_BUF_SZ:
-            x = PINS_ESPCAM_BUF_SZ;
-            break;
-
-        default:
-            x = -1;
-            break;
-    }
-
-    return x;
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS) return -1;
+    return camext.prm[ix];
 }
 
 
@@ -319,9 +388,9 @@ static os_long esp32_cam_get_parameter(
   @brief Set JPEG compression quality.
   @anchor esp32_cam_set_jpeg_quality
 
-  The esp32_cam_set_jpeg_quality() function is used when camera driver takes care of JPEG 
+  The esp32_cam_set_jpeg_quality() function is used when camera driver takes care of JPEG
   compression and we want to adjust compressed image size (inverse of quality) according
-  to brick buffer, etc size. 
+  to brick buffer, etc size.
 
   @param   c Pointer to camera structure.
   @param   quality JPEG compression quality 1 - 100.
@@ -416,8 +485,7 @@ static void esp32_cam_finalize_camera_photo(
   @brief Thread to process camera data.
   @anchor esp32_cam_task
 
-  The usb_cam_task() thread to process data from camera.
-
+  The esp32_cam_task() thread to process data from camera.
 
   ESP32 camera API functions
   - esp_camera_init: Initialize camera.
@@ -464,15 +532,8 @@ static void esp32_cam_task(
                     goto goon;
                 }
 
-//                sens = esp_camera_sensor_get();
-                //initial sensors are flipped vertically and colors are a bit saturated
-                /* if (s->id.PID == OV3660_PID) {
-                  s->set_vflip(s, 1);//flip it back
-                  s->set_brightness(s, 1);//up the blightness just a bit
-                  s->set_saturation(s, -2);//lower the saturation
-                } */
-                //drop down frame size for higher initial frame rate
-//                sens->set_framesize(sens, FRAMESIZE_QVGA);
+                esp32_cam_set_parameters(c, VI, camera_nr);
+                camext.reconfigure_camera = OS_FALSE;
 
                 initialized = OS_TRUE;
             }
@@ -492,10 +553,103 @@ static void esp32_cam_task(
                 esp32_cam_finalize_camera_photo(c, fb);
                 esp_camera_fb_return(fb);
             }
+
+            if (c->ext->prm_changed) {
+                if (os_has_elapsed(&c->ext->prm_timer, 50))
+                {
+                    if (c->ext->reconfigure_camera) {
+                        break;
+                    }
+                    esp32_cam_set_parameters(c, VI, camera_nr);
+                }
+            }
         }
 goon:;
     }
 }
+
+
+/**
+****************************************************************************************************
+
+  @brief Write parameters to camera driver.
+  @anchor esp32_cam_set_parameters
+
+  The esp32_cam_set_parameters() function....
+
+  @return  None.
+
+****************************************************************************************************
+*/
+static void esp32_cam_set_parameters(
+    void)
+{
+/* Set parameter, input 0 - 100, output -2 ... 2
+ */
+#define PINCAM_SETPRM_MACRO_PM2(a, b) \
+    x = camext.prm[b]; \
+    y = 4 * (x + 10) / 100 - 2; \
+    s->a(s, x);     // -2 to 2
+
+    os_int x, y;
+    sensor_t * s = esp_camera_sensor_get();
+
+    c->ext->prm_changed = OS_FALSE;
+
+    PINCAM_SETPRM_MACRO_PM2(set_brightness, PINS_CAM_BRIGHTNESS)
+    PINCAM_SETPRM_MACRO(set_contrast, PINS_CAM_CONTRAST)
+
+    /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
+    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION)
+
+    PINCAM_SETPRM_MACRO(Sharpness, PINS_CAM_SHARPNESS)
+    PINCAM_SETPRM_MACRO(Gamma, PINS_CAM_GAMMA)
+    PINCAM_SETPRM_MACRO(ColorEnable, PINS_CAM_COLOR_ENABLE)
+    PINCAM_SETPRM_MACRO(WhiteBalance, PINS_CAM_WHITE_BALANCE)
+    PINCAM_SETPRM_MACRO(BacklightCompensation, PINS_CAM_BACKLIGHT_COMPENSATION)
+    PINCAM_SETPRM_MACRO(Gain, PINS_CAM_GAIN)
+    PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE)
+    PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS)
+    PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)
+    */
+
+/*
+    s->set_brightness(s, 0);     // -2 to 2
+    s->set_contrast(s, 0);       // -2 to 2
+    s->set_saturation(s, 0);     // -2 to 2
+    s->set_special_effect(s, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
+    s->set_whitebal(s, 1);       // 0 = disable , 1 = enable
+    s->set_awb_gain(s, 1);       // 0 = disable , 1 = enable
+    s->set_wb_mode(s, 0);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+    s->set_exposure_ctrl(s, 1);  // 0 = disable , 1 = enable
+    s->set_aec2(s, 0);           // 0 = disable , 1 = enable
+    s->set_ae_level(s, 0);       // -2 to 2
+    s->set_aec_value(s, 300);    // 0 to 1200
+    s->set_gain_ctrl(s, 1);      // 0 = disable , 1 = enable
+    s->set_agc_gain(s, 0);       // 0 to 30
+    s->set_gainceiling(s, (gainceiling_t)0);  // 0 to 6
+    s->set_bpc(s, 0);            // 0 = disable , 1 = enable
+    s->set_wpc(s, 1);            // 0 = disable , 1 = enable
+    s->set_raw_gma(s, 1);        // 0 = disable , 1 = enable
+    s->set_lenc(s, 1);           // 0 = disable , 1 = enable
+    s->set_hmirror(s, 0);        // 0 = disable , 1 = enable
+    s->set_vflip(s, 0);          // 0 = disable , 1 = enable
+    s->set_dcw(s, 1);            // 0 = disable , 1 = enable
+    s->set_colorbar(s, 0);       // 0 = disable , 1 = enable
+
+//                sens = esp_camera_sensor_get();
+                //initial sensors are flipped vertically and colors are a bit saturated
+                /* if (s->id.PID == OV3660_PID) {
+                  s->set_vflip(s, 1);//flip it back
+                  s->set_brightness(s, 1);//up the blightness just a bit
+                  s->set_saturation(s, -2);//lower the saturation
+                } */
+                //drop down frame size for higher initial frame rate
+//                sens->set_framesize(sens, FRAMESIZE_QVGA);
+
+ */
+}
+
 
 /* Camera interface (structure with function pointers, polymorphism)
  */
