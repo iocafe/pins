@@ -180,6 +180,7 @@ static osalStatus esp32_cam_open(
     c->callback_context = prm->callback_context;
     c->iface = &pins_esp32_camera_iface;
     c->jpeg_quality = 12;
+    c->ext = &camext;
 
     os_memclear(&camext, sizeof(PinsCameraExt));
     for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
@@ -545,10 +546,10 @@ static void esp32_cam_task(
                 esp_camera_fb_return(fb);
             }
 
-            if (c->ext->prm_changed) {
-                if (os_has_elapsed(&c->ext->prm_timer, 50))
+            if (camext.prm_changed) {
+                if (os_has_elapsed(&camext.prm_timer, 50))
                 {
-                    if (c->ext->reconfigure_camera) {
+                    if (camext.reconfigure_camera) {
                         break;
                     }
                     esp32_cam_set_parameters();
@@ -581,8 +582,6 @@ static void esp32_cam_set_parameters(
     x = camext.prm[b]; \
     y = 4 * (x + 10) / 100 - 2; \
     s->a(s, y);     // -2 to 2
-
-return;
 
     os_int x, y;
     sensor_t * s = esp_camera_sensor_get();
