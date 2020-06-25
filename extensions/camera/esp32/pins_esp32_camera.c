@@ -77,15 +77,6 @@ static camera_config_t camera_config = {
 };
 
 
-#ifndef PINS_ESPCAM_MAX_CAMERAS
-#define PINS_ESPCAM_MAX_CAMERAS 1
-#endif
-
-// #define esp32_cam_MAX_PIN_PRM 14
-
-#define PINS_ESPCAM_MAX_DATA_SZ (640 * 480 * 3)
-#define PINS_ESPCAM_BUF_SZ (sizeof(iocBrickHdr) + PINS_ESPCAM_MAX_DATA_SZ)
-
 /* Wrapper specific extensions to PinsCamera structure
  */
 typedef struct PinsCameraExt
@@ -181,6 +172,8 @@ static osalStatus esp32_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
+    os_int i;
+
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
@@ -349,7 +342,7 @@ static void esp32_cam_check_dims_and_set_frame_size(
     w = camext.prm[PINS_CAM_IMG_WIDTH];
     if (w <= 320) { w = 320; h = 240; camera_config.frame_size = FRAMESIZE_QVGA; }
     else if (w <= 640) { w = 640; h = 480; camera_config.frame_size = FRAMESIZE_VGA; }
-    else if (w <= 800) { w = 800; h = 600; camera_config.frame_size = FRAMESIZE_SGA; }
+    else if (w <= 800) { w = 800; h = 600; camera_config.frame_size = FRAMESIZE_SVGA; }
     else if (w <= 1024) { w = 1024; h = 768; camera_config.frame_size = FRAMESIZE_XGA; }
     else if (w <= 1280) { w = 1280; h = 1024; camera_config.frame_size = FRAMESIZE_SXGA; }
     else { w = 1600; h = 1200; camera_config.frame_size = FRAMESIZE_UXGA; }
@@ -431,7 +424,6 @@ static void esp32_cam_finalize_camera_photo(
     pinsPhoto photo;
     iocBrickHdr hdr;
     os_int alloc_sz, w, h;
-    os_uchar quality;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -504,7 +496,6 @@ static void esp32_cam_task(
 {
     pinsCamera *c;
     camera_fb_t *fb;
-    sensor_t *sens;
     os_timer error_retry_timer = 0;
     esp_err_t err;
     os_boolean initialized = OS_FALSE;
@@ -532,7 +523,7 @@ static void esp32_cam_task(
                     goto goon;
                 }
 
-                esp32_cam_set_parameters(c, VI, camera_nr);
+                esp32_cam_set_parameters();
                 camext.reconfigure_camera = OS_FALSE;
 
                 initialized = OS_TRUE;
@@ -560,7 +551,7 @@ static void esp32_cam_task(
                     if (c->ext->reconfigure_camera) {
                         break;
                     }
-                    esp32_cam_set_parameters(c, VI, camera_nr);
+                    esp32_cam_set_parameters();
                 }
             }
         }
@@ -589,15 +580,16 @@ static void esp32_cam_set_parameters(
 #define PINCAM_SETPRM_MACRO_PM2(a, b) \
     x = camext.prm[b]; \
     y = 4 * (x + 10) / 100 - 2; \
-    s->a(s, x);     // -2 to 2
+    s->a(s, y);     // -2 to 2
 
     os_int x, y;
     sensor_t * s = esp_camera_sensor_get();
 
-    c->ext->prm_changed = OS_FALSE;
+    camext.prm_changed = OS_FALSE;
 
     PINCAM_SETPRM_MACRO_PM2(set_brightness, PINS_CAM_BRIGHTNESS)
-    PINCAM_SETPRM_MACRO(set_contrast, PINS_CAM_CONTRAST)
+    PINCAM_SETPRM_MACRO_PM2(set_contrast, PINS_CAM_CONTRAST)
+    PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
 
     /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
     PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION)
@@ -637,15 +629,13 @@ static void esp32_cam_set_parameters(
     s->set_dcw(s, 1);            // 0 = disable , 1 = enable
     s->set_colorbar(s, 0);       // 0 = disable , 1 = enable
 
-//                sens = esp_camera_sensor_get();
-                //initial sensors are flipped vertically and colors are a bit saturated
-                /* if (s->id.PID == OV3660_PID) {
-                  s->set_vflip(s, 1);//flip it back
-                  s->set_brightness(s, 1);//up the blightness just a bit
-                  s->set_saturation(s, -2);//lower the saturation
-                } */
-                //drop down frame size for higher initial frame rate
-//                sens->set_framesize(sens, FRAMESIZE_QVGA);
+    if (s->id.PID == OV3660_PID) {
+          s->set_vflip(s, 1);//flip it back
+          s->set_brightness(s, 1);//up the blightness just a bit
+          s->set_saturation(s, -2);//lower the saturation
+    }
+    //drop down frame size for higher initial frame rate
+    sens->set_framesize(sens, FRAMESIZE_QVGA);
 
  */
 }
