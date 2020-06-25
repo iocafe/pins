@@ -582,6 +582,8 @@ static void esp32_cam_set_parameters(
     y = 4 * (x + 10) / 100 - 2; \
     s->a(s, y);     // -2 to 2
 
+return;
+
     os_int x, y;
     sensor_t * s = esp_camera_sensor_get();
 
