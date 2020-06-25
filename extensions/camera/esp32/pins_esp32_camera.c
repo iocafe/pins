@@ -14,6 +14,7 @@
 
 ****************************************************************************************************
 */
+#define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
 #if PINS_IS_ESP32_CAMERA
 
@@ -85,6 +86,8 @@ typedef struct PinsCameraExt
     os_timer prm_timer;
     volatile os_boolean prm_changed;
     volatile os_boolean reconfigure_camera;
+    volatile os_boolean enable_interrupts;
+    volatile os_boolean camera_paused;
 }
 PinsCameraExt;
 
@@ -106,6 +109,9 @@ static void esp32_cam_task(
 static void esp32_cam_set_parameters(
     void);
 
+static void esp32_cam_global_interrupt_control(
+    os_boolean enable,
+    void *context);
 
 /**
 ****************************************************************************************************
@@ -186,6 +192,8 @@ static osalStatus esp32_cam_open(
     for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
         camext.prm[i] = -1;
     }
+
+    camext.enable_interrupts = osal_add_interrupt_to_list(esp32_cam_global_interrupt_control, c);
 
     return OSAL_SUCCESS;
 }
@@ -507,7 +515,18 @@ static void esp32_cam_task(
 
     while (!c->stop_thread && osal_go())
     {
-        if (!initialized)
+        if (!camext.enable_interrupts)
+        {
+            camext.camera_paused = OS_TRUE;
+            while (!camext.enable_interrupts &&
+                   !c->stop_thread &&
+                   osal_go())
+            {
+                os_timeslice();
+            }
+            camext.camera_paused = OS_FALSE;
+        }
+        else if (!initialized)
         {
             if (os_has_elapsed(&error_retry_timer, 1200))
             {
@@ -639,6 +658,45 @@ static void esp32_cam_set_parameters(
     sens->set_framesize(sens, FRAMESIZE_QVGA);
 
  */
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Global enable/disable interrupts callback for flash writes.
+  @anchor esp32_cam_global_interrupt_control
+
+  The esp32_cam_global_interrupt_control() function is callback function from
+  global interrupt control. The purpose of global control is to disable interrupts
+  when writing to flash. Heare disabling interrupts means stopping the camera
+ (is that good enough?)
+
+  @param   enable OS_TRUE to mark that interrupts are enabled globally, or OS_FALSE
+           to mark that interrupts are disabled.
+  @param   context Pointer to the pin structure, callback context.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void esp32_cam_global_interrupt_control(
+    os_boolean enable,
+    void *context)
+{
+    pinsCamera *c;
+
+    if (camext.enable_interrupts != enable)
+    {
+        camext.enable_interrupts = enable;
+        c = (pinsCamera*)context;
+
+        while (!enable &&
+               !camext.camera_paused &&
+               c->camera_thread)
+        {
+            os_timeslice();
+        }
+    }
 }
 
 
