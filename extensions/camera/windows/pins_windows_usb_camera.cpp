@@ -249,7 +249,7 @@ static void usb_cam_stop(
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
-  @param   x Parameter value.
+  @param   x Parameter value. -1 to indicate that parameter has not value.
   @return  None
 
 ****************************************************************************************************
@@ -632,7 +632,7 @@ static void usb_cam_set_parameters(
         y = (os_int)(0.01 * delta * x + 0.5); \
         if (y < CP.a.Min) y = CP.a.Min; \
         if (y > CP.a.Max) y = CP.a.Max; \
-        if (y != CP.a.CurrentValue && x > 0) \
+        if (y != CP.a.CurrentValue && x >= 0) \
         { \
             CP.a.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
             CP.a.CurrentValue = y; \
@@ -641,7 +641,7 @@ static void usb_cam_set_parameters(
 
 #define PINCAM_SETPRM_MANUAL_MACRO(a, b) \
     x = c->ext->prm[b]; \
-    if (x != CP.a.CurrentValue && x > 0) \
+    if (x != CP.a.CurrentValue && x >= 0) \
     { \
         CP.a.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
         CP.a.CurrentValue = x; \

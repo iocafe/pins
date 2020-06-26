@@ -71,7 +71,8 @@ static camera_config_t camera_config = {
     .ledc_channel = LEDC_CHANNEL_0,
 
     .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_QVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+//    .frame_size = FRAMESIZE_QVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
 
     .jpeg_quality = 12, //0-63 lower number means higher quality
     .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
@@ -290,7 +291,7 @@ static void esp32_cam_stop(
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
-  @param   x Parameter value.
+  @param   x Parameter value. -1 to indicate that parameter has not value.
   @return  None
 
 ****************************************************************************************************
@@ -347,6 +348,8 @@ static void esp32_cam_check_dims_and_set_frame_size(
     pinsCamera *c)
 {
     os_int w, h;
+
+return;
 
     w = camext.prm[PINS_CAM_IMG_WIDTH];
     if (w <= 320) { w = 320; h = 240; camera_config.frame_size = FRAMESIZE_QVGA; }
@@ -600,10 +603,10 @@ static void esp32_cam_set_parameters(
 #define PINCAM_SETPRM_MACRO_PM2(a, b) \
     x = camext.prm[b]; \
     y = 4 * (x + 10) / 100 - 2; \
-    s->a(s, y);     // -2 to 2
+    sens->a(sens, y);     // -2 to 2
 
     os_int x, y;
-    sensor_t * s = esp_camera_sensor_get();
+    sensor_t * sens = esp_camera_sensor_get();
 
     camext.prm_changed = OS_FALSE;
 
@@ -611,8 +614,12 @@ static void esp32_cam_set_parameters(
     PINCAM_SETPRM_MACRO_PM2(set_contrast, PINS_CAM_CONTRAST)
     PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
 
+//    sens->set_awb_gain(sens, 0);       // 0 = disable , 1 = enable
+//    sens->set_wb_mode(sens, 4);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+
+//    sens->set_framesize(sens, camera_config.frame_size);
+
     /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
-    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION)
 
     PINCAM_SETPRM_MACRO(Sharpness, PINS_CAM_SHARPNESS)
     PINCAM_SETPRM_MACRO(Gamma, PINS_CAM_GAMMA)
@@ -623,36 +630,32 @@ static void esp32_cam_set_parameters(
     PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE)
     PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS)
     PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)
-    */
 
-/*
-    s->set_brightness(s, 0);     // -2 to 2
-    s->set_contrast(s, 0);       // -2 to 2
-    s->set_saturation(s, 0);     // -2 to 2
-    s->set_special_effect(s, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
-    s->set_whitebal(s, 1);       // 0 = disable , 1 = enable
-    s->set_awb_gain(s, 1);       // 0 = disable , 1 = enable
-    s->set_wb_mode(s, 0);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
-    s->set_exposure_ctrl(s, 1);  // 0 = disable , 1 = enable
-    s->set_aec2(s, 0);           // 0 = disable , 1 = enable
-    s->set_ae_level(s, 0);       // -2 to 2
-    s->set_aec_value(s, 300);    // 0 to 1200
-    s->set_gain_ctrl(s, 1);      // 0 = disable , 1 = enable
-    s->set_agc_gain(s, 0);       // 0 to 30
-    s->set_gainceiling(s, (gainceiling_t)0);  // 0 to 6
-    s->set_bpc(s, 0);            // 0 = disable , 1 = enable
-    s->set_wpc(s, 1);            // 0 = disable , 1 = enable
-    s->set_raw_gma(s, 1);        // 0 = disable , 1 = enable
-    s->set_lenc(s, 1);           // 0 = disable , 1 = enable
-    s->set_hmirror(s, 0);        // 0 = disable , 1 = enable
-    s->set_vflip(s, 0);          // 0 = disable , 1 = enable
-    s->set_dcw(s, 1);            // 0 = disable , 1 = enable
-    s->set_colorbar(s, 0);       // 0 = disable , 1 = enable
 
-    if (s->id.PID == OV3660_PID) {
-          s->set_vflip(s, 1);//flip it back
-          s->set_brightness(s, 1);//up the blightness just a bit
-          s->set_saturation(s, -2);//lower the saturation
+
+    sens->set_special_effect(sens, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
+    sens->set_whitebal(sens, 1);       // 0 = disable , 1 = enable
+
+    sens->set_exposure_ctrl(sens, 1);  // 0 = disable , 1 = enable
+    sens->set_aec2(sens, 0);           // 0 = disable , 1 = enable
+    sens->set_ae_level(sens, 0);       // -2 to 2
+    sens->set_aec_value(sens, 300);    // 0 to 1200
+    sens->set_gain_ctrl(sens, 1);      // 0 = disable , 1 = enable
+    sens->set_agc_gain(sens, 0);       // 0 to 30
+    sens->set_gainceiling(sens, (gainceiling_t)0);  // 0 to 6
+    sens->set_bpc(sens, 0);            // 0 = disable , 1 = enable
+    sens->set_wpc(sens, 1);            // 0 = disable , 1 = enable
+    sens->set_raw_gma(sens, 1);        // 0 = disable , 1 = enable
+    sens->set_lenc(sens, 1);           // 0 = disable , 1 = enable
+    sens->set_hmirror(sens, 0);        // 0 = disable , 1 = enable
+    sens->set_vflip(sens, 0);          // 0 = disable , 1 = enable
+    sens->set_dcw(sens, 1);            // 0 = disable , 1 = enable
+    sens->set_colorbar(sens, 0);       // 0 = disable , 1 = enable
+
+    if (sens->id.PID == OV3660_PID) {
+          sens->set_vflip(sens, 1);//flip it back
+          sens->set_brightness(sens, 1);//up the blightness just a bit
+          sens->set_saturation(sens, -2);//lower the saturation
     }
     //drop down frame size for higher initial frame rate
     sens->set_framesize(sens, FRAMESIZE_QVGA);
