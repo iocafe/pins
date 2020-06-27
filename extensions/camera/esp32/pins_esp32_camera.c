@@ -71,8 +71,7 @@ static camera_config_t camera_config = {
     .ledc_channel = LEDC_CHANNEL_0,
 
     .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-//    .frame_size = FRAMESIZE_QVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
-    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA,//QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA, // Do not use sizes above QVGA when not JPEG
 
     .jpeg_quality = 12, //0-63 lower number means higher quality
     .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
@@ -89,6 +88,11 @@ typedef struct PinsCameraExt
     volatile os_boolean reconfigure_camera;
     volatile os_boolean enable_interrupts;
     volatile os_boolean camera_paused;
+
+    /* JPEG compression quality 1 - 100. and previous value for change checking.
+     */
+    volatile os_uchar jpeg_quality;
+    os_uchar prev_jpeg_quality;
 }
 PinsCameraExt;
 
@@ -113,6 +117,7 @@ static void esp32_cam_set_parameters(
 static void esp32_cam_global_interrupt_control(
     os_boolean enable,
     void *context);
+
 
 /**
 ****************************************************************************************************
@@ -186,10 +191,10 @@ static osalStatus esp32_cam_open(
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
     c->iface = &pins_esp32_camera_iface;
-    c->jpeg_quality = 12;
     c->ext = &camext;
 
     os_memclear(&camext, sizeof(PinsCameraExt));
+    camext.jpeg_quality = 12;
     for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
         camext.prm[i] = -1;
     }
@@ -247,7 +252,7 @@ static void esp32_cam_start(
     opt.thread_name = "espcam";
     opt.stack_size = 8000;
     opt.pin_to_core = OS_TRUE;
-    opt.pin_to_core_nr = 0;
+    opt.pin_to_core_nr = 1;
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
@@ -349,8 +354,6 @@ static void esp32_cam_check_dims_and_set_frame_size(
 {
     os_int w, h;
 
-return;
-
     w = camext.prm[PINS_CAM_IMG_WIDTH];
     if (w <= 320) { w = 320; h = 240; camera_config.frame_size = FRAMESIZE_QVGA; }
     else if (w <= 640) { w = 640; h = 480; camera_config.frame_size = FRAMESIZE_VGA; }
@@ -407,7 +410,7 @@ static void esp32_cam_set_jpeg_quality(
     pinsCamera *c,
     os_uchar quality)
 {
-    c->jpeg_quality = quality;
+    camext.jpeg_quality = quality;
 }
 
 
@@ -455,6 +458,12 @@ static void esp32_cam_finalize_camera_photo(
         case PIXFORMAT_JPEG:
             photo.format = OSAL_RGB24;
             photo.compression = IOC_JPEG;
+
+            /* Return image quality used to compress the image for adapting compression.
+             */
+            if (camext.prev_jpeg_quality <= 100) {
+                photo.compression |= camext.prev_jpeg_quality;
+            }
             break;
 
         case PIXFORMAT_GRAYSCALE:
@@ -468,6 +477,7 @@ static void esp32_cam_finalize_camera_photo(
             break;
     }
     hdr.compression = (os_uchar)photo.compression;
+
 
     photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
     photo.w = w;
@@ -508,9 +518,11 @@ static void esp32_cam_task(
 {
     pinsCamera *c;
     camera_fb_t *fb;
+    sensor_t *sens;
     os_timer error_retry_timer = 0;
     esp_err_t err;
     os_boolean initialized = OS_FALSE;
+    int q,  ccc = 0;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -540,6 +552,8 @@ static void esp32_cam_task(
                     digitalWrite(CAM_PIN_PWDN, LOW);
                 }
 
+                // call camera_probe before
+
                 err = esp_camera_init(&camera_config);
                 if (err != ESP_OK) {
                     osal_debug_error("ESP32 camera init failed");
@@ -548,6 +562,7 @@ static void esp32_cam_task(
 
                 esp32_cam_set_parameters();
                 camext.reconfigure_camera = OS_FALSE;
+                camext.prev_jpeg_quality = 255;
 
                 initialized = OS_TRUE;
             }
@@ -558,6 +573,24 @@ static void esp32_cam_task(
         else
         {
             os_sleep(20);
+
+            if (camext.jpeg_quality != camext.prev_jpeg_quality)
+            {
+                camext.prev_jpeg_quality = camext.jpeg_quality;
+                sens = esp_camera_sensor_get();
+                //0-63 lower number means higher quality
+                q = 63 * (100 - (int)camext.prev_jpeg_quality) / 100;
+osal_debug_error_int("HERE QUALITY ", q)                ;
+                sens->set_quality(sens, q);
+
+/* if (++ccc > 10)
+{
+ccc = 0;
+// osal_debug_error_int("HERE QUALITY ", q)                ;
+}
+*/
+            }
+
             fb = esp_camera_fb_get();
             if (fb == OS_NULL) {
                 osal_debug_error("ESP32 camera capture failed");
@@ -571,9 +604,9 @@ static void esp32_cam_task(
             if (camext.prm_changed) {
                 if (os_has_elapsed(&camext.prm_timer, 50))
                 {
-                    if (camext.reconfigure_camera) {
-                        break;
-                    }
+                    // if (camext.reconfigure_camera) {
+                    //     break;
+                    // }
                     esp32_cam_set_parameters();
                 }
             }
@@ -617,7 +650,7 @@ static void esp32_cam_set_parameters(
 //    sens->set_awb_gain(sens, 0);       // 0 = disable , 1 = enable
 //    sens->set_wb_mode(sens, 4);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
 
-//    sens->set_framesize(sens, camera_config.frame_size);
+    sens->set_framesize(sens, camera_config.frame_size);
 
     /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
 
@@ -630,7 +663,6 @@ static void esp32_cam_set_parameters(
     PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE)
     PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS)
     PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)
-
 
 
     sens->set_special_effect(sens, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
