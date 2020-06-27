@@ -71,9 +71,10 @@ static camera_config_t camera_config = {
     .ledc_channel = LEDC_CHANNEL_0,
 
     .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_VGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA, // Do not use sizes above QVGA when not JPEG
 
-    .jpeg_quality = 12, //0-63 lower number means higher quality
+// CONFIGURE WITH MAXIMUM RESOLUTION AND QUALITY TO SET UP WITH MAX FRAME BUFFER SIZE (it will not be resized)
+    .frame_size = FRAMESIZE_SVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA, // Do not use sizes above QVGA when not JPEG
+    .jpeg_quality = 1, //0-63 lower number means higher quality
     .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
 };
 
@@ -93,6 +94,8 @@ typedef struct PinsCameraExt
      */
     volatile os_uchar jpeg_quality;
     os_uchar prev_jpeg_quality;
+    int frame_size;
+    int prev_frame_size;
 }
 PinsCameraExt;
 
@@ -355,12 +358,12 @@ static void esp32_cam_check_dims_and_set_frame_size(
     os_int w, h;
 
     w = camext.prm[PINS_CAM_IMG_WIDTH];
-    if (w <= 320) { w = 320; h = 240; camera_config.frame_size = FRAMESIZE_QVGA; }
-    else if (w <= 640) { w = 640; h = 480; camera_config.frame_size = FRAMESIZE_VGA; }
-    else if (w <= 800) { w = 800; h = 600; camera_config.frame_size = FRAMESIZE_SVGA; }
-    else if (w <= 1024) { w = 1024; h = 768; camera_config.frame_size = FRAMESIZE_XGA; }
-    else if (w <= 1280) { w = 1280; h = 1024; camera_config.frame_size = FRAMESIZE_SXGA; }
-    else { w = 1600; h = 1200; camera_config.frame_size = FRAMESIZE_UXGA; }
+    if (w <= 320) { w = 320; h = 240; camext.frame_size = FRAMESIZE_QVGA; }
+    else if (w <= 640) { w = 640; h = 480; camext.frame_size = FRAMESIZE_VGA; }
+    else if (w <= 800) { w = 800; h = 600; camext.frame_size = FRAMESIZE_SVGA; }
+    else if (w <= 1024) { w = 1024; h = 768; camext.frame_size = FRAMESIZE_XGA; }
+    else if (w <= 1280) { w = 1280; h = 1024; camext.frame_size = FRAMESIZE_SXGA; }
+    else { w = 1600; h = 1200; camext.frame_size = FRAMESIZE_UXGA; }
     camext.prm[PINS_CAM_IMG_WIDTH] = w;
     camext.prm[PINS_CAM_IMG_HEIGHT] = h;
 }
@@ -563,6 +566,7 @@ static void esp32_cam_task(
                 esp32_cam_set_parameters();
                 camext.reconfigure_camera = OS_FALSE;
                 camext.prev_jpeg_quality = 255;
+                camext.prev_frame_size = -1;
 
                 initialized = OS_TRUE;
             }
@@ -582,13 +586,12 @@ static void esp32_cam_task(
                 q = 63 * (100 - (int)camext.prev_jpeg_quality) / 100;
 osal_debug_error_int("HERE QUALITY ", q)                ;
                 sens->set_quality(sens, q);
+            }
 
-/* if (++ccc > 10)
-{
-ccc = 0;
-// osal_debug_error_int("HERE QUALITY ", q)                ;
-}
-*/
+            if (camext.frame_size != camext.prev_frame_size)
+            {
+                camext.prev_frame_size = camext.frame_size;
+                sens->set_framesize(sens, camext.prev_frame_size);
             }
 
             fb = esp_camera_fb_get();
@@ -650,7 +653,6 @@ static void esp32_cam_set_parameters(
 //    sens->set_awb_gain(sens, 0);       // 0 = disable , 1 = enable
 //    sens->set_wb_mode(sens, 4);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
 
-    sens->set_framesize(sens, camera_config.frame_size);
 
     /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
 
