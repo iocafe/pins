@@ -4,7 +4,12 @@
   @brief   ESP32-CAM wrapper.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    21.4.2020
+  @date    21.6.2020
+
+  Notes: ESP32 allocates image frame buffer when camera is initalized. It is not practical to
+  reallocate this buffer later on, thus camera is first initialized with high resolution and
+  quality to get large enough frame buffer. Later code switches to real image size and
+  JPEG quality to use.
 
   Copyright 2020 Espressif, Apace 2 license.
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
@@ -347,6 +352,10 @@ static void esp32_cam_set_parameter(
   height setting is selected.
   The function also stores matching frame size in global camera_config structure.
 
+  Note: Camera supprts higher resolutions FRAMESIZE_SXGA (1280x1024) and FRAMESIZE_UXGA
+  (1600x1200), but current implementation needs more memory than regular ESP32 CAM has.
+  Thus these modes are not supported.
+
   @param   c Pointer to camera structure.
   @return  None
 
@@ -361,9 +370,7 @@ static void esp32_cam_check_dims_and_set_frame_size(
     if (w <= 320) { w = 320; h = 240; camext.frame_size = FRAMESIZE_QVGA; }
     else if (w <= 640) { w = 640; h = 480; camext.frame_size = FRAMESIZE_VGA; }
     else if (w <= 800) { w = 800; h = 600; camext.frame_size = FRAMESIZE_SVGA; }
-    else if (w <= 1024) { w = 1024; h = 768; camext.frame_size = FRAMESIZE_XGA; }
-    else if (w <= 1280) { w = 1280; h = 1024; camext.frame_size = FRAMESIZE_SXGA; }
-    else { w = 1600; h = 1200; camext.frame_size = FRAMESIZE_UXGA; }
+    else { w = 1024; h = 768; camext.frame_size = FRAMESIZE_XGA; }
     camext.prm[PINS_CAM_IMG_WIDTH] = w;
     camext.prm[PINS_CAM_IMG_HEIGHT] = h;
 }
