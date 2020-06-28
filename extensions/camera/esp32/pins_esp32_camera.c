@@ -230,6 +230,7 @@ static osalStatus esp32_cam_open(
 static void esp32_cam_close(
     pinsCamera *c)
 {
+
     esp32_cam_stop(c);
 }
 
@@ -260,7 +261,7 @@ static void esp32_cam_start(
     opt.thread_name = "espcam";
     opt.stack_size = 8000;
     opt.pin_to_core = OS_TRUE;
-    opt.pin_to_core_nr = 1;
+    opt.pin_to_core_nr = 0;
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
