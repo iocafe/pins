@@ -41,7 +41,7 @@ void forward_signal_change_to_io_pins(
  */
 void forward_signal_change_to_io_pin(
     const iocSignal *sig,
-    os_int reserved);
+    os_short flags);
 
 /* Forward data data received from communication to IO pins.
  */

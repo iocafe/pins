@@ -175,14 +175,16 @@ osal_debug_error("planning to OBSOLETE this function, replaced by more efficient
   forward IO pin state change to hardware IO pin.
 
   @param   handle Memory block handle.
-  @param   reserved Reserved for future, set 0 for now.
+  @param   flags IOC_SIGNAL_DEFAULT for default operation. Flag IOC_SIGNAL_NO_TBUF_CHECK to
+           forward change even memory block is not communication target (used to forward
+           parameter setting to pins).
   @return  None.
 
 ****************************************************************************************************
 */
 void forward_signal_change_to_io_pin(
     const iocSignal *sig,
-    os_int reserved)
+    os_short flags)
 {
     const Pin *pin;
     os_int x;
@@ -190,7 +192,7 @@ void forward_signal_change_to_io_pin(
 
     osal_debug_assert(sig->flags & IOC_PIN_PTR);
 
-    x = (os_int)ioc_get_ext(sig, &state_bits, IOC_SIGNAL_DEFAULT);
+    x = (os_int)ioc_get_ext(sig, &state_bits, flags);
     if (state_bits & OSAL_STATE_CONNECTED)
     {
         pin = (const Pin *)sig->ptr;
