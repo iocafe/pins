@@ -161,8 +161,6 @@ typedef enum pinsCameraParamIx
     PINS_CAM_SATURATION,
 
     PINS_CAM_SHARPNESS,
-    PINS_CAM_IRIS,
-    PINS_CAM_FOCUS,
 
     /* Experimental */
 
@@ -171,22 +169,9 @@ typedef enum pinsCameraParamIx
     PINS_CAM_GAMMA,             /* 1000 * gamma value */
 
     PINS_CAM_GAIN,
-    PINS_CAM_AGC_GAIN,
-    PINS_CAM_GAIN_CTRL,
-    PINS_CAM_GAIN_CEILING,
 
-    PINS_CAM_INTEGRATION_US, /* Same as exposure */
-    PINS_CAM_EXPOSURE = PINS_CAM_INTEGRATION_US,
-    PINS_CAM_EXPOSURE_CTRL,
-    PINS_CAM_AEC2,
-    PINS_CAM_AE_LEVEL,
-
-    PINS_CAM_BPC,
-    PINS_CAM_WPC,
-    PINS_CAM_LENC,
-    PINS_CAM_DCW,
-    PINS_CAM_COLORBAR,
-    PINS_CAM_RAW_GMA,
+    PINS_CAM_INTEGRATION_US,
+    PINS_CAM_EXPOSURE,
 
     PINS_NRO_CAMERA_PARAMS
 }

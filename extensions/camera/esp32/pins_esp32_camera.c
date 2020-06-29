@@ -684,31 +684,40 @@ static void esp32_cam_set_parameters(
     PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
     sens->set_whitebal(sens, 1);
     sens->set_awb_gain(sens, 1);
-    sens->set_wb_mode(sens, 0); /* 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+    sens->set_wb_mode(sens, 0); /* 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home) */
 
-/*
-    PINCAM_SETPRM_MACRO_ONOFF(set_exposure_ctrl, PINS_CAM_EXPOSURE_CTRL)
-    PINCAM_SETPRM_MACRO_ONOFF(set_aec2, PINS_CAM_AEC2)
-    PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_EXPOSURE, 1200)
-    PINCAM_SETPRM_MACRO_PM2(set_ae_level, PINS_CAM_AE_LEVEL)
+    x = camext.prm[PINS_CAM_GAIN];
+    if (x >= 0) {
+        sens->set_gainceiling(sens, 1);
+        sens->set_gain_ctrl(sens, 0);
+        PINCAM_SETPRM_MACRO_SCALE(set_agc_gain, PINS_CAM_GAIN, 30)
+    }
+    else {
+        sens->set_agc_gain(sens, 0);
+        sens->set_gain_ctrl(sens, 1);
+        sens->set_gainceiling(sens, 1);
+    }
 
-    PINCAM_SETPRM_MACRO_ONOFF(set_gain_ctrl, PINS_CAM_GAIN_CTRL)
-    PINCAM_SETPRM_MACRO_SCALE(set_agc_gain, PINS_CAM_AGC_GAIN, 30)
-    PINCAM_SETPRM_MACRO_SCALE(set_gainceiling, PINS_CAM_GAIN_CEILING, 6)
-*/
+    sens->set_aec2(sens, 1);
+    x = camext.prm[PINS_CAM_EXPOSURE];
+    sens->set_ae_level(sens, 2); // 1 or 2 ?
+    if (x > 0) {
+        sens->set_exposure_ctrl(sens, 0);
+        PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_EXPOSURE, 1200)
+    }
+    else {
+        sens->set_exposure_ctrl(sens, 1);
+    }
 
-/*    PINCAM_SETPRM_MACRO_ONOFF(set_raw_gma, PINS_CAM_RAW_GMA)
+    sens->set_raw_gma(sens, 0);
+    sens->set_lenc(sens, 0);
+    sens->set_dcw(sens, 1);
 
-    PINCAM_SETPRM_MACRO_ONOFF(set_bpc, PINS_CAM_BPC)
-    PINCAM_SETPRM_MACRO_ONOFF(set_wpc, PINS_CAM_WPC)
-    PINCAM_SETPRM_MACRO_ONOFF(set_lenc, PINS_CAM_LENC)
-    PINCAM_SETPRM_MACRO_ONOFF(set_dcw, PINS_CAM_DCW)
-    PINCAM_SETPRM_MACRO_ONOFF(set_colorbar, PINS_CAM_COLORBAR)
+    sens->set_colorbar(sens, 0);
 
     if (sens->id.PID == OV3660_PID) {
-          sens->set_vflip(sens, 1);//flip it back
+        sens->set_vflip(sens, 1);//flip it back
     }
-*/
 }
 
 
