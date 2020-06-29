@@ -91,7 +91,6 @@ typedef struct PinsCameraExt
     os_int prm[PINS_NRO_CAMERA_PARAMS];
     os_timer prm_timer;
     volatile os_boolean prm_changed;
-    volatile os_boolean reconfigure_camera;
     volatile os_boolean enable_interrupts;
     volatile os_boolean camera_paused;
 
@@ -318,25 +317,19 @@ static void esp32_cam_set_parameter(
     if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS || x < 0) return;
     if ((os_int)camext.prm[ix] == x) return;
     camext.prm[ix] = (os_int)x;
-    os_get_timer(&camext.prm_timer);
 
     switch (ix)
     {
-        case PINS_CAM_NR:
-        case PINS_CAM_FRAMERATE:
-            camext.reconfigure_camera = OS_TRUE;
-            break;
-
         case PINS_CAM_IMG_WIDTH:
         case PINS_CAM_IMG_HEIGHT:
             esp32_cam_check_dims_and_set_frame_size(c);
-            camext.reconfigure_camera = OS_TRUE;
             break;
 
         default:
             break;
     }
 
+    os_get_timer(&camext.prm_timer);
     camext.prm_changed = OS_TRUE;
 }
 
@@ -572,7 +565,6 @@ static void esp32_cam_task(
                 }
 
                 esp32_cam_set_parameters();
-                camext.reconfigure_camera = OS_FALSE;
                 camext.prev_jpeg_quality = 255;
                 camext.prev_frame_size = -1;
 
@@ -615,9 +607,6 @@ osal_debug_error_int("HERE QUALITY ", q)                ;
             if (camext.prm_changed) {
                 if (os_has_elapsed(&camext.prm_timer, 50))
                 {
-                    // if (camext.reconfigure_camera) {
-                    //     break;
-                    // }
                     esp32_cam_set_parameters();
                 }
             }
@@ -656,16 +645,11 @@ static void esp32_cam_set_parameters(
     y = scale * (x + 10) / 100; \
     if (x >= 0) {sens->a(sens, y);}  // 0 to scale
 
-/* Set on/off parameter.
-*/
-#define PINCAM_SETPRM_MACRO_ONOFF(a, b) \
-    x = camext.prm[b]; \
-    if (x >= 0) {sens->a(sens, x ? 1 : 0 );} // 0 or 1
 
     os_int x, y;
-    sensor_t * sens = esp_camera_sensor_get();
 
     camext.prm_changed = OS_FALSE;
+    sensor_t * sens = esp_camera_sensor_get();
 
     /* Always this way
      */
@@ -673,18 +657,16 @@ static void esp32_cam_set_parameters(
     sens->set_hmirror(sens, 0);        // 0 = disable , 1 = enable
     sens->set_vflip(sens, 0);          // 0 = disable , 1 = enable
 
-    /* NOT USED: PINS_CAM_HUE, PINS_CAM_COLOR_ENABLE, PINS_CAM_SHARPNESS, PINS_CAM_EXPOSURE, PINS_CAM_IRIS, PINS_CAM_FOCUS
-     */
+    sens->set_brightness(sens, 0);
+    sens->set_contrast(sens, 0);
 
-    PINCAM_SETPRM_MACRO_PM2(set_brightness, PINS_CAM_BRIGHTNESS)
-    PINCAM_SETPRM_MACRO_PM2(set_contrast, PINS_CAM_CONTRAST)
-
-    /* Colors
+    /* Set color
+       wb_mode: 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
      */
     PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
     sens->set_whitebal(sens, 1);
     sens->set_awb_gain(sens, 1);
-    sens->set_wb_mode(sens, 0); /* 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home) */
+    sens->set_wb_mode(sens, 0);
 
     x = camext.prm[PINS_CAM_GAIN];
     if (x >= 0) {
@@ -698,18 +680,21 @@ static void esp32_cam_set_parameters(
         sens->set_gainceiling(sens, 1);
     }
 
-    sens->set_aec2(sens, 1);
+    sens->set_aec2(sens, 0); // TEST
     x = camext.prm[PINS_CAM_EXPOSURE];
-    sens->set_ae_level(sens, 2); // 1 or 2 ?
-    if (x > 0) {
+    if (x >= 0)
+    {
+        sens->set_ae_level(sens, 0);
         sens->set_exposure_ctrl(sens, 0);
         PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_EXPOSURE, 1200)
     }
     else {
+        sens->set_aec_value(sens, 300);
         sens->set_exposure_ctrl(sens, 1);
+        sens->set_ae_level(sens, 2); // 1 or 2 ?
     }
 
-    sens->set_raw_gma(sens, 0);
+    sens->set_raw_gma(sens, 1); // TEST
     sens->set_lenc(sens, 0);
     sens->set_dcw(sens, 1);
 
