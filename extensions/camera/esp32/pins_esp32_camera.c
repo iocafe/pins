@@ -647,62 +647,68 @@ static void esp32_cam_set_parameters(
 #define PINCAM_SETPRM_MACRO_PM2(a, b) \
     x = camext.prm[b]; \
     y = 4 * (x + 10) / 100 - 2; \
-    sens->a(sens, y);     // -2 to 2
+    if (x >= 0) {sens->a(sens, y);}  // -2 to 2
+
+/* Set parameter, input 0 - 100, output 0 ... scale
+ */
+#define PINCAM_SETPRM_MACRO_SCALE(a, b, scale) \
+    x = camext.prm[b]; \
+    y = scale * (x + 10) / 100; \
+    if (x >= 0) {sens->a(sens, y);}  // 0 to scale
+
+/* Set on/off parameter.
+*/
+#define PINCAM_SETPRM_MACRO_ONOFF(a, b) \
+    x = camext.prm[b]; \
+    if (x >= 0) {sens->a(sens, x ? 1 : 0 );} // 0 or 1
 
     os_int x, y;
     sensor_t * sens = esp_camera_sensor_get();
 
     camext.prm_changed = OS_FALSE;
 
-    PINCAM_SETPRM_MACRO_PM2(set_brightness, PINS_CAM_BRIGHTNESS)
-    PINCAM_SETPRM_MACRO_PM2(set_contrast, PINS_CAM_CONTRAST)
-    PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
-
-//    sens->set_awb_gain(sens, 0);       // 0 = disable , 1 = enable
-//    sens->set_wb_mode(sens, 4);        // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
-
-
-    /* PINCAM_SETPRM_MACRO(Hue, PINS_CAM_HUE)
-
-    PINCAM_SETPRM_MACRO(Sharpness, PINS_CAM_SHARPNESS)
-    PINCAM_SETPRM_MACRO(Gamma, PINS_CAM_GAMMA)
-    PINCAM_SETPRM_MACRO(ColorEnable, PINS_CAM_COLOR_ENABLE)
-    PINCAM_SETPRM_MACRO(WhiteBalance, PINS_CAM_WHITE_BALANCE)
-    PINCAM_SETPRM_MACRO(BacklightCompensation, PINS_CAM_BACKLIGHT_COMPENSATION)
-    PINCAM_SETPRM_MACRO(Gain, PINS_CAM_GAIN)
-    PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE)
-    PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS)
-    PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)
-
-
-    sens->set_special_effect(sens, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
-    sens->set_whitebal(sens, 1);       // 0 = disable , 1 = enable
-
-    sens->set_exposure_ctrl(sens, 1);  // 0 = disable , 1 = enable
-    sens->set_aec2(sens, 0);           // 0 = disable , 1 = enable
-    sens->set_ae_level(sens, 0);       // -2 to 2
-    sens->set_aec_value(sens, 300);    // 0 to 1200
-    sens->set_gain_ctrl(sens, 1);      // 0 = disable , 1 = enable
-    sens->set_agc_gain(sens, 0);       // 0 to 30
-    sens->set_gainceiling(sens, (gainceiling_t)0);  // 0 to 6
-    sens->set_bpc(sens, 0);            // 0 = disable , 1 = enable
-    sens->set_wpc(sens, 1);            // 0 = disable , 1 = enable
-    sens->set_raw_gma(sens, 1);        // 0 = disable , 1 = enable
-    sens->set_lenc(sens, 1);           // 0 = disable , 1 = enable
+    /* Always this way
+     */
+    sens->set_special_effect(sens, 0);
     sens->set_hmirror(sens, 0);        // 0 = disable , 1 = enable
     sens->set_vflip(sens, 0);          // 0 = disable , 1 = enable
-    sens->set_dcw(sens, 1);            // 0 = disable , 1 = enable
-    sens->set_colorbar(sens, 0);       // 0 = disable , 1 = enable
+
+    /* NOT USED: PINS_CAM_HUE, PINS_CAM_COLOR_ENABLE, PINS_CAM_SHARPNESS, PINS_CAM_EXPOSURE, PINS_CAM_IRIS, PINS_CAM_FOCUS
+     */
+
+    PINCAM_SETPRM_MACRO_PM2(set_brightness, PINS_CAM_BRIGHTNESS)
+    PINCAM_SETPRM_MACRO_PM2(set_contrast, PINS_CAM_CONTRAST)
+
+    /* Colors
+     */
+    PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
+    sens->set_whitebal(sens, 1);
+    sens->set_awb_gain(sens, 1);
+    sens->set_wb_mode(sens, 0); /* 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+
+/*
+    PINCAM_SETPRM_MACRO_ONOFF(set_exposure_ctrl, PINS_CAM_EXPOSURE_CTRL)
+    PINCAM_SETPRM_MACRO_ONOFF(set_aec2, PINS_CAM_AEC2)
+    PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_EXPOSURE, 1200)
+    PINCAM_SETPRM_MACRO_PM2(set_ae_level, PINS_CAM_AE_LEVEL)
+
+    PINCAM_SETPRM_MACRO_ONOFF(set_gain_ctrl, PINS_CAM_GAIN_CTRL)
+    PINCAM_SETPRM_MACRO_SCALE(set_agc_gain, PINS_CAM_AGC_GAIN, 30)
+    PINCAM_SETPRM_MACRO_SCALE(set_gainceiling, PINS_CAM_GAIN_CEILING, 6)
+*/
+
+/*    PINCAM_SETPRM_MACRO_ONOFF(set_raw_gma, PINS_CAM_RAW_GMA)
+
+    PINCAM_SETPRM_MACRO_ONOFF(set_bpc, PINS_CAM_BPC)
+    PINCAM_SETPRM_MACRO_ONOFF(set_wpc, PINS_CAM_WPC)
+    PINCAM_SETPRM_MACRO_ONOFF(set_lenc, PINS_CAM_LENC)
+    PINCAM_SETPRM_MACRO_ONOFF(set_dcw, PINS_CAM_DCW)
+    PINCAM_SETPRM_MACRO_ONOFF(set_colorbar, PINS_CAM_COLORBAR)
 
     if (sens->id.PID == OV3660_PID) {
           sens->set_vflip(sens, 1);//flip it back
-          sens->set_brightness(sens, 1);//up the blightness just a bit
-          sens->set_saturation(sens, -2);//lower the saturation
     }
-    //drop down frame size for higher initial frame rate
-    sens->set_framesize(sens, FRAMESIZE_QVGA);
-
- */
+*/
 }
 
 
