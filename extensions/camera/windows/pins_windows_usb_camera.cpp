@@ -516,7 +516,7 @@ static void usb_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, nro_cameras, w, h;
+    os_int camera_nr, nro_cameras, w, h, fr;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -537,7 +537,9 @@ static void usb_cam_task(
 
         w = c->ext->prm[PINS_CAM_IMG_WIDTH];
         h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
-        if(!VI->setupDevice(camera_nr, w, h, c->ext->prm[PINS_CAM_FRAMERATE]))
+        fr = c->ext->prm[PINS_CAM_FRAMERATE];
+        if (fr <= 0) fr = 30;
+        if(!VI->setupDevice(camera_nr, w, h, fr))
         {
             osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
             goto tryagain;
@@ -624,28 +626,19 @@ static void usb_cam_set_parameters(
     videoInput *VI,
     os_int camera_nr)
 {
-#define PINCAM_SETPRM_MACRO(a, b) \
+#define PINCAM_SETPRM_MACRO(a, b, f) \
     x = c->ext->prm[b]; \
     delta = CP.a.Max - CP.a.Min; \
     if (delta > 0) \
     { \
+        if (x < 0) x = 50; \
         y = (os_int)(0.01 * delta * x + 0.5); \
         if (y < CP.a.Min) y = CP.a.Min; \
         if (y > CP.a.Max) y = CP.a.Max; \
-        if (y != CP.a.CurrentValue && x >= 0) \
-        { \
-            CP.a.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
-            CP.a.CurrentValue = y; \
-        } \
+        CP.a.Flag = f;  /* 1 = KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
+                        /* 2 = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
+        CP.a.CurrentValue = y; \
     }
-
-#define PINCAM_SETPRM_MANUAL_MACRO(a, b) \
-    x = c->ext->prm[b]; \
-    if (x != CP.a.CurrentValue && x >= 0) \
-    { \
-        CP.a.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
-        CP.a.CurrentValue = x; \
-    } 
 
     os_int x, y;
     os_double delta;
@@ -654,18 +647,19 @@ static void usb_cam_set_parameters(
 
     CamParametrs CP = VI->getParametrs(camera_nr);
 
-    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS) 
-    PINCAM_SETPRM_MACRO(Contrast, PINS_CAM_CONTRAST) 
-    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION) 
+    /* Brightness */
+    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2) 
 
-    PINCAM_SETPRM_MACRO(Sharpness, PINS_CAM_SHARPNESS) 
-    PINCAM_SETPRM_MACRO(Gamma, PINS_CAM_GAMMA) 
-    // PINCAM_SETPRM_MACRO(WhiteBalance, PINS_CAM_WHITE_BALANCE)
-    PINCAM_SETPRM_MACRO(BacklightCompensation, PINS_CAM_BACKLIGHT_COMPENSATION) 
-    PINCAM_SETPRM_MACRO(Gain, PINS_CAM_GAIN) 
-    // PINCAM_SETPRM_MACRO(Exposure, PINS_CAM_EXPOSURE)
-    // PINCAM_SETPRM_MACRO(Iris, PINS_CAM_IRIS)
-    // PINCAM_SETPRM_MACRO(Focus, PINS_CAM_FOCUS)
+    /* Saruration */
+    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2) 
+
+    /* Focus  */
+    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  
+    CP.Focus.CurrentValue = 100; 
+
+    /* White balance */
+    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  
+    CP.WhiteBalance.CurrentValue = 1; 
 
     VI->setParametrs(camera_nr, CP);
     if(!VI->isDeviceSetup(camera_nr))

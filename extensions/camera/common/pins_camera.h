@@ -151,27 +151,19 @@ pinsCameraInfo;
 typedef enum pinsCameraParamIx
 {
     PINS_CAM_NR,                /* Camera number. 1 is first camera (0 = any camera) */
-    PINS_CAM_MAX_BUF_SZ,
     PINS_CAM_IMG_WIDTH,         /* Image width, pixels */
     PINS_CAM_IMG_HEIGHT,        /* Image height, pixels */
     PINS_CAM_FRAMERATE,         /* Frame reate, pictures/second */
 
     PINS_CAM_BRIGHTNESS,
-    PINS_CAM_CONTRAST,
     PINS_CAM_SATURATION,
 
-    PINS_CAM_SHARPNESS,
-
     /* Experimental */
-
-    PINS_CAM_BACKLIGHT_COMPENSATION,
-
-    PINS_CAM_GAMMA,             /* 1000 * gamma value */
-
     PINS_CAM_GAIN,
-
-    PINS_CAM_INTEGRATION_US,
     PINS_CAM_EXPOSURE,
+
+    PINS_CAM_MAX_BUF_SZ,
+    PINS_CAM_INTEGRATION_US,
 
     PINS_NRO_CAMERA_PARAMS
 }
