@@ -293,6 +293,14 @@ MorseCodeEnum network_state_to_morse_code(
         goto setit;
     }
 
+    /* If device initialization is incomplete?
+     */
+    if (osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, 0))
+    {
+        code = MORSE_DEVICE_INIT_INCOMPLETE;
+        goto setit;
+    }
+
     /* All running fine.
      */
     code = MORSE_RUNNING;

@@ -51,7 +51,7 @@
 #define CAM_PIN_HREF    HREF_GPIO_NUM
 #define CAM_PIN_PCLK    PCLK_GPIO_NUM
 
-static camera_config_t camera_config = {
+static OS_FLASH_MEM camera_config_t camera_config = {
     .pin_pwdn  = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
     .pin_xclk = CAM_PIN_XCLK,
@@ -70,17 +70,19 @@ static camera_config_t camera_config = {
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
 
-     //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
-    .xclk_freq_hz = 10000000, // 20000000,
+     /* XCLK 20MHz (20000000)or 10MHz (10000000) for OV2640 double FPS (Experimental) */
+    .xclk_freq_hz = 10000000,
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
 
-    .pixel_format = PIXFORMAT_JPEG,//YUV422,GRAYSCALE,RGB565,JPEG
+    .pixel_format = PIXFORMAT_JPEG, /* YUV422,GRAYSCALE,RGB565,JPEG */
 
-// CONFIGURE WITH MAXIMUM RESOLUTION AND QUALITY TO SET UP WITH MAX FRAME BUFFER SIZE (it will not be resized)
-    .frame_size = FRAMESIZE_SVGA,//  FRAMESIZE_QVGA. FRAMESIZE_UXGA, // Do not use sizes above QVGA when not JPEG
-    .jpeg_quality = 1, //0-63 lower number means higher quality
-    .fb_count = 1 //if more than one, i2s runs in continuous mode. Use only with JPEG
+    /* CONFIGURE WITH MAXIMUM RESOLUTION AND QUALITY TO SET UP WITH MAX FRAME BUFFER
+       SIZE (it will not be resized)
+     */
+    .frame_size = FRAMESIZE_SVGA,
+    .jpeg_quality = 1,  /* 0-63 lower number means higher quality */
+    .fb_count = 1       /* if more than one, i2s runs in continuous mode. Use only with JPEG */
 };
 
 
@@ -526,7 +528,7 @@ static void esp32_cam_task(
     os_timer error_retry_timer = 0;
     esp_err_t err;
     os_boolean initialized = OS_FALSE;
-    int q,  ccc = 0;
+    int q;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -554,12 +556,17 @@ static void esp32_cam_task(
                 if (CAM_PIN_PWDN != -1) {
                     pinMode(CAM_PIN_PWDN, OUTPUT);
                     digitalWrite(CAM_PIN_PWDN, LOW);
+                    os_sleep(100);
                 }
-
-                // call camera_probe before
 
                 err = esp_camera_init(&camera_config);
                 if (err != ESP_OK) {
+                    if (CAM_PIN_PWDN != -1) {
+                        pinMode(CAM_PIN_PWDN, OUTPUT);
+                        digitalWrite(CAM_PIN_PWDN, LOW);
+                    }
+
+                    osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, OS_TRUE);
                     osal_debug_error("ESP32 camera init failed");
                     goto goon;
                 }
@@ -568,6 +575,7 @@ static void esp32_cam_task(
                 camext.prev_jpeg_quality = 255;
                 camext.prev_frame_size = -1;
 
+                osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, OS_FALSE);
                 initialized = OS_TRUE;
             }
             else {
@@ -582,7 +590,7 @@ static void esp32_cam_task(
             {
                 camext.prev_jpeg_quality = camext.jpeg_quality;
                 sens = esp_camera_sensor_get();
-                //0-63 lower number means higher quality
+                /* 0-63 lower number means higher quality */
                 q = 63 * (100 - (int)camext.prev_jpeg_quality) / 100;
 osal_debug_error_int("HERE QUALITY ", q)                ;
                 sens->set_quality(sens, q);
@@ -622,7 +630,8 @@ goon:;
   @brief Write parameters to camera driver.
   @anchor esp32_cam_set_parameters
 
-  The esp32_cam_set_parameters() function....
+  The esp32_cam_set_parameters() function parametrizes the camera. This is more or less
+  experimental, I have not found any useful documentation on ESP32CAM parameters.
 
   @return  None.
 
@@ -636,31 +645,31 @@ static void esp32_cam_set_parameters(
 #define PINCAM_SETPRM_MACRO_PM2(a, b) \
     x = camext.prm[b]; \
     y = 4 * (x + 10) / 100 - 2; \
-    if (x >= 0) {sens->a(sens, y);}  // -2 to 2
+    if (x >= 0) {sens->a(sens, y);}  /* -2 to 2 */
 
 /* Set parameter, input 0 - 100, output 0 ... scale
  */
 #define PINCAM_SETPRM_MACRO_SCALE(a, b, scale) \
     x = camext.prm[b]; \
     y = scale * (x + 10) / 100; \
-    if (x >= 0) {sens->a(sens, y);}  // 0 to scale
+    if (x >= 0) {sens->a(sens, y);}  /* 0 to scale */
 
     os_int x, y;
 
     camext.prm_changed = OS_FALSE;
     sensor_t * sens = esp_camera_sensor_get();
 
-    /* Always this way
+    /* Always this way. 0 = disable , 1 = enable.
      */
     sens->set_special_effect(sens, 0);
-    sens->set_hmirror(sens, 0);        // 0 = disable , 1 = enable
-    sens->set_vflip(sens, 0);          // 0 = disable , 1 = enable
+    sens->set_hmirror(sens, 0);
+    sens->set_vflip(sens, 0);
 
     sens->set_brightness(sens, 0);
     sens->set_contrast(sens, 0);
 
-    /* Set color
-       wb_mode: 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+    /* Set color. wb_mode: 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny,
+       2 - Cloudy, 3 - Office, 4 - Home)
      */
     PINCAM_SETPRM_MACRO_PM2(set_saturation, PINS_CAM_SATURATION)
     sens->set_whitebal(sens, 1);
@@ -669,7 +678,6 @@ static void esp32_cam_set_parameters(
 
     sens->set_gainceiling(sens, 1);
     sens->set_gain_ctrl(sens, 0);
-    // sens->set_agc_gain(sens, 0);
 
     x = camext.prm[PINS_CAM_BRIGHTNESS];
     if (x >= 0)
@@ -690,8 +698,10 @@ static void esp32_cam_set_parameters(
 
     sens->set_colorbar(sens, 0);
 
+    /* flip it back ?
+     */
     if (sens->id.PID == OV3660_PID) {
-        sens->set_vflip(sens, 1);//flip it back
+        sens->set_vflip(sens, 1);
     }
 }
 
