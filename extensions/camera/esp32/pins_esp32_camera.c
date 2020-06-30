@@ -645,7 +645,6 @@ static void esp32_cam_set_parameters(
     y = scale * (x + 10) / 100; \
     if (x >= 0) {sens->a(sens, y);}  // 0 to scale
 
-
     os_int x, y;
 
     camext.prm_changed = OS_FALSE;
@@ -668,34 +667,25 @@ static void esp32_cam_set_parameters(
     sens->set_awb_gain(sens, 1);
     sens->set_wb_mode(sens, 0);
 
-    x = camext.prm[PINS_CAM_GAIN];
-    if (x >= 0) {
-        sens->set_gainceiling(sens, 1);
-        sens->set_gain_ctrl(sens, 0);
-        PINCAM_SETPRM_MACRO_SCALE(set_agc_gain, PINS_CAM_GAIN, 30)
-    }
-    else {
-        sens->set_agc_gain(sens, 0);
-        sens->set_gain_ctrl(sens, 1);
-        sens->set_gainceiling(sens, 1);
-    }
+    sens->set_gainceiling(sens, 1);
+    sens->set_gain_ctrl(sens, 0);
+    // sens->set_agc_gain(sens, 0);
 
-    sens->set_aec2(sens, 0); // TEST
-    x = camext.prm[PINS_CAM_EXPOSURE];
+    x = camext.prm[PINS_CAM_BRIGHTNESS];
     if (x >= 0)
     {
         sens->set_ae_level(sens, 0);
         sens->set_exposure_ctrl(sens, 0);
-        PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_EXPOSURE, 1200)
+        PINCAM_SETPRM_MACRO_SCALE(set_aec_value, PINS_CAM_BRIGHTNESS, 1200)
     }
     else {
         sens->set_aec_value(sens, 300);
         sens->set_exposure_ctrl(sens, 1);
-        sens->set_ae_level(sens, 2); // 1 or 2 ?
+        sens->set_ae_level(sens, 1);
     }
 
-    sens->set_raw_gma(sens, 1); // TEST
-    sens->set_lenc(sens, 0);
+    sens->set_raw_gma(sens, 1);
+    sens->set_lenc(sens, 1); /* this may be 0 also */
     sens->set_dcw(sens, 1);
 
     sens->set_colorbar(sens, 0);

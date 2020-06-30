@@ -158,10 +158,6 @@ typedef enum pinsCameraParamIx
     PINS_CAM_BRIGHTNESS,
     PINS_CAM_SATURATION,
 
-    /* Experimental */
-    PINS_CAM_GAIN,
-    PINS_CAM_EXPOSURE,
-
     PINS_CAM_MAX_BUF_SZ,
     PINS_CAM_INTEGRATION_US,
 
