@@ -28,7 +28,7 @@ OSAL_C_HEADER_BEGINS
 /* PINS library version number.
  */
 #ifndef PINS_VERSION
-#define PINS_VERSION "0.3"
+#define PINS_VERSION "200712"
 #endif
 
 /* Include target operating system specific defines.
