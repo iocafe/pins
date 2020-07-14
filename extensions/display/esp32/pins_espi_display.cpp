@@ -72,7 +72,7 @@ void run_display_hw(
     os_timer *timer)
 {
     uint16_t background, color, bgr_color;
-    MorseCodeEnum code;
+    osalMorseCodeEnum code;
     os_char buf[IOC_NETWORK_NAME_SZ], nbuf[OSAL_NBUF_SZ];
     const os_char *text;
     os_short x, y, r;

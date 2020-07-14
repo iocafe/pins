@@ -138,11 +138,11 @@ static void display_net_state_notification_handler(
     struct osalNetworkState *net_state,
     void *context)
 {
-    MorseCodeEnum code;
+    osalMorseCodeEnum code;
     PinsDisplay *display;
     display = (PinsDisplay*)context;
 
-    code = network_state_to_morse_code(&display->morse, net_state);
+    code = osal_network_state_to_morse_code(net_state);
     set_morse_code(&display->morse, code);
     display->code = code;
 }

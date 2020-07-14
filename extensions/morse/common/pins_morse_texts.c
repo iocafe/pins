@@ -34,7 +34,7 @@
 ****************************************************************************************************
 */
 const os_char *morse_code_to_text(
-    MorseCodeEnum code)
+    osalMorseCodeEnum code)
 {
     const os_char *p;
 

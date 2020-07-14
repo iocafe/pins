@@ -225,94 +225,6 @@ os_boolean blink_morse_code(
 /**
 ****************************************************************************************************
 
-  @brief Get morse code corresponding to network state.
-  @anchor network_state_to_morse_code
-
-  The network_state_to_morse_code() function examines network state structure and selects which
-  morse code best describes it.
-
-  @param   morse Morse code structure.
-  @param   net_state Network state structure.
-  @return  Morse code enumeration value.
-
-****************************************************************************************************
-*/
-MorseCodeEnum network_state_to_morse_code(
-    struct MorseCode *morse,
-    struct osalNetworkState *net_state)
-{
-    MorseCodeEnum code;
-    osaLightHouseClientState lighthouse_state;
-    osalGazerbeamConnectionState gbs;
-
-    /* If Gazerbeam configuration (WiFi with Android phone) is on?
-     */
-    gbs = osal_get_network_state_int(OSAL_NS_GAZERBEAM_CONNECTED, 0);
-    if (gbs)
-    {
-        code = (gbs == OSAL_NS_GAZERBEAM_CONFIGURATION_MATCH)
-                ? MORSE_CONFIGURATION_MATCH : MORSE_CONFIGURING;
-        goto setit;
-    }
-
-    /* If WiFi is not connected?
-     */
-    if (osal_get_network_state_int(OSAL_NS_NETWORK_USED, 0) &&
-        !osal_get_network_state_int(OSAL_NS_NETWORK_CONNECTED, 0))
-    {
-        code = MORSE_NETWORK_NOT_CONNECTED;
-        goto setit;
-    }
-
-    /* Check for light house.
-     */
-    lighthouse_state
-        = (osaLightHouseClientState)osal_get_network_state_int(OSAL_NS_LIGHTHOUSE_STATE, 0);
-    if (lighthouse_state != OSAL_LIGHTHOUSE_NOT_USED &&
-        lighthouse_state != OSAL_LIGHTHOUSE_OK)
-    {
-        code = (lighthouse_state == OSAL_LIGHTHOUSE_NOT_VISIBLE)
-            ? MORSE_LIGHTHOUSE_NOT_VISIBLE : MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK;
-        goto setit;
-    }
-
-    /* Certificates/keys not loaded.
-     */
-    if (/* osal_get_network_state_int(OSAL_NS_SECURITY_CONF_ERROR, 0) || */
-        osal_get_network_state_int(OSAL_NS_NO_CERT_CHAIN, 0))
-    {
-        code = MORSE_SECURITY_CONF_ERROR;
-        goto setit;
-    }
-
-    /* If no connected sockets?
-     */
-    if (osal_get_network_state_int(OSAL_NRO_CONNECTED_SOCKETS, 0) == 0)
-    {
-        code = MORSE_NO_CONNECTED_SOCKETS;
-        goto setit;
-    }
-
-    /* If device initialization is incomplete?
-     */
-    if (osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, 0))
-    {
-        code = MORSE_DEVICE_INIT_INCOMPLETE;
-        goto setit;
-    }
-
-    /* All running fine.
-     */
-    code = MORSE_RUNNING;
-
-setit:
-    return code;
-}
-
-
-/**
-****************************************************************************************************
-
   @brief Handle network state change notifications.
   @anchor morse_net_state_notification_handler
 
@@ -330,10 +242,10 @@ static void morse_net_state_notification_handler(
     struct osalNetworkState *net_state,
     void *context)
 {
-    MorseCodeEnum code;
+    osalMorseCodeEnum code;
     MorseCode *morse;
     morse = (MorseCode*)context;
 
-    code = network_state_to_morse_code(morse, net_state);
+    code = osal_network_state_to_morse_code(net_state);
     set_morse_code(morse, code);
 }

@@ -20,24 +20,6 @@
 
 #define NRO_MORSE_STEPS 10
 
-/* Morse code state structure.
- */
-typedef enum MorseCodeEnum
-{
-    MORSE_CONFIGURING = -2,
-    MORSE_CONFIGURATION_MATCH = -1,
-    MORSE_RUNNING = 0,
-    MORSE_NETWORK_NOT_CONNECTED = 1, /* Not connected to WiFi or Ethernet network. */
-    MORSE_LIGHTHOUSE_NOT_VISIBLE = 2,
-    MORSE_NO_LIGHTHOUSE_FOR_THIS_IO_NETWORK = 3,
-    MORSE_SECURITY_CONF_ERROR = 4,
-    MORSE_NO_CONNECTED_SOCKETS = 5,
-    MORSE_DEVICE_INIT_INCOMPLETE = 8,
-
-    MORSE_UNKNOWN = 100
-}
-MorseCodeEnum;
-
 
 /* Receipe how to bling the LED OFF and ON, contains ms timer values.
  */
@@ -47,7 +29,6 @@ typedef struct MorseRecipe
     os_int n;
 }
 MorseRecipe;
-
 
 /* Morse code state structure.
  * Pin connected to the LED to blink.
@@ -67,7 +48,6 @@ typedef struct MorseCode
     MorseRecipe recipe;
 }
 MorseCode;
-
 
 /* Flags for initialize_morse_code()
  */
@@ -95,13 +75,7 @@ os_boolean blink_morse_code(
     struct MorseCode *morse,
     os_timer *timer);
 
-/* Get morse code corresponding to network state.
- */
-MorseCodeEnum network_state_to_morse_code(
-    struct MorseCode *morse,
-    struct osalNetworkState *net_state);
-
 /* Get text describing a morse code.
  */
 const os_char *morse_code_to_text(
-    MorseCodeEnum code);
+    osalMorseCodeEnum code);

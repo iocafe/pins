@@ -62,7 +62,7 @@ typedef struct PinsDisplay
     /* Display shows also morse code indicators.
      */
     MorseCode morse;
-    MorseCodeEnum code;
+    osalMorseCodeEnum code;
 
     iocRoot *root;
 
@@ -77,7 +77,7 @@ typedef struct PinsDisplay
         show_network_name,
         app_data_touched;
 
-    MorseCodeEnum
+    osalMorseCodeEnum
         displayed_code;
 
     os_timer
