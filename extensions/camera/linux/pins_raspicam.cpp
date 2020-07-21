@@ -15,9 +15,9 @@
 */
 #include "pinsx.h"
 #include <malloc.h>
-#if PINS_CAMERA == PINS_USB_CAMERA
+#include <stdlib.h>
+#if PINS_CAMERA == PINS_RASPI_CAMERA
 
-#include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
 
 #define TESTSUM_N 20
@@ -56,7 +56,7 @@ static void usb_cam_task(
 
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI,
+    //videoInput *VI,
     os_int camera_nr);
 
 
@@ -102,11 +102,11 @@ static void usb_cam_initialize(
 static os_int usb_cam_enumerate_cameras(
     pinsCameraInfo **camera_info)
 {
-    os_int nro_cameras;
-    videoInput *VI = &videoInput::getInstance();
+    os_int nro_cameras = 0;
+    /* videoInput *VI = &videoInput::getInstance();
 
     if (camera_info) *camera_info = OS_NULL;
-    nro_cameras = VI->listDevices();
+    nro_cameras = VI->listDevices(); */
     return nro_cameras;
 }
 
@@ -118,7 +118,7 @@ static os_int usb_cam_enumerate_cameras(
   @anchor usb_cam_open
 
   The usb_cam_open() sets ip camera for use. This function is called from application trough
-  camera interface pins_usb_camera_iface.open().
+  camera interface pins_raspi_camera_iface.open().
 
   @param   c Pointer to camera structure.
   @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
@@ -135,7 +135,7 @@ static osalStatus usb_cam_open(
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
-    c->iface = &pins_usb_camera_iface;
+    c->iface = &pins_raspi_camera_iface;
 
     c->ext = (PinsCameraExt*)os_malloc(sizeof(PinsCameraExt), OS_NULL);
     if (c->ext == OS_NULL) {
@@ -157,7 +157,7 @@ static osalStatus usb_cam_open(
   @anchor usb_cam_close
 
   The usb_cam_close() stops the video and releases any resources reserved for the camera.
-  This function is called from application trough camera interface pins_usb_camera_iface.close().
+  This function is called from application trough camera interface pins_raspi_camera_iface.close().
 
   @param   c Pointer to camera structure.
   @return  None
@@ -188,7 +188,7 @@ static void usb_cam_close(
   @anchor usb_cam_start
 
   The usb_cam_start() starts the video. This function is called from application trough
-  camera interface pins_usb_camera_iface.start().
+  camera interface pins_raspi_camera_iface.start().
 
   @param   c Pointer to camera structure.
   @return  None
@@ -219,7 +219,7 @@ static void usb_cam_start(
   @anchor usb_cam_stop
 
   The usb_cam_stop() stops the video. This function is called from application trough
-  camera interface pins_usb_camera_iface.stop().
+  camera interface pins_raspi_camera_iface.stop().
 
   @param   c Pointer to camera structure.
   @return  None
@@ -245,7 +245,7 @@ static void usb_cam_stop(
   @anchor usb_cam_set_parameter
 
   The usb_cam_set_parameter() sets value of a camera parameter. This function is called from
-  application trough camera interface pins_usb_camera_iface.set_parameter().
+  application trough camera interface pins_raspi_camera_iface.set_parameter().
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
@@ -327,7 +327,7 @@ static void usb_cam_check_image_dims(
   @anchor usb_cam_get_parameter
 
   The usb_cam_get_parameter() gets value of a camera parameter. This function is called from
-  application trough camera interface pins_usb_camera_iface.get_parameter().
+  application trough camera interface pins_raspi_camera_iface.get_parameter().
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
@@ -429,7 +429,7 @@ static osalStatus usb_cam_finalize_camera_photo(
     /* This can be done here or by VI->getPixels()
        First flip image, top to bottom.
      */
-    os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
+    os_uchar *tmp = (os_uchar*)alloca(photo.byte_w);
     h2 = h/2;
     for (y = 0; y<h2; y++) {
         top = photo.data + photo.byte_w * (size_t)y;
@@ -455,9 +455,8 @@ static osalStatus usb_cam_finalize_camera_photo(
 
 static void usb_cam_stop_event(int deviceID, void *userData)
 {
-    videoInput *VI = &videoInput::getInstance();
-
-    VI->closeDevice(deviceID);
+    /* videoInput *VI = &videoInput::getInstance();
+    VI->closeDevice(deviceID); */
 }
 
 
@@ -516,15 +515,16 @@ static void usb_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, nro_cameras, w, h, fr;
+    //os_int camera_nr, nro_cameras, w, h, fr;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
 
-    videoInput *VI = &videoInput::getInstance();
+    // videoInput *VI = &videoInput::getInstance();
 
     while (!c->stop_thread && osal_go())
     {
+#if 0
         camera_nr = c->ext->prm[PINS_CAM_NR] - 1;
         if (camera_nr < 0) camera_nr = 0;
         c->camera_nr = camera_nr;
@@ -597,6 +597,7 @@ static void usb_cam_task(
         } 
 
 tryagain:
+#endif
         os_sleep(100);
     }
 
@@ -623,9 +624,10 @@ getout:;
 */
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI,
+//    videoInput *VI,
     os_int camera_nr)
 {
+#if 0
 #define PINCAM_SETPRM_MACRO(a, b, f) \
     x = c->ext->prm[b]; \
     delta = CP.a.Max - CP.a.Min; \
@@ -665,11 +667,12 @@ static void usb_cam_set_parameters(
     if(!VI->isDeviceSetup(camera_nr))
     {
     } 
+#endif
 }
 
 /* Camera interface (structure with function pointers, polymorphism)
  */
-const pinsCameraInterface pins_usb_camera_iface
+const pinsCameraInterface pins_raspi_camera_iface
 = {
     usb_cam_initialize,
     usb_cam_enumerate_cameras,

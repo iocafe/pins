@@ -26,17 +26,23 @@ struct iocBrickHdr;
 #define PINS_M5STACK_WIDE_CAMERA 13
 #define PINS_AI_THINKER_CAMERA 14
 #define PINS_USB_CAMERA 20
+#define PINS_RASPI_CAMERA 30
 
-/* If no camera defined for build, default to USB camera on windows
-   and to no camera on other platforms.
+/* If no camera defined for build, default to USB camera on windows,
+ * Raspicam on Raspberry PI and to "no camera" on other platforms.
  */
 #ifndef PINS_CAMERA
-  #if OSAL_WINDOWS
+  #ifdef OSAL_WINDOWS
     #define PINS_CAMERA PINS_USB_CAMERA
-  #else
-    #define PINS_CAMERA PINS_NO_CAMERA
+  #endif
+  #ifdef E_OSVER_pi
+    #define PINS_CAMERA PINS_RASPI_CAMERA
   #endif
 #endif
+#ifndef PINS_CAMERA
+  #define PINS_CAMERA PINS_NO_CAMERA
+#endif
+
 
 #if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
     PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
@@ -283,6 +289,11 @@ pinsCameraInterface;
 #if PINS_CAMERA == PINS_USB_CAMERA
   extern const pinsCameraInterface pins_usb_camera_iface;
   #define PINS_CAMERA_IFACE pins_usb_camera_iface
+#endif
+
+#if PINS_CAMERA == PINS_RASPI_CAMERA
+  extern const pinsCameraInterface pins_raspi_camera_iface;
+  #define PINS_CAMERA_IFACE pins_raspi_camera_iface
 #endif
 
 /* Store a photo as a "brick" within brick buffer for communication.
