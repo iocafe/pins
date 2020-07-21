@@ -8,6 +8,8 @@ project(${E_PROJECT})
 # include build information common to all projects.
 include(../eosal/osbuild/cmakedefs/eosal-defs.txt)
 
+
+
 # Set path to where to keep libraries.
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $ENV{E_LIBOUT})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $ENV{E_LIBOUT})
@@ -31,16 +33,18 @@ file(GLOB EX_CM_HEADERS "${EXTENSIONS}/*/common/*.h")
 
 # We use simulation code on Windows and linux
 if($ENV{E_OS} MATCHES "windows")
-   set(ENV{E_PINS_SIMULATION} "simulation")
+   set(ENV{E_IMPL_DIR} "simulation")
 endif()
 if($ENV{E_OS} MATCHES "linux")
-   set(ENV{E_PINS_SIMULATION} "simulation")
+    if($ENV{E_OSVER} MATCHES "pi")
+      set(ENV{E_IMPL_DIR} "pigpio")
+  else()
+      set(ENV{E_IMPL_DIR} "simulation")
+#      set(ENV{E_IMPL_DIR} "pigpio")
+  endif()
 endif()
 
-# Select OS specific directory or simulation
-if (DEFINED ENV{E_PINS_SIMULATION})
-   set(ENV{E_IMPL_DIR} $ENV{E_PINS_SIMULATION})
-else()
+if (NOT DEFINED ENV{E_IMPL_DIR})
    set(ENV{E_IMPL_DIR} $ENV{E_OS})
 endif()
 

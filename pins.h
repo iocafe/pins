@@ -49,7 +49,11 @@ OSAL_C_HEADER_BEGINS
 
 #ifndef PINS_TARGET_HDRS_INCLUDED
 #ifdef E_OS_linux
-  #include "code/simulation/pins_hw_defs.h"
+  #ifdef E_OSVER_pi
+    #include "code/pigpio/pins_hw_defs.h"
+  #else
+    #include "code/simulation/pins_hw_defs.h"
+  #endif
   #define PINS_TARGET_HDRS_INCLUDED
 #endif
 #endif
