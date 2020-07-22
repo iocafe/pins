@@ -41,7 +41,7 @@ void pins_setup(
     const Pin *pin;
     os_short gcount, pcount;
 
-    pins_ll_initialize();
+    pins_ll_initialize_lib();
 
     gcount = pins_hdr->n_groups;
     group = pins_hdr->group;
@@ -96,6 +96,8 @@ void pins_shutdown(
 
         group++;
     }
+
+    pins_ll_shutdown_lib();
 }
 #endif
 

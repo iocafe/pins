@@ -4,7 +4,7 @@
   @brief   Pins library basic functionality.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    21.4.2020
+  @date    21.7.2020
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -18,26 +18,48 @@
 #include "code/pigpio/pins_pigpio_gpio.h"
 #include "code/pigpio/pins_pigpio_pwm.h"
 
-/*
-#include "Arduino.h"
-#include "driver/ledc.h"
-#include "driver/periph_ctrl.h"
-*/
-
 /**
 ****************************************************************************************************
 
   @brief Initialize hardware IO library.
-  @anchor pins_ll_initialize
+  @anchor pins_ll_initialize_lib
 
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize(
+void pins_ll_initialize_lib(
     void)
 {
+    int s;
+
+    s = gpioInitialise();
+    if (s < 0) {
+        osal_debug_error("gpioInitialise() failed");
+    }
+    else {
+        osal_trace_int("pigpio version ", s);
+    }
 }
+
+
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Clean up resources allocated by IO hardware library.
+  @anchor pins_ll_shutdown_lib
+
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_shutdown_lib(
+    void)
+{
+    gpioTerminate();
+}
+#endif
 
 
 /**
@@ -58,17 +80,10 @@ void pin_ll_setup(
     const Pin *pin,
     os_int flags)
 {
-    os_int
-        is_touch_sensor;
-
-    if (pin->addr >=  0) switch (pin->type)
+    if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_INPUT:
-            is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
-            if (!is_touch_sensor)
-            {
-                pin_gpio_setup_input(pin);
-            }
+            pin_gpio_setup_input(pin);
             break;
 
         case PIN_OUTPUT:
@@ -120,27 +135,25 @@ void pin_ll_shutdown(
 
 ****************************************************************************************************
 */
-void OS_ISR_FUNC_ATTR pin_ll_set(
+void pin_ll_set(
     const Pin *pin,
     os_int x)
 {
     if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_OUTPUT:
-            // gpio_set_level(pin->addr, x);
+            if (gpioWrite(pin->addr, x ? 1 : 0)) {
+                osal_debug_error_int("gpioWrite(x,v) failed, x=", pin->addr);
+            }
             break;
 
         case PIN_PWM:
-            /* Not thread safe: PWM channel duty must be modified only from one thread at a time.
-             */
-            // ledc_set_duty(LEDC_HIGH_SPEED_MODE, pin->bank, (uint32_t)x);
-            // ledc_update_duty(LEDC_HIGH_SPEED_MODE, pin->bank);
+            if (gpioPWM(pin->addr, (unsigned)x)) { // x is dutycycle, defaults to max 255?
+                osal_debug_error_int("gpioPWM(x,v) failed, x=", pin->addr);
+            }
             break;
 
-    case PIN_ANALOG_OUTPUT:
-            //dacWrite(pin->bank, x);
-            break;
-
+        case PIN_ANALOG_OUTPUT:
         case PIN_INPUT:
         case PIN_ANALOG_INPUT:
         case PIN_TIMER:
@@ -162,27 +175,21 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
 
 ****************************************************************************************************
 */
-os_int OS_ISR_FUNC_ATTR pin_ll_get(
+os_int pin_ll_get(
     const Pin *pin)
 {
+    os_int r;
     if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_INPUT:
-            /* Touch sensor
-             */
-            if (pin->prm) {
-                if (pin_get_prm(pin, PIN_TOUCH)) {
-                    // return touchRead(pin->addr);
-                }
+            r = gpioRead(pin->addr);
+            if (r < 0) {
+                osal_debug_error_int("gpioRead(x) failed, x=", pin->addr);
+                return 0;
             }
-
-            /* Normal digital input
-             */
-            // return digitalRead(pin->addr);
+            return r;
 
         case PIN_ANALOG_INPUT:
-            // return analogRead(pin->addr);
-
         case PIN_OUTPUT:
         case PIN_PWM:
         case PIN_ANALOG_OUTPUT:

@@ -145,7 +145,12 @@ Pin;
 
 /* Initialize IO hardware library.
  */
-void pins_ll_initialize(
+void pins_ll_initialize_lib(
+    void);
+
+/* Clean up resources allocated by IO hardware library.
+ */
+void pins_ll_shutdown_lib(
     void);
 
 /* Setup IO hardware pin.

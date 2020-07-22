@@ -21,16 +21,35 @@
 ****************************************************************************************************
 
   @brief Initialize hardware IO library.
-  @anchor pins_ll_initialize
+  @anchor pins_ll_initialize_lib
 
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize(
+void pins_ll_initialize_lib(
     void)
 {
 }
+
+
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Clean up resources allocated by IO hardware library.
+  @anchor pins_ll_shutdown_lib
+
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_shutdown_lib(
+    void)
+{
+}
+#endif
+
 
 /**
 ****************************************************************************************************

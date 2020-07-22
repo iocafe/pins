@@ -26,13 +26,13 @@
 ****************************************************************************************************
 
   @brief Initialize hardware IO library.
-  @anchor pins_ll_initialize
+  @anchor pins_ll_initialize_lib
 
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize(
+void pins_ll_initialize_lib(
     void)
 {
     periph_module_enable(PERIPH_LEDC_MODULE);
@@ -40,6 +40,24 @@ void pins_ll_initialize(
     gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 #endif
 }
+
+
+#if OSAL_PROCESS_CLEANUP_SUPPORT
+/**
+****************************************************************************************************
+
+  @brief Clean up resources allocated by IO hardware library.
+  @anchor pins_ll_shutdown_lib
+
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_ll_shutdown_lib(
+    void)
+{
+}
+#endif
 
 
 /**
