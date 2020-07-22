@@ -600,8 +600,6 @@ tryagain:
 #endif
         os_sleep(100);
     }
-
-getout:;
 }
 
 

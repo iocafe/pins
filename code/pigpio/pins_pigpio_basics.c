@@ -17,6 +17,7 @@
 #include "pinsx.h"
 #include "code/pigpio/pins_pigpio_gpio.h"
 #include "code/pigpio/pins_pigpio_pwm.h"
+#include <pigpio.h>
 
 /**
 ****************************************************************************************************

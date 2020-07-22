@@ -14,11 +14,20 @@
 ****************************************************************************************************
 */
 
-/* Interrupt handler function type.
+/* Interrupt handler (actually callback for raspberry) function type.
  */
-// typedef void pin_interrupt_handler(void *arg);
+typedef void pin_interrupt_handler(void *arg);
+
+#ifdef PINS_OS_INT_HANDLER_HDRS
+#define PIN_INTERRUPT_HANDLER_PROTO(name) void name(void)
+#define BEGIN_PIN_INTERRUPT_HANDLER(func_name) void func_name() {
+#define END_PIN_INTERRUPT_HANDLER(func_name) }
+#define TIMER_INTERRUPT_HANDLER_PROTO(name) void name(void)
+#define BEGIN_TIMER_INTERRUPT_HANDLER(func_name) void func_name() {
+#define END_TIMER_INTERRUPT_HANDLER(func_name) }
+#endif
 
 /* Simulated interrupts on PIGPIO.
  */
 #define PINS_SIMULATION 0
-#define PINS_SIMULATED_INTERRUPTS 1
+#define PINS_SIMULATED_INTERRUPTS 0

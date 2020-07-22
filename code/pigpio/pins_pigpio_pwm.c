@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#include <pigpio.h>
 
 /**
 ****************************************************************************************************
@@ -46,7 +47,7 @@ void pin_pwm_setup(
         osal_debug_error_int("gpioSetPWMfrequency(x,v), x=", pin->addr);
     }
     else {
-        pin_ll_set(pin, pin_get_prm(pin, PIN_INIT);
+        pin_ll_set(pin, pin_get_prm(pin, PIN_INIT));
     }
 }
 
