@@ -15,7 +15,7 @@
 */
 #include "pinsx.h"
 #if PINS_CAMERA == PINS_RASPI_CAMERA
-#include <raspicam/raspicam.h>
+#include "raspicam/raspicam.h"
 
 
 
@@ -499,7 +499,7 @@ static void raspi_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    //os_int camera_nr, nro_cameras, w, h, fr;
+    os_int camera_nr, nro_cameras, w, h, fr;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -570,7 +570,7 @@ tryagain:
         os_sleep(100);
     }
 
-    if (TCMA) {
+    if (TCAM) {
         TCAM->release(); delete TCAM; TCAM = OS_NULL;
     }
 }
