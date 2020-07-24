@@ -21,7 +21,7 @@
 
 #define TESTSUM_N 20
 
-/* Wrapper specific extensions to PinsCamera structure
+/* Raspberry specific extensions to PinsCamera structure
  */
 typedef struct PinsCameraExt
 {
