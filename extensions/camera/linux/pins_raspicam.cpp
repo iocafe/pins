@@ -588,52 +588,35 @@ tryagain:
   https://docs.microsoft.com/en-us/windows/win32/api/strmif/ne-strmif-videoprocampproperty
 
   @param   c Pointer to pinsCamera structure.
-  @param   VI Video input device.
   @return  None.
 
 ****************************************************************************************************
 */
 static void raspi_cam_set_parameters(
     pinsCamera *c,
-//    videoInput *VI,
     os_int camera_nr)
 {
-#if 0
+    os_int w, h;
 
-    /* Set image size.
-     */
-    switch (t->videomode)
-    {
-        default:
-        case OEPI_VIDEO_640x480:
-            TCAM->setWidth(640);
-            TCAM->setHeight(480);
-            break;
+    w = c->ext->prm[PINS_CAM_IMG_WIDTH];
+    if (w > 10 && w < 10000) TCAM->setWidth(w);
+    h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
+    if (h > 10 && h < 10000) TCAM->setHeight(h);
 
-        case OEPI_VIDEO_1280x960:
-            TCAM->setWidth(1280);
-            TCAM->setHeight(960);
-            break;
-
-        case OEPI_VIDEO_1920x1080:
-            TCAM->setWidth(1920);
-            TCAM->setHeight(1080);
-            break;
-    }
 
     /* Set shutter speed us.
      */
-    TCAM->setShutterSpeed(t->exposure_time * 1000.0);
+    // TCAM->setShutterSpeed(t->exposure_time * 1000.0);
 
     /* Set color format: RGB or grayscale. (note we use BGR byte order
      * internally within oecore)
      */
-    TCAM->setFormat(t->colorformat==2
-        ? raspicam::RASPICAM_FORMAT_BGR
-        : raspicam::RASPICAM_FORMAT_GRAY);
+    // TCAM->setFormat(t->colorformat==2
+    //        ? raspicam::RASPICAM_FORMAT_BGR
+    //    : raspicam::RASPICAM_FORMAT_GRAY);
 
     /* Automatic color balancing always off.
-     */
+    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2)
     switch (t->whitebalance)
     {
         case OEPI_WHITE_BALANCE_OFF:
@@ -643,16 +626,18 @@ static void raspi_cam_set_parameters(
         case OEPI_AUTO_WHITE_BALANCE:
             TCAM->setAWB(raspicam::RASPICAM_AWB_AUTO);
             break;
+     */
     }
 
     /* Rotate image 180 degrees if needed.
      */
-    TCAM->setHorizontalFlip ((bool)(t->rotate180));
-    TCAM->setVerticalFlip ((bool)(t->rotate180));
+    // TCAM->setHorizontalFlip ((bool)(t->rotate180));
+    // TCAM->setVerticalFlip ((bool)(t->rotate180));
 
 
     /* Set exposure control.
-     */
+     *     PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
+
     switch (t->exposurectrl)
     {
         default:
@@ -664,50 +649,7 @@ static void raspi_cam_set_parameters(
             TCAM->setExposure(raspicam::RASPICAM_EXPOSURE_AUTO);
         break;
     }
-
-xxxxx
-
-
-#define PINCAM_SETPRM_MACRO(a, b, f) \
-    x = c->ext->prm[b]; \
-    delta = CP.a.Max - CP.a.Min; \
-    if (delta > 0) \
-    { \
-        if (x < 0) x = 50; \
-        y = (os_int)(0.01 * delta * x + 0.5); \
-        if (y < CP.a.Min) y = CP.a.Min; \
-        if (y > CP.a.Max) y = CP.a.Max; \
-        CP.a.Flag = f;  /* 1 = KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
-                        /* 2 = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
-        CP.a.CurrentValue = y; \
-    }
-
-    os_int x, y;
-    os_double delta;
-
-    c->ext->prm_changed = OS_FALSE;
-
-    CamParametrs CP = VI->getParametrs(camera_nr);
-
-    /* Brightness */
-    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
-
-    /* Saruration */
-    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2)
-
-    /* Focus  */
-    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */
-    CP.Focus.CurrentValue = 100;
-
-    /* White balance */
-    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */
-    CP.WhiteBalance.CurrentValue = 1;
-
-    VI->setParametrs(camera_nr, CP);
-    if(!VI->isDeviceSetup(camera_nr))
-    {
-    }
-#endif
+     */
 }
 
 /* Camera interface (structure with function pointers, polymorphism)
