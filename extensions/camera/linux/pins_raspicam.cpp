@@ -104,8 +104,10 @@ static void raspi_cam_initialize(
 static os_int raspi_cam_enumerate_cameras(
     pinsCameraInfo **camera_info)
 {
-    os_int nro_cameras = 0;
-    return nro_cameras;
+    if (camera_info) {
+        *camera_info = OS_NULL;
+    }
+    return 1;
 }
 
 
@@ -368,7 +370,15 @@ static osalStatus raspi_cam_finalize_camera_photo(
     photo.camera = c;
     photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
-    photo.format = OSAL_RGB24;
+    switch (c->ext->bytes_per_pix)
+    {
+        case 1: photo.format = OSAL_GRAYSCALE8; break;
+        case 2: photo.format = OSAL_GRAYSCALE16; break;
+        case 3: photo.format = OSAL_RGB24; break;
+        case 4: photo.format = OSAL_RGBA32; break;
+
+    }
+
     photo.data_sz = photo.byte_w * (size_t)h;
 
 #if 0
@@ -499,7 +509,8 @@ static void raspi_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, nro_cameras, w, h, fr;
+    os_int camera_nr, sz, w, h, fr;
+    os_int bytes_per_line, bytes_per_pix;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
@@ -530,25 +541,23 @@ static void raspi_cam_task(
             w = TCAM->getWidth();
             h = TCAM->getHeight();
             sz = TCAM->getImageBufferSize();
-            if (w < 10 || h < 10 || sz < 100) {oe_sleep(50); continue;}
+            if (w < 10 || h < 10 || sz < 100) {os_sleep(50); continue;}
             bytes_per_line = (sz+h-1) / h;
             bytes_per_pix = bytes_per_line / w;
-            if (bytes_per_pix < 1 || bytes_per_pix > 4) {oe_sleep(50); continue;}
+            if (bytes_per_pix < 1 || bytes_per_pix > 4) {os_sleep(50); continue;}
             w = bytes_per_line / bytes_per_pix;
 
-                 c->ext->w = VI->getWidth(camera_nr);
-                 c->ext->h = VI->getHeight(camera_nr);
-                 c->ext->bytes_per_pix = 3;
+            c->ext->w = w;
+            c->ext->h = h;
+            c->ext->bytes_per_pix = bytes_per_pix;
 
-            switch (bytes_per_pix)
-            {
-                case 1: format = OEARR_GRAYSCALE8; break;
-                case 2: format = OEARR_GRAYSCALE16; break;
-                case 3: format = OEARR_RGB24; break;
-                case 4: format = OEARR_RGBA32; break;
+            if (sz > c->ext->alloc_sz) {
+                if (raspi_cam_allocate_buffer(c)) break;
             }
 
-            TCAM->retrieve(p);
+
+            TCAM->retrieve(c->ext->buf);
+
              if (raspi_cam_finalize_camera_photo(c)) {
                 os_timeslice();
              }
@@ -564,7 +573,7 @@ static void raspi_cam_task(
         }
 
 tryagain:
-        if (TCMA) {
+        if (TCAM) {
             TCAM->release(); delete TCAM; TCAM = OS_NULL;
         }
         os_sleep(100);
@@ -626,8 +635,8 @@ static void raspi_cam_set_parameters(
         case OEPI_AUTO_WHITE_BALANCE:
             TCAM->setAWB(raspicam::RASPICAM_AWB_AUTO);
             break;
-     */
     }
+     */
 
     /* Rotate image 180 degrees if needed.
      */
