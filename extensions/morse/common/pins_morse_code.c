@@ -210,6 +210,7 @@ os_boolean blink_morse_code(
     {
         morse->led_on = !morse->led_on;
         if (morse->pin) pin_set(morse->pin, morse->led_on);
+        if (morse->pin2) pin_set(morse->pin2, morse->led_on);
         morse->timer = *timer;
         if (++pos >= morse->recipe.n)
         {
