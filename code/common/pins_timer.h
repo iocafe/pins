@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_TIMER_H_
+#define PINS_TIMER_H_
+#include "pins.h"
 
 struct Pin;
 
@@ -51,4 +55,6 @@ void pin_timer_detach_interrupt(
  */
 void pin_timer_simulate_interrupt(
     const struct Pin *pin);
+#endif
+
 #endif

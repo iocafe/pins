@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_BASICS_H_
+#define PINS_BASICS_H_
+#include "pins.h"
 
 /** Enumeration of pin types.
  */
@@ -177,4 +181,4 @@ void pin_ll_set(
 os_int pin_ll_get(
     const Pin *pin);
 
-// int local_adc1_read_test(int channel);
+#endif

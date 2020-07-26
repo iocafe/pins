@@ -21,6 +21,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_SPI_DEVICE_H_
+#define PINS_SPI_DEVICE_H_
+#include "pins.h"
 
 struct Pin;
 struct pinsSpiBus;
@@ -87,7 +91,7 @@ void pins_run_spi(
     pinsSpi *spi);
 
 void pins_run_spi_bus(
-    pinsSpiBuf *spi_bus);
+    pinsSpiBus *spi_bus);
 
 void pins_add_spi_device(
     pinsSpi *spi,

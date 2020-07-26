@@ -13,11 +13,9 @@
 
 ****************************************************************************************************
 */
-#ifndef PINSX_INCLUDED
-#define PINSX_INCLUDED
-
-/* Pins basics and operating system abstraction layer headers.
- */
+#pragma once
+#ifndef PINSX_H_
+#define PINSX_H_
 #include "pins.h"
 
 /* If C++ compilation, all functions, etc. from this point on in this header file are

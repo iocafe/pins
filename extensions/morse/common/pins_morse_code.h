@@ -17,6 +17,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_MORSE_CODE_H_
+#define PINS_MORSE_CODE_H_
+#include "pinsx.h"
 
 #define NRO_MORSE_STEPS 10
 
@@ -79,3 +83,5 @@ os_boolean blink_morse_code(
  */
 const os_char *morse_code_to_text(
     osalMorseCodeEnum code);
+
+#endif

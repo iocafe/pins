@@ -13,11 +13,9 @@
 
 ****************************************************************************************************
 */
-#ifndef PINS_INCLUDED
-#define PINS_INCLUDED
-
-/* Include operating system abstraction layer.
- */
+#pragma once
+#ifndef PINS_H_
+#define PINS_H_
 #include "iocom.h"
 
 /* If C++ compilation, all functions, etc. from this point on in this header file are

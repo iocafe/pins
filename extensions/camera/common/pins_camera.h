@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_CAMERA_H_
+#define PINS_CAMERA_H_
+#include "pinsx.h"
 
 struct iocBrickHdr;
 
@@ -310,3 +314,4 @@ void pins_release_camera_info(
 
 #endif
 
+#endif

@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_PARAMETERS_H_
+#define PINS_PARAMETERS_H_
+#include "pins.h"
 
 /* Modify IO pin parameter.
  */
@@ -32,3 +36,5 @@ os_int pin_get_prm(
 os_int pin_get_frequency(
     const Pin *pin,
     os_int default_frequency);
+
+#endif

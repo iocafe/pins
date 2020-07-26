@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_GPIO_H_
+#define PINS_GPIO_H_
+#include "pins.h"
 
 struct Pin;
 
@@ -89,5 +93,7 @@ void pin_gpio_detach_interrupt(
 void pin_gpio_simulate_interrupt(
     const struct Pin *pin,
     os_int x);
+
+#endif
 
 #endif

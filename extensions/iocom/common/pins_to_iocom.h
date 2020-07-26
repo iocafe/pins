@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_TO_IOCOM_H_
+#define PINS_TO_IOCOM_H_
+#include "pinsx.h"
 
 /* Flags. Reserved for future expansion.
    For now: always set PINS_DEFAULT (0).
@@ -51,3 +55,5 @@ void pins_default_iocom_callback(
     os_int end_addr,
     os_ushort flags,
     void *context);
+
+#endif

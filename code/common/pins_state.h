@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_STATE_H_
+#define PINS_STATE_H_
+#include "pins.h"
 
 /* Flags for functions.
  */
@@ -64,3 +68,5 @@ os_int pin_value(
 void pins_read_all(
     const IoPinsHdr *hdr,
     os_ushort flags);
+
+#endif

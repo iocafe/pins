@@ -25,6 +25,11 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_DISPLAY_H_
+#define PINS_DISPLAY_H_
+#include "pinsx.h"
+
 /* Pins display types
  */
 #define PINS_NO_DISPLAY 0
@@ -122,5 +127,7 @@ void initialize_display_hw(
 void run_display_hw(
     PinsDisplay *display,
     os_timer *timer);
+
+#endif
 
 #endif
