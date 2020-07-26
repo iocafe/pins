@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_HW_DEFS_H_
+#define PINS_HW_DEFS_H_
+#include "pins.h"
 
 /* Include OS headers if we got the PINS_OS_INT_HANDLER_HDRS define.
  */
@@ -82,3 +86,5 @@ typedef void pin_interrupt_handler(void *arg);
  */
 #define PINS_SIMULATION 0
 #define PINS_SIMULATED_INTERRUPTS 0
+
+#endif

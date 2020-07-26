@@ -13,6 +13,10 @@
 
 ****************************************************************************************************
 */
+#pragma once
+#ifndef PINS_HW_DEFS_H_
+#define PINS_HW_DEFS_H_
+#include "pins.h"
 
 /* Operating system/platform specific defines for interrupt handlers
  */
@@ -68,4 +72,6 @@
   #define PINS_SIMULATED_INTERRUPTS 0
 #else
    typedef void pin_interrupt_handler(void);
+#endif
+
 #endif
