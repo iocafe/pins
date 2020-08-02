@@ -29,8 +29,11 @@
 
 #define PINS_TCD1304_BUF_SZ (sizeof(iocBrickHdr) + TDC1304_DATA_SZ)
 
-typedef struct
+/* Extensions to PinsCamera structure
+ */
+typedef struct PinsCameraExt
 {
+    os_int prm[PINS_NRO_CAMERA_PARAMS];
     pinsCamera *c;
     volatile os_short pos;
     volatile os_short processed_pos;
@@ -60,9 +63,9 @@ typedef struct
      */
     Pin in_pin, igc_pin, sh_pin, igc_loopback_pin;
 }
-staticCameraState;
+PinsCameraExt;
 
-static staticCameraState cam_state[TDC1304_MAX_CAMERAS];
+static PinsCameraExt camext;
 
 /* Forward referred static functions.
  */
@@ -92,7 +95,6 @@ static void tcd1304_setup_camera_io_pins(
 static void tcd1304_cam_initialize(
     void)
 {
-    os_memclear(cam_state, TDC1304_MAX_CAMERAS * sizeof(staticCameraState));
 }
 
 
@@ -143,9 +145,7 @@ static osalStatus tcd1304_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
-    staticCameraState *cs;
     osalThreadOptParams opt;
-    os_int camera_nr;
 
     os_memclear(c, sizeof(pinsCamera));
     c->camera_pin = prm->camera_pin;
@@ -153,22 +153,16 @@ static osalStatus tcd1304_cam_open(
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
 
-    c->integration_us = 2000;
+    camext.prm[PINS_CAM_INTEGRATION_US] = 2000;
     c->iface = &pins_tcd1304_camera_iface;
+    c->ext = &camext;
 
     /* We could support two TDC1304 cameras later on, we should check which static camera
        structure is free, etc. Now one only.
      */
-    camera_nr = prm->camera_nr;
-    if (cam_state[camera_nr].c || (os_uint)camera_nr >= TDC1304_MAX_CAMERAS)
-    {
-        osal_debug_error("tcd1304_cam_open: Camera is already open or errornous camera_nr");
-        return OSAL_STATUS_FAILED;
-    }
-    cs = &cam_state[camera_nr];
-    os_memclear(cs, sizeof(staticCameraState));
-    cs->c = c;
-    c->camera_nr = camera_nr;
+    os_memclear(&camext, sizeof(camext));
+    camext.c = c;
+    c->camera_nr = 0;
 
     /* Create event to trigger the thread.
      */
@@ -238,7 +232,6 @@ static void tcd1304_cam_close(
 static void tcd1304_cam_start(
     pinsCamera *c)
 {
-    staticCameraState *cs;
     pinTimerParams prm;
 
     tcd1304_setup_camera_io_pins(c);
@@ -248,12 +241,11 @@ static void tcd1304_cam_start(
 
     pin_timer_attach_interrupt(c->timer_pin, &prm);
 
-    cs = &cam_state[c->camera_nr];
-    cs->pos = 0;
-    cs->processed_pos = 0;
-    cs->start_new_frame = OS_FALSE;
-    cs->frame_ready = OS_FALSE;
-    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
+    camext.pos = 0;
+    camext.processed_pos = 0;
+    camext.start_new_frame = OS_FALSE;
+    camext.frame_ready = OS_FALSE;
+    pin_ll_set(&camext.igc_pin, camext.igc_on_pulse_setting);
 }
 
 
@@ -298,17 +290,9 @@ static void tcd1304_cam_set_parameter(
     pinsCameraParamIx ix,
     os_long x)
 {
-    switch (ix)
-    {
-        case PINS_CAM_INTEGRATION_US:
-            if (c->integration_us == x) return;
-            c->integration_us = x;
-            break;
-
-        default:
-            osal_debug_error("tcd1304_cam_set_parameter: Unknown prm");
-            return;
-    }
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS || x < 0) return;
+    if ((os_int)camext.prm[ix] == x) return;
+    camext.prm[ix] = (os_int)x;
 }
 
 
@@ -331,19 +315,8 @@ static os_long tcd1304_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
 {
-    os_long x;
-    switch (ix)
-    {
-        case PINS_CAM_MAX_BUF_SZ:
-            x = PINS_TCD1304_BUF_SZ;
-            break;
-
-        default:
-            x = -1;
-            break;
-    }
-
-    return x;
+    if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS) return -1;
+    return camext.prm[ix];
 }
 
 
@@ -412,13 +385,11 @@ static void tcd1304_cam_task(
     osalEvent done)
 {
     pinsPhoto photo;
-    staticCameraState *cs;
     pinsCamera *c;
     os_int x;
     os_short pos, processed_pos, max_pos;
 
     c = (pinsCamera*)prm;
-    cs = &cam_state[c->camera_nr];
 
     osal_event_set(done);
 
@@ -428,18 +399,18 @@ int dummy = 0, xsum = 0, xn = 0;
     {
         if (osal_event_wait(c->camera_event, 2017) != OSAL_STATUS_TIMEOUT)
         {
-            if (!cs->frame_ready)
+            if (!camext.frame_ready)
             {
-                pos = cs->pos;
-                processed_pos = cs->processed_pos;
+                pos = camext.pos;
+                processed_pos = camext.processed_pos;
 
                 if (processed_pos < TDC1304_DATA_SZ)
                 {
-                    x = pin_ll_get(&cs->in_pin);
+                    x = pin_ll_get(&camext.in_pin);
                     // x = local_adc1_read_test(cam_state[c->camera_nr].in_pin.addr);
 
                     if (processed_pos == 0) {
-                        pin_ll_set(&cs->igc_pin, cs->igc_off_pulse_setting);
+                        pin_ll_set(&camext.igc_pin, camext.igc_off_pulse_setting);
                     }
 
                     max_pos = pos;
@@ -449,11 +420,11 @@ int dummy = 0, xsum = 0, xn = 0;
 
                     x >>= 4;
                     while (processed_pos < max_pos) {
-                        cs->buf[sizeof(iocBrickHdr) + processed_pos++] = x;
+                        camext.buf[sizeof(iocBrickHdr) + processed_pos++] = x;
                     }
                     xsum += x;
                     xn ++;
-                    cs->processed_pos = processed_pos;
+                    camext.processed_pos = processed_pos;
                 }
 
                 if (pos > TDC1304_DATA_SZ + 30) // + 30 SLACK
@@ -461,9 +432,9 @@ int dummy = 0, xsum = 0, xn = 0;
                     tcd1304_finalize_camera_photo(c, &photo);
                     c->callback_func(&photo, c->callback_context);
 
-                    cs->frame_ready = OS_TRUE;
-                    cs->processed_pos = 0;
-                    pin_ll_set(&cs->igc_pin, cs->igc_on_pulse_setting);
+                    camext.frame_ready = OS_TRUE;
+                    camext.processed_pos = 0;
+                    pin_ll_set(&camext.igc_pin, camext.igc_on_pulse_setting);
 
     if (++dummy > 100 && xn) {
 //        osal_debug_error_int("HERE average ",  xsum / xn);
@@ -491,9 +462,7 @@ int dummy = 0, xsum = 0, xn = 0;
 ****************************************************************************************************
 */
 BEGIN_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
-#define ISR_CAM_IX 0
-    cam_state[ISR_CAM_IX].start_new_frame = OS_TRUE;
-#undef ISR_CAM_IX
+    camext.start_new_frame = OS_TRUE;
 END_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
 
 
@@ -510,28 +479,26 @@ END_PIN_INTERRUPT_HANDLER(tcd1304_cam_1_igc_end)
 ****************************************************************************************************
 */
 BEGIN_TIMER_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
-#define ISR_CAM_IX 0
-    if (cam_state[ISR_CAM_IX].start_new_frame)
+    if (camext.start_new_frame)
     {
-        cam_state[ISR_CAM_IX].pos = 0;
-        cam_state[ISR_CAM_IX].processed_pos = 0;
-        cam_state[ISR_CAM_IX].start_new_frame = OS_FALSE;
-        cam_state[ISR_CAM_IX].frame_ready = OS_FALSE;
+        camext.pos = 0;
+        camext.processed_pos = 0;
+        camext.start_new_frame = OS_FALSE;
+        camext.frame_ready = OS_FALSE;
     }
     else  {
-        cam_state[ISR_CAM_IX].pos++;
+        camext.pos++;
     }
 
-    osal_event_set(cam_state[ISR_CAM_IX].c->camera_event);
+    osal_event_set(camext.c->camera_event);
 
 #if PINS_SIMULATED_INTERRUPTS
-    if (cam_state[ISR_CAM_IX].pos == TDC1304_DATA_SZ + 50)
+    if (camext.pos == TDC1304_DATA_SZ + 50)
     {
         tcd1304_cam_1_igc_end();
     }
 #endif
 
-#undef ISR_CAM_IX
 END_TIMER_INTERRUPT_HANDLER(tcd1304_cam_1_on_timer)
 
 
@@ -594,7 +561,6 @@ static void tcd1304_append_pin_parameter(
 static void tcd1304_setup_camera_io_pins(
     pinsCamera *c)
 {
-    staticCameraState *cs;
     pinInterruptParams iprm;
 
     os_double
@@ -612,17 +578,15 @@ static void tcd1304_setup_camera_io_pins(
         igc_pulse_setting,
         sh_delay_setting;
 
-    cs = &cam_state[c->camera_nr];
-
     /* Camera analog video signal input.
      */
-    cs->in_pin.type = PIN_ANALOG_INPUT;
-    cs->in_pin.addr = pin_get_prm(c->camera_pin, PIN_A);
-    pin_ll_setup(&cs->in_pin, PINS_DEFAULT);
+    camext.in_pin.type = PIN_ANALOG_INPUT;
+    camext.in_pin.addr = pin_get_prm(c->camera_pin, PIN_A);
+    pin_ll_setup(&camext.in_pin, PINS_DEFAULT);
 
     /* Calculate timing
      */
-    clocks_per_sh = os_round_int(0.000001 * c->integration_us * TDC1304_TIMING_CLOCK_HZ);
+    clocks_per_sh = os_round_int(0.000001 * camext.prm[PINS_CAM_INTEGRATION_US] * TDC1304_TIMING_CLOCK_HZ);
     if (clocks_per_sh < 10) clocks_per_sh = 10;
     sh_frequency_hz = os_round_int(TDC1304_TIMING_CLOCK_HZ / clocks_per_sh);
     if (sh_frequency_hz < 10) sh_frequency_hz = 10;
@@ -656,70 +620,70 @@ static void tcd1304_setup_camera_io_pins(
     sh_delay_setting = os_round_int(pulse_setting);
     if (sh_delay_setting < 1) sh_delay_setting = 1;
 
-    cs->igc_on_pulse_setting = max_pulse - igc_pulse_setting;
-    cs->igc_off_pulse_setting = max_pulse;
+    camext.igc_on_pulse_setting = max_pulse - igc_pulse_setting;
+    camext.igc_off_pulse_setting = max_pulse;
 
     timer_nr = pin_get_prm(c->camera_pin, PIN_TIMER_SELECT);
 
     /* Integration time (electronic shutter) signal SH.
      */
-    cs->sh_prm_count = 0;
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RV, PIN_RV);
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_TIMER_SELECT, timer_nr);
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_FREQENCY, sh_frequency_hz);
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_RESOLUTION, bits);
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_INIT, sh_pulse_setting);
-    tcd1304_append_pin_parameter(cs->sh_pin_prm, &cs->sh_prm_count, PIN_HPOINT, sh_delay_setting);
+    camext.sh_prm_count = 0;
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_RV, PIN_RV);
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_TIMER_SELECT, timer_nr);
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_FREQENCY, sh_frequency_hz);
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_RESOLUTION, bits);
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_INIT, sh_pulse_setting);
+    tcd1304_append_pin_parameter(camext.sh_pin_prm, &camext.sh_prm_count, PIN_HPOINT, sh_delay_setting);
 
-    cs->sh_pin.type = PIN_PWM;
-    cs->sh_pin.bank = pin_get_prm(c->camera_pin, PIN_B_BANK); /* PWM channel */
-    cs->sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
-    cs->sh_pin.prm = cs->sh_pin_prm;
-    cs->sh_pin.prm_n = (os_char)cs->sh_prm_count;
-    pin_ll_setup(&cs->sh_pin, PINS_DEFAULT);
+    camext.sh_pin.type = PIN_PWM;
+    camext.sh_pin.bank = pin_get_prm(c->camera_pin, PIN_B_BANK); /* PWM channel */
+    camext.sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
+    camext.sh_pin.prm = camext.sh_pin_prm;
+    camext.sh_pin.prm_n = (os_char)camext.sh_prm_count;
+    pin_ll_setup(&camext.sh_pin, PINS_DEFAULT);
 
     /* IGC parameters
      */
-    cs->igc_prm_count = 0;
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RV, PIN_RV);
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_TIMER_SELECT, timer_nr);
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_FREQENCY, sh_frequency_hz);
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_RESOLUTION, bits);
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_INIT, cs->igc_on_pulse_setting);
-    tcd1304_append_pin_parameter(cs->igc_pin_prm, &cs->igc_prm_count, PIN_HPOINT, igc_pulse_setting);
+    camext.igc_prm_count = 0;
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_RV, PIN_RV);
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_TIMER_SELECT, timer_nr);
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_FREQENCY, sh_frequency_hz);
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_RESOLUTION, bits);
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_INIT, camext.igc_on_pulse_setting);
+    tcd1304_append_pin_parameter(camext.igc_pin_prm, &camext.igc_prm_count, PIN_HPOINT, igc_pulse_setting);
 
     /* Integration clear (new photo) signal IGC.
      */
-    cs->igc_pin.type = PIN_PWM;
-    cs->igc_pin.bank = pin_get_prm(c->camera_pin, PIN_C_BANK); /* PWM channel */
-    cs->igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
-    cs->igc_pin.prm = cs->igc_pin_prm;
-    cs->igc_pin.prm_n = (os_char)cs->igc_prm_count;
-    pin_ll_setup(&cs->igc_pin, PINS_DEFAULT);
+    camext.igc_pin.type = PIN_PWM;
+    camext.igc_pin.bank = pin_get_prm(c->camera_pin, PIN_C_BANK); /* PWM channel */
+    camext.igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
+    camext.igc_pin.prm = camext.igc_pin_prm;
+    camext.igc_pin.prm_n = (os_char)camext.igc_prm_count;
+    pin_ll_setup(&camext.igc_pin, PINS_DEFAULT);
 
     /* IGC loop back parameters
      */
-    cs->igc_loopback_prm_count = 0;
-    tcd1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_RV, PIN_RV);
-    tcd1304_append_pin_parameter(cs->igc_loopback_pin_prm, &cs->igc_loopback_prm_count, PIN_INTERRUPT_ENABLED, 1);
+    camext.igc_loopback_prm_count = 0;
+    tcd1304_append_pin_parameter(camext.igc_loopback_pin_prm, &camext.igc_loopback_prm_count, PIN_RV, PIN_RV);
+    tcd1304_append_pin_parameter(camext.igc_loopback_pin_prm, &camext.igc_loopback_prm_count, PIN_INTERRUPT_ENABLED, 1);
 
     /* Integration clear (new photo) signal IGC.
      */
-    cs->igc_loopback_pin.type = PIN_INPUT;
-    cs->igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);
-    cs->igc_loopback_pin.prm = cs->igc_loopback_pin_prm;
-    cs->igc_loopback_pin.prm_n = (os_char)cs->igc_loopback_prm_count;
+    camext.igc_loopback_pin.type = PIN_INPUT;
+    camext.igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);
+    camext.igc_loopback_pin.prm = camext.igc_loopback_pin_prm;
+    camext.igc_loopback_pin.prm_n = (os_char)camext.igc_loopback_prm_count;
 #if PINS_SIMULATED_INTERRUPTS
-    cs->igc_loopback_pin.int_conf = &cs->loopback_int_conf;
+    camext.igc_loopback_pin.int_conf = &camext.loopback_int_conf;
 #endif
-    pin_ll_setup(&cs->igc_loopback_pin, PINS_DEFAULT);
+    pin_ll_setup(&camext.igc_loopback_pin, PINS_DEFAULT);
 
     /* Receive interrupts when pin does up.
      */
     os_memclear(&iprm, sizeof(iprm));
     iprm.int_handler_func = tcd1304_cam_1_igc_end;
     iprm.flags = PINS_INT_RISING;
-    pin_gpio_attach_interrupt(&cs->igc_loopback_pin, &iprm);
+    pin_gpio_attach_interrupt(&camext.igc_loopback_pin, &iprm);
 }
 
 /* Camera interface (structure with function pointers, polymorphism)
@@ -733,7 +697,8 @@ const pinsCameraInterface pins_tcd1304_camera_iface
     tcd1304_cam_start,
     tcd1304_cam_stop,
     tcd1304_cam_set_parameter,
-    tcd1304_cam_get_parameter
+    tcd1304_cam_get_parameter,
+    OS_NULL
 };
 
 #endif
