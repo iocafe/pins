@@ -560,13 +560,14 @@ static void esp32_cam_task(
                 }
 
                 err = esp_camera_init(&camera_config);
+
                 if (err != ESP_OK) {
                     if (CAM_PIN_PWDN != -1) {
                         pinMode(CAM_PIN_PWDN, OUTPUT);
                         digitalWrite(CAM_PIN_PWDN, LOW);
                     }
 
-                    osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, OS_TRUE);
+                    osal_set_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, 0, OS_TRUE);
                     osal_debug_error("ESP32 camera init failed");
                     goto goon;
                 }
@@ -575,7 +576,8 @@ static void esp32_cam_task(
                 camext.prev_jpeg_quality = 255;
                 camext.prev_frame_size = -1;
 
-                osal_get_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, OS_FALSE);
+                osal_set_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, 0, OS_FALSE);
+
                 initialized = OS_TRUE;
             }
             else {
