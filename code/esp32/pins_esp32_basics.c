@@ -81,7 +81,7 @@ void pin_ll_setup(
     os_int
         is_touch_sensor;
 
-    if (pin->addr >=  0) switch (pin->type)
+    if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_INPUT:
             is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
