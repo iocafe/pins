@@ -262,7 +262,7 @@ static void esp32_cam_start(
     opt.thread_name = "espcam";
     opt.stack_size = 8000;
     opt.pin_to_core = OS_TRUE;
-    opt.pin_to_core_nr = 0;
+    opt.pin_to_core_nr = 1; // 7.8.2020 test core 1 HERE works a lot faster than 0 for ESP32
     c->camera_thread = osal_thread_create(esp32_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
