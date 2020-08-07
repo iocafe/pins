@@ -237,6 +237,17 @@ static void tcd1304_cam_start(
 {
     pinTimerParams prm;
 
+#if OSAL_DEBUG
+    if (c->camera_pin == OS_NULL) {
+        osal_debug_error("pins_sim_line_camera: No camera_pin");
+        return;
+    }
+    if (c->timer_pin == OS_NULL) {
+        osal_debug_error("pins_sim_line_camera: No timer_pin");
+        return;
+    }
+#endif
+
     tcd1304_setup_camera_io_pins(c);
 
     os_memclear(&prm, sizeof(prm));
