@@ -29,6 +29,12 @@
        40 MHz (half of APB clock) and approximately 0.001 Hz.
        Please check the LEDC chapter in Technical Reference Manual.
 
+       "timer": 0 - 3 selects timer to use. All PWM outputs sharing same timer share same frequency.
+       I think timer 0 and channel 0 are used for esp32 camera, if connected?
+
+       "bank": 0 - 7 select the channel. It needs to be own value for each PWM output. Same bank
+       number cannot be reused with different channels.
+
   @param   pin Pointer to the pin structure.
   @return  None.
 
@@ -62,7 +68,8 @@ void pin_pwm_setup(
     ledc_timer.duty_resolution = resolution_bits,
     ledc_timer.freq_hz = frequency_hz,
     ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
-    ledc_timer.timer_num = timer_nr;  // LEDC_TIMER_0
+    ledc_timer.timer_num = timer_nr;  // 0 = LEDC_TIMER_0, ...
+
 
     /* I think needed for new esp-idf software ?
     ledc_timer.clk_cfg = LEDC_USE_APB_CLK;

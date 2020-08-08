@@ -38,6 +38,8 @@ void pins_ll_initialize_lib(
     periph_module_enable(PERIPH_LEDC_MODULE);
 #if PINS_IS_ESP32_CAMERA==0
     gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+#else
+    gpio_install_isr_service(0 /* 0=default */);
 #endif
 }
 
