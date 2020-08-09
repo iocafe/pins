@@ -56,8 +56,8 @@ void initialize_morse_code(
     morse->pin2 = pin2;
     morse->prev_code = -1;
     morse->start_led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
-    morse->value_blink_ok[0] = morse->value_blink_ok[1] = 1;
-    morse->value_blink_attention[0] = morse->value_blink_attention[1] = 1;
+    morse->blink_level[0] = morse->blink_level[1] = 1;
+    morse->blink_attention_level[0] = morse->blink_attention_level[1] = 1;
 
     if (flags & MORSE_HANDLE_NET_STATE_NOTIFICATIONS)
     {
@@ -197,21 +197,25 @@ static os_short blink_get_pin_value(
 {
     os_short value;
 
+    if (morse->code == MORSE_RUNNING && morse->steady_hdlight_level[pin_nr0]) {
+        return morse->steady_hdlight_level[pin_nr0];
+    }
+
     if (morse->led_on)
     {
         if (morse->code == MORSE_RUNNING ||
             morse->code == MORSE_CONFIGURING ||
             morse->code == MORSE_NETWORK_NOT_CONNECTED)
         {
-            value = morse->value_blink_ok[pin_nr0];
+            value = morse->blink_level[pin_nr0];
         }
         else
         {
-            value = morse->value_blink_attention[pin_nr0];
+            value = morse->blink_attention_level[pin_nr0];
         }
     }
     else {
-        value = morse->value_off[pin_nr0];
+        value = morse->off_level[pin_nr0];
     }
     return value;
 }

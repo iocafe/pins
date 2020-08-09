@@ -49,9 +49,10 @@ typedef struct MorseCode
     os_boolean start_led_on;
     os_boolean led_on;
 
-    os_short value_off[2];
-    os_short value_blink_ok[2];
-    os_short value_blink_attention[2];
+    os_short off_level[2];
+    os_short blink_level[2];
+    os_short blink_attention_level[2];
+    os_short steady_hdlight_level[2];
 
     MorseRecipe recipe;
 }

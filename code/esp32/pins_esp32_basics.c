@@ -36,11 +36,17 @@ void pins_ll_initialize_lib(
     void)
 {
     periph_module_enable(PERIPH_LEDC_MODULE);
-#if PINS_IS_ESP32_CAMERA==0
-    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
-#else
+
+    /* pekka 9.8.2020: This seems to be right one. We get warning when camera is started
+       that grpio_isr_service is already installed. But ignoring that seems to be ok.
+       This call is necessary, strange behaviour without it.
+     */
     gpio_install_isr_service(0 /* 0=default */);
-#endif
+
+    /* WAS (this code is rejected now)
+    #if PINS_IS_ESP32_CAMERA==0
+        gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+    #else */
 }
 
 
