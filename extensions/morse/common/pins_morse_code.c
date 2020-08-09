@@ -199,12 +199,15 @@ static os_short blink_get_pin_value(
 
     if (morse->led_on)
     {
-        if (morse->code) {
-            value = morse->value_blink_attention[pin_nr0];
+        if (morse->code == MORSE_RUNNING ||
+            morse->code == MORSE_CONFIGURING ||
+            morse->code == MORSE_NETWORK_NOT_CONNECTED)
+        {
+            value = morse->value_blink_ok[pin_nr0];
         }
         else
         {
-            value = morse->value_blink_ok[pin_nr0];
+            value = morse->value_blink_attention[pin_nr0];
         }
     }
     else {
