@@ -149,6 +149,7 @@ void run_display_hw(
         if (display->state_led_on) {
             switch (code)
             {
+                case MORSE_PROGRAMMING_DEVICE:
                 case MORSE_CONFIGURING: color = TFT_YELLOW; break;
                 case MORSE_CONFIGURATION_MATCH: color = TFT_GREEN; break;
                 case MORSE_RUNNING: color = TFT_GREEN; break;

@@ -115,7 +115,13 @@ static void make_morse_recipe(
     os_memclear(&morse->recipe, sizeof(MorseRecipe));
     n = 0;
 
-    if (code == MORSE_CONFIGURING)
+    if (code == MORSE_PROGRAMMING_DEVICE)
+    {
+        morse->recipe.time_ms[n++] = 200;
+        morse->recipe.time_ms[n++] = 200;
+    }
+
+    else if (code == MORSE_CONFIGURING)
     {
         morse->recipe.time_ms[n++] = 3000;
         morse->recipe.time_ms[n++] = 0;
