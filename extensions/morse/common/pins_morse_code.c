@@ -56,6 +56,8 @@ void initialize_morse_code(
     morse->pin2 = pin2;
     morse->prev_code = -1;
     morse->start_led_on = (os_boolean)((flags & MORSE_LED_INVERTED) == 0);
+    morse->value_blink_ok[0] = morse->value_blink_ok[1] = 1;
+    morse->value_blink_attention[0] = morse->value_blink_attention[1] = 1;
 
     if (flags & MORSE_HANDLE_NET_STATE_NOTIFICATIONS)
     {
@@ -169,6 +171,46 @@ static void make_morse_recipe(
 /**
 ****************************************************************************************************
 
+  @brief Get value to write to IO ping matching to morse state.
+  @anchor blink_get_pin_value
+
+  The blink_get_pin_value() function gets value to set for output pin. Normally, for digital
+  outputs, value 1 is used ofr LED on and value 0 for LED off. But it is possible to
+  bling PWM output with different intensities, or to invert the signal using pin levels.
+  This allows also blinking error coders with brighter intensity than normal operation.
+
+  @param   morse Morse code structure.
+  @param   pin_nr0 0 for first morse pin, 1 for second morse pin.
+  @return  Value to write to pin
+
+****************************************************************************************************
+*/
+static os_short blink_get_pin_value(
+    struct MorseCode *morse,
+    os_short pin_nr0)
+{
+    os_short value;
+
+    if (morse->led_on)
+    {
+        if (morse->code) {
+            value = morse->value_blink_attention[pin_nr0];
+        }
+        else
+        {
+            value = morse->value_blink_ok[pin_nr0];
+        }
+    }
+    else {
+        value = morse->value_off[pin_nr0];
+    }
+    return value;
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Keep the morse code LED alive.
   @anchor blink_morse_code
 
@@ -195,8 +237,8 @@ os_boolean blink_morse_code(
         morse->prev_code = morse->code;
         morse->pos = 0;
         morse->led_on = morse->start_led_on;
-        if (morse->pin) pin_set(morse->pin, morse->led_on);
-        if (morse->pin2) pin_set(morse->pin2, morse->led_on);
+        if (morse->pin) pin_set(morse->pin, blink_get_pin_value(morse, 0));
+        if (morse->pin2) pin_set(morse->pin2, blink_get_pin_value(morse, 1));
     }
 
     if (timer == OS_NULL)
@@ -209,8 +251,9 @@ os_boolean blink_morse_code(
     if (os_has_elapsed_since(&morse->timer, timer, morse->recipe.time_ms[pos]))
     {
         morse->led_on = !morse->led_on;
-        if (morse->pin) pin_set(morse->pin, morse->led_on);
-        if (morse->pin2) pin_set(morse->pin2, morse->led_on);
+
+        if (morse->pin) pin_set(morse->pin, blink_get_pin_value(morse, 0));
+        if (morse->pin2) pin_set(morse->pin2, blink_get_pin_value(morse, 1));
         morse->timer = *timer;
         if (++pos >= morse->recipe.n)
         {
