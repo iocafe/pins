@@ -40,6 +40,7 @@ const os_char *morse_code_to_text(
 
     switch (code)
     {
+        case MORSE_PROGRAMMING_DEVICE: p = "programming"; break;
         case MORSE_CONFIGURING: p = "configuring"; break;
         case MORSE_CONFIGURATION_MATCH: p = "configuration ready"; break;
         case MORSE_RUNNING: p = "running"; break;
