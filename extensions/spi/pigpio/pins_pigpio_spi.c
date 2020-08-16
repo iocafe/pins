@@ -1,7 +1,7 @@
 /**
 
-  @file    extensions/spi/common/pins_spi.c
-  @brief   Camera hardware API.
+  @file    extensions/spi/pigpio/pins_pigpio_spi.c
+  @brief   SPI
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
@@ -25,38 +25,31 @@
 
 ****************************************************************************************************
 */
-/**
-
-  @file    extensions/camera/common/pins_camera.c
-  @brief   Camera hardware API.
-  @author  Pekka Lehtikoski
-  @version 1.0
-  @date    21.4.2020
-
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
-  modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept
-  it fully.
-
-****************************************************************************************************
-*/
 #include "pinsx.h"
 #if PINS_SPI
 
 /**
 ****************************************************************************************************
 
-   @brief Store a photo as a "brick" within brick buffer for communication.
-   @anchor pins_store_photo_as_brick
+   @brief Send data to SPI bus and receive reply.
+   @anchor pins_do_spi_bus_transaction
 
-   The pins_store_photo_as_brick() function...
+   The pins_do_spi_bus_transaction() function sends buffer content to SPI bus
+   and ...
 
    @param   photo Pointer to photo to store. The photo is not modified by this function.
    @param   b Pointer to brick buffer into which to store the photo as "brick".
-   @param   compression Should photo be compressed by this function and is so how? 
+   @param   compression Should photo be compressed by this function and is so how?
    @return  None.
 
 ****************************************************************************************************
 */
+void pins_do_spi_bus_transaction(
+    pinsSpiBus *spi_bus);
+{
+    //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
+
+    wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
+}
 
 #endif

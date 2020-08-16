@@ -1,7 +1,7 @@
 /**
 
   @file    extensions/spi/common/pins_spi.h
-  @brief   Camera hardware API.
+  @brief   SPI.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
@@ -17,6 +17,16 @@
     affect, waiting for reply, etc. Interrupt is timed, we never wait in interrup handler,
     just return is thing waited for is not yet ready.
   - We can also run SPI without waiting from the single threaded main loop.
+
+THINK ABOUT
+  - DATA PINS in JSON are not associated directly with any physical pin, but present values
+    to read or write as directly connected signals. Data signals can be in any signal group.
+  - Data signals can be associated to SPI device.
+  - Signals like MISO, MOSI, CLOCK AND CS are real signals with address, but controlled
+    by SPI code. Set up same way as camera signals?. Does't work for CS. Or should we have
+    "reserved" pins group.
+  - How to specify SPI devices in JSON.
+
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -35,9 +45,9 @@ struct pinsSpiDevice;
 struct pinsSpiBus;
 
 
-/** SPI device callback, when we can send eequest to device.
+/** SPI device callback, when we can send request to device.
  */
-typedef void pinsGenerateSpiRequest(
+typedef os_short pinsGenerateSpiRequest(
     struct pinsSpiDevice *spi_device,
     void *context);
 
@@ -64,7 +74,6 @@ typedef struct pinsSpiDevice
     pinsGenerateSpiRequest *gen_req_func;
     pinsProcessSpiResponce *proc_resp_func;
 
-
     /** Pointer to SPI bus to which this device is connected.
      */
     struct pinsSpiBus *spi_bus;
@@ -76,11 +85,14 @@ typedef struct pinsSpiDevice
 pinsSpiDevice;
 
 
+/** SPI message buffer size, bytes.
+ */
+#define PINS_SPI_BUF_SZ 32
+
 /**
  */
 typedef struct pinsSpiBus
 {
-
     /** Pointer to pin structure.
      */
     const struct Pin *miso_pin;
@@ -93,11 +105,15 @@ typedef struct pinsSpiBus
      */
     const struct Pin *clock_pin;
 
-    /* Linked list of SPI devices, must not be modified when SPI is running.
+    /** SPI message buffer, used for both outgoing and incoming message.
+     */
+    os_uchar buf[PINS_SPI_BUF_SZ];
+
+    /** Linked list of SPI devices, must not be modified when SPI is running.
      */
     pinsSpiDevice *first_spi_device;
 
-    /* Linked list of SPI buses, must not be modified when SPI is running.
+    /** Linked list of SPI buses, must not be modified when SPI is running.
      */
     struct pinsSpiBus *next_spi_bus;
 }
@@ -114,13 +130,22 @@ pinsSpi;
 
 
 /*
+void pins_initialize_spi_bus(
+    pinsSpiBus *spi_bus);
+
 void pins_set_spi_bus_speed(
-    pinsSpiDevice *spi_device);
+    pinsSpiBus *spi_bus,
+    os_int speed);
 
 void pins_send_spi_request(
-    pinsSpiDevice *spi_device,
+    pinsSpiBus *spi_bus,
     const os_uchar buf,
-    os_int buf_sz); */
+    os_short buf_sz);
+ */
+
+void pins_do_spi_bus_transaction(
+    pinsSpiBus *spi_bus);
+
 
 
 #endif
