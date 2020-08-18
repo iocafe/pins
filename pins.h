@@ -70,6 +70,16 @@ OSAL_C_HEADER_BEGINS
 #endif
 #endif
 
+/* Defaults for SPI and I2C support, if none specified in OS specific headers
+   or for the build.
+ */
+#ifndef PINS_SPI
+  #define PINS_SPI 1
+#endif
+#ifndef PINS_I2C
+  #define PINS_I2C 0
+#endif
+
 /* Include generic pins library headers.
  */
 #include "code/common/pins_gpio.h"

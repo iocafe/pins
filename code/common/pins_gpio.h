@@ -59,6 +59,15 @@ PinInterruptConf;
 #define PINS_INTCONF_NULL
 #endif
 
+/* If we need to store SPI or I2C bus "pin" pointer
+ */
+#if PINS_SPI || PINS_I2C
+#define PINS_DEVCONF_PTR(name) ,&name
+#define PINS_DEVCONF_NULL ,OS_NULL
+#else
+#define PINS_DEVCONF_PTR(name)
+#define PINS_DEVCONF_NULL
+#endif
 
 /* Parameter structure for pin_gpio_attach_interrupt() function.
  */

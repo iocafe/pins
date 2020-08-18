@@ -138,8 +138,14 @@ typedef struct Pin
      */
     const struct iocSignal *signal;
 
+#if PINS_SPI || PINS_I2C
+    /** SPI or IC2 bus device "pin".
+     */
+    const struct Pin *bus_device;
+#endif
+
 #if PINS_SIMULATED_INTERRUPTS
-    /* Pointer to interrupt configuration when working on simulated environment
+    /** Pointer to interrupt configuration when working on simulated environment
      */
     struct PinInterruptConf *int_conf;
 

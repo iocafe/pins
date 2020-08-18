@@ -1,4 +1,4 @@
-# pins_to_c.py 27.3.2020/pekka
+# pins_to_c.py 17.8.2020/pekka
 # Converts hardware IO specification(s) written in JSON to C source and header files.
 import json
 import os
@@ -30,7 +30,7 @@ prm_type_list = {
     "miso": "PIN_MISO",
     "mosi": "PIN_MOSI",
     "sclk": "PIN_SCLK",
-    "cd": "PIN_CS",
+    "cs": "PIN_CS",
     "dc": "PIN_DC",
     "rx": "PIN_RX",
     "tx": "PIN_TX",
@@ -91,7 +91,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
 
-        elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group':
+        elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group' and attr != 'device':
             print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")
 
     if c_prm_list_has_interrupt == False and pin_type == 'timers':
@@ -153,6 +153,16 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += ', ' + signallist[pin_name]
     else:
         ccontent += ', OS_NULL'
+
+    # If IO pin is on SPI device
+    bus_device = pin_attr.get("device", None)
+    if bus_device != None:
+        ccontent += ' PINS_DEVCONF_PTR('
+        ccontent += prefix + '.' + bus_device
+        ccontent += ')'
+
+    else:
+        ccontent += ' PINS_DEVCONF_NULL'
 
     if c_prm_list_has_interrupt:
         intconf_struct_name = "pin_" + pin_name + "_intconf"
@@ -392,11 +402,14 @@ def mymain():
         print("No source files")
         exit()
 
-#    sourcefiles.append('/coderoot/dehec-ref/dref/config/pins/yogurt/pins-io.json')
-#    outpath = '/coderoot/dehec-ref/dref/config/include/yogurt/pins-io.c'
+#    sourcefiles.append('/coderoot/iocom/examples/buster/config/pins/grumpy/pins_io.json')
+#    outpath = '/coderoot/iocom/examples/buster/config/include/grumpy/pins_io.c'
 
-#     sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/pins-io.json')
-#     outpath = '/coderoot/pins/examples/jane/config/include/carol/pins-io.c'
+#    sourcefiles.append('/coderoot/dehec-ref/dref/config/pins/yogurt/pins_io.json')
+#    outpath = '/coderoot/dehec-ref/dref/config/include/yogurt/pins_io.c'
+
+#     sourcefiles.append('/coderoot/pins/examples/jane/config/pins/carol/pins_io.json')
+#     outpath = '/coderoot/pins/examples/jane/config/include/carol/pins_io.c'
 
 #    sourcefiles.append('/coderoot/iocom/examples/gina/config/pins/carol/gina-io.json')
 #    outpath = '/coderoot/iocom/examples/gina/config/include/carol/gina-io.c'
