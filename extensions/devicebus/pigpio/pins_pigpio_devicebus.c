@@ -1,14 +1,14 @@
 /**
 
-  @file    extensions/spi/pigpio/pins_pigpio_spi.c
+  @file    extensions/spi/pigpio/pins_pigpio_devicebus.c
   @brief   SPI
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
 
   - Run sequentially. Set speed and chip select pin. Send request. Wait for reply.
-    Get reply and process it. The pinsGenerateSpiRequest() is called to generate the request
-    and pinsProcessSpiResponce() to process it. Main loop calls this for every SPI device in turn.
+    Get reply and process it. The pinsGenerateDeviceRequest() is called to generate the request
+    and pinsProcessDeviceResponce() to process it. Main loop calls this for every SPI device in turn.
   - Threaded variation. Much the same as previous one, but every SPI bus has own thread which
     runs the SPI bus sequence, one device at a time: "run set speed and cs, send request, wait,
     get reply and process it."
@@ -45,7 +45,7 @@
 ****************************************************************************************************
 */
 void pins_do_spi_bus_transaction(
-    pinsSpiBus *spi_bus);
+    pinsBus *spi_bus);
 {
     //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
 

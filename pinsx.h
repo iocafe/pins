@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -26,7 +26,7 @@ OSAL_C_HEADER_BEGINS
 /* Include IOCOM support headers.
  */
 #include "extensions/morse/common/pins_morse_code.h"
-#include "extensions/spi/common/pins_spi.h"
+#include "extensions/devicebus/common/pins_devicebus.h"
 #include "extensions/camera/common/pins_camera.h"
 #include "extensions/display/common/pins_display.h"
 #include "extensions/iocom/common/pins_to_iocom.h"

@@ -36,12 +36,10 @@
    @brief X
    @anchor initialize_mcp3208
 
-   The pins_store_photo_as_brick() function...
+   The initialize_mcp3208() function...
 
-   @param   spi_device.
-   @param   b Pointer to brick buffer into which to store the photo as "brick".
-   @param   compression Should photo be compressed by this function and is so how?
-   @return  Number of bytes. 0 if nothing to send.
+   @param   pin Pin structure representing SPI device.
+   @return  None.
 
 ****************************************************************************************************
 */
@@ -51,7 +49,7 @@ void initialize_mcp3208(const Pin *pin)
 }
 
 /* static os_short pins_adc_mcp3208_generate_spi_request(
-    struct pinsSpiDevice *spi_device,
+    struct pinsBusDevice *device,
     void *context)
 {
   unsigned char buff[3];
@@ -64,8 +62,8 @@ void initialize_mcp3208(const Pin *pin)
 }
 
 
-typedef void pinsProcessSpiResponce(
-    struct pinsSpiDevice *spi_device,
+typedef void pinsProcessDeviceResponce(
+    struct pinsBusDevice *device,
     void *context)
 {
      buff[1] = 0x0F & buff[1];

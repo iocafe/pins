@@ -1,14 +1,14 @@
 /**
 
-  @file    extensions/spi/common/pins_spi.h
+  @file    extensions/spi/common/pins_devicebus.h
   @brief   SPI.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
 
   - Run sequentially. Set speed and chip select pin. Send request. Wait for reply.
-    Get reply and process it. The pinsGenerateSpiRequest() is called to generate the request
-    and pinsProcessSpiResponce() to process it. Main loop calls this for every SPI device in turn.
+    Get reply and process it. The pinsGenerateDeviceRequest() is called to generate the request
+    and pinsProcessDeviceResponce() to process it. Main loop calls this for every SPI device in turn.
   - Threaded variation. Much the same as previous one, but every SPI bus has own thread which
     runs the SPI bus sequence, one device at a time: "run set speed and cs, send request, wait,
     get reply and process it."
@@ -40,58 +40,83 @@ THINK ABOUT
 #define PINS_SPI_H_
 #include "pinsx.h"
 
+struct pinsBusDevice;
+struct pinsBus;
 
-struct pinsSpiDevice;
-struct pinsSpiBus;
-
+/** Supported bus types.
+ */
+typedef enum {
+    PINS_SPI_BUS,
+    PINS_I2C_BUS
+}
+pinsBusType;
 
 /** SPI device callback, when we can send request to device.
  */
-typedef os_short pinsGenerateSpiRequest(
-    struct pinsSpiDevice *spi_device,
+typedef os_short pinsGenerateDeviceRequest(
+    struct pinsBusDevice *device,
     void *context);
 
 /** SPI device callback, when reply is received from the device.
  */
-typedef void pinsProcessSpiResponce(
-    struct pinsSpiDevice *spi_device,
+typedef void pinsProcessDeviceResponce(
+    struct pinsBusDevice *device,
     void *context);
 
-
-/** Camera photo as received by camera callback function.
+/** Function type to set value to SPI or I2C device driver. Implemented by driver.
  */
-typedef struct pinsSpiDevice
-{
+typedef void pinsBusSet(
+    struct pinsBusDevice *device,
+    os_short addr,
+    os_int value);
 
+/** Function type to get value from SPI or I2C device driver. Implemented by driver.
+ */
+typedef os_int pinsBusGet(
+    struct pinsBusDevice *device,
+    os_short addr,
+    os_int value);
+
+
+/** Structure representing either a SPI or I2C device.
+ */
+typedef struct pinsBusDevice
+{
     /** Pointer to chip select pin structure.
      */
     const struct Pin *cs_pin;
 
+    /** Enable device flag. Devices can be disabled if not connected,
+        or to speed up communication to other device in the bus.
+     */
+    os_boolean enable;
+
+    /* Bus speed for this device.
+     */
     os_int bus_speed;
 
-    // os_boolean enable;
+    pinsGenerateDeviceRequest *gen_req_func;
+    pinsProcessDeviceResponce *proc_resp_func;
 
-    pinsGenerateSpiRequest *gen_req_func;
-    pinsProcessSpiResponce *proc_resp_func;
+    void *custom; // ??????
 
     /** Pointer to SPI bus to which this device is connected.
      */
-    struct pinsSpiBus *spi_bus;
+    struct pinsBus *bus;
 
     /** Netx in linked list of SPI devices, must not be modified when SPI is running.
      */
-    struct pinsSpiDevice *next_spi_device;
+    struct pinsBusDevice *next_spi_device;
 }
-pinsSpiDevice;
+pinsBusDevice;
 
 
 /** SPI message buffer size, bytes.
  */
-#define PINS_SPI_BUF_SZ 32
+#define PINS_BUS_BUF_SZ 32
 
-/**
- */
-typedef struct pinsSpiBus
+
+typedef struct pinSpiBusVariables
 {
     /** Pointer to pin structure.
      */
@@ -104,47 +129,80 @@ typedef struct pinsSpiBus
     /**
      */
     const struct Pin *clock_pin;
+}
+pinSpiBusVariables;
+
+
+typedef struct pinsI2cBusVariables
+{
+    /**
+     */
+    const struct Pin *xxx;
+}
+pinsI2cBusVariables;
+
+
+/**
+ */
+typedef struct pinsBus
+{
+    /* Either PINS_SPI_BUS or PINS_I2C_BUS.
+     */
+    pinsBusType bus_type;
+
+    /* Bus type specific variables.
+     */
+    union {
+        pinSpiBusVariables spi;
+        pinsI2cBusVariables i2c;
+    }
+    spec;
 
     /** SPI message buffer, used for both outgoing and incoming message.
      */
-    os_uchar buf[PINS_SPI_BUF_SZ];
+    os_uchar buf[PINS_BUS_BUF_SZ];
+
+    /** Driver function pointers
+     */
+    pinsBusSet *set_func;
+    pinsBusGet *get_func;
 
     /** Linked list of SPI devices, must not be modified when SPI is running.
      */
-    pinsSpiDevice *first_spi_device;
+    pinsBusDevice *first_bus_device;
 
     /** Linked list of SPI buses, must not be modified when SPI is running.
      */
-    struct pinsSpiBus *next_spi_bus;
+    struct pinsBus *next_bus;
 }
-pinsSpiBus;
+pinsBus;
 
 
 /** SPI state
  */
 typedef struct pinsSpi
 {
-    pinsSpiBus *first_bus;
+    pinsBus *first_bus;
 }
 pinsSpi;
 
 
 /*
 void pins_initialize_spi_bus(
-    pinsSpiBus *spi_bus);
+    pinsBus *spi_bus);
 
 void pins_set_spi_bus_speed(
-    pinsSpiBus *spi_bus,
+    pinsBus *spi_bus,
     os_int speed);
 
 void pins_send_spi_request(
-    pinsSpiBus *spi_bus,
+    pinsBus *spi_bus,
     const os_uchar buf,
     os_short buf_sz);
  */
 
 void pins_do_spi_bus_transaction(
-    pinsSpiBus *spi_bus);
+    pinsBus *spi_bus);
 
 
 

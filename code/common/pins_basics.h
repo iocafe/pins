@@ -18,6 +18,10 @@
 #define PINS_BASICS_H_
 #include "pins.h"
 
+struct Pin;
+struct PinInterruptConf;
+struct PinBusDevice;
+
 /** Enumeration of pin types.
  */
 typedef enum
@@ -84,8 +88,6 @@ pinPrm;
  */
 #define PINS_N_RESERVED 2
 
-struct Pin;
-struct PinInterruptConf;
 
 typedef struct
 {
@@ -141,6 +143,7 @@ typedef struct Pin
 #if PINS_SPI || PINS_I2C
     /** SPI or IC2 bus device "pin".
      */
+    // struct PinBusDevice *bus_device;
     const struct Pin *bus_device;
 #endif
 
