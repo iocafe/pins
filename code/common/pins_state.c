@@ -57,6 +57,11 @@ void pins_setup(
 
         group++;
     }
+
+#if PINS_SPI || PINS_I2C
+    /* SPI and I2C initialization. */
+    pins_initialize_bus_devices();
+#endif
 }
 
 
@@ -67,7 +72,7 @@ void pins_setup(
   @brief Shut down the hardware IO.
   @anchor pins_setup
 
-  The pins_shutdown() function is called before program exits to stop io devices and release 
+  The pins_shutdown() function is called before program exits to stop io devices and release
   resources for them. For example: Windows USB camera needs to be shut down.
 
   @param   pins_hdr Top level pins IO configuration structure.

@@ -199,7 +199,6 @@ def write_device_list(device_init_list, device_init_list_hdr):
 
     hfile.write('\n/* SPI and I2C initialization */\n');
     hfile.write('#if PINS_SPI || PINS_I2C\n');
-    hfile.write('void pins_initialize_bus_devices(void);\n')
     for driver_name, func_decl in device_init_list_hdr.items():
         hfile.write(func_decl)
     hfile.write('#endif\n');

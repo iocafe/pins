@@ -187,4 +187,10 @@ void pin_ll_set(
 os_int pin_ll_get(
     const Pin *pin);
 
+/* SPI and I2C initialization.
+ */
+#if PINS_SPI || PINS_I2C
+void pins_initialize_bus_devices(void);
+#endif
+
 #endif
