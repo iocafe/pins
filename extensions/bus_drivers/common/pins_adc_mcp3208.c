@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/spi/spi_collection/pins_adc_mcp3208.c
+  @file    extensions/bus_drivers/common/pins_adc_mcp3208.c
   @brief   Driver for MCP3208 8-Channel 12-Bit A/D converter
   @author  Pekka Lehtikoski
   @version 1.0
@@ -25,14 +25,16 @@
 
 ****************************************************************************************************
 */
+#define PINS_ENABLE_MCP3208_ADC 1
+
 #include "pinsx.h"
-#if PINS_ENABLE_ADC_MCP3208
+#if PINS_ENABLE_MCP3208_ADC
 
 /**
 ****************************************************************************************************
 
-   @brief Store a photo as a "brick" within brick buffer for communication.
-   @anchor pins_store_photo_as_brick
+   @brief X
+   @anchor initialize_mcp3208
 
    The pins_store_photo_as_brick() function...
 
@@ -43,8 +45,12 @@
 
 ****************************************************************************************************
 */
+void initialize_mcp3208(const Pin *pin)
+{
 
-static os_short pins_adc_mcp3208_generate_spi_request(
+}
+
+/* static os_short pins_adc_mcp3208_generate_spi_request(
     struct pinsSpiDevice *spi_device,
     void *context)
 {
@@ -92,7 +98,7 @@ typedef void pinsProcessSpiResponce(
 }
 
 void add_adc_mcp
+*/
 
-#endif
 
 #endif

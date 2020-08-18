@@ -75,7 +75,7 @@ def write_pin_to_c_header(pin_name):
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     global known_groups, prefix, ccontent, c_prm_comment_written
-    global nro_pins, pin_nr, define_list
+    global nro_pins, pin_nr, define_list, device_init_list, device_init_list_hdr
 
     # Generate C parameter list for the pin
     c_prm_list = "PIN_RV, PIN_RV"
@@ -91,7 +91,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
 
-        elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group' and attr != 'device':
+        elif attr != 'name' and attr != 'addr' and attr != 'bank' and attr != 'group' and attr != 'device' and attr != 'driver':
             print("Pin '" + pin_name + "' has unknown attribute '" + attr + "', ignored.")
 
     if c_prm_list_has_interrupt == False and pin_type == 'timers':
@@ -154,7 +154,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     else:
         ccontent += ', OS_NULL'
 
-    # If IO pin is on SPI device
+    # If IO pin is on SPI or I2C device
     bus_device = pin_attr.get("device", None)
     if bus_device != None:
         ccontent += ' PINS_DEVCONF_PTR('
@@ -163,6 +163,12 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
     else:
         ccontent += ' PINS_DEVCONF_NULL'
+
+    # If IO pin is a SPI or I2C device
+    driver = pin_attr.get("driver", None)
+    if driver != None:
+        device_init_list[pin_name] = '    initialize_' + driver + '(&' + prefix + '.' + pin_type + '.' +  pin_name + ');\n'
+        device_init_list_hdr[driver] = 'void initialize_' + driver + '(const Pin *pin);\n'
 
     if c_prm_list_has_interrupt:
         intconf_struct_name = "pin_" + pin_name + "_intconf"
@@ -180,6 +186,23 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += ","
 
     ccontent += ' /* ' + pin_name + ' */\n'
+
+def write_device_list(device_init_list, device_init_list_hdr):
+    global cfile, hfile
+    cfile.write('\n/* SPI and I2C bus device initialization */\n');
+    cfile.write('#if PINS_SPI || PINS_I2C\n');
+    cfile.write('void pins_initialize_bus_devices(void)\n{\n')
+    for device_name, init_command in device_init_list.items():
+        cfile.write(init_command)
+    cfile.write('}\n');
+    cfile.write('#endif\n');
+
+    hfile.write('\n/* SPI and I2C initialization */\n');
+    hfile.write('#if PINS_SPI || PINS_I2C\n');
+    hfile.write('void pins_initialize_bus_devices(void);\n')
+    for driver_name, func_decl in device_init_list_hdr.items():
+        hfile.write(func_decl)
+    hfile.write('#endif\n');
 
 def write_linked_list_heads():
     global prefix, known_groups
@@ -296,7 +319,7 @@ def list_signals_in_file(path):
         printf ("Opening file " + path + " failed")
 
 def process_io_device(io):
-    global device_name, known_groups, prefix, signallist
+    global device_name, known_groups, prefix, signallist, device_init_list, device_init_list_hdr
     global nro_groups, group_nr, ccontent, pin_group_list, define_list
 
     device_name = io.get("name", "ioblock")
@@ -308,6 +331,9 @@ def process_io_device(io):
     signallist = {}
     if signalspath != None:
         list_signals_in_file(signalspath)
+
+    device_init_list = {}
+    device_init_list_hdr = {}
 
     hfile.write("/* " + device_name.upper() + " IO configuration structure */\n")
     hfile.write('typedef struct\n{')
@@ -357,6 +383,8 @@ def process_io_device(io):
     hfile.write("\n/* Name defines for pins and application pin groups (use ifdef to check if HW has pin) */\n")
     for d in define_list:
         hfile.write('#define ' +d + '\n')
+
+    write_device_list(device_init_list, device_init_list_hdr)        
 
 def process_source_file(path):
     read_file = open(path, "r")
