@@ -1,7 +1,7 @@
 /**
 
-  @file    extensions/spi/pigpio/pins_pigpio_devicebus.c
-  @brief   SPI
+  @file    extensions/spi/common/pins_devicebus.h
+  @brief   SPI.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
@@ -18,6 +18,16 @@
     just return is thing waited for is not yet ready.
   - We can also run SPI without waiting from the single threaded main loop.
 
+THINK ABOUT
+  - DATA PINS in JSON are not associated directly with any physical pin, but present values
+    to read or write as directly connected signals. Data signals can be in any signal group.
+  - Data signals can be associated to SPI device.
+  - Signals like MISO, MOSI, CLOCK AND CS are real signals with address, but controlled
+    by SPI code. Set up same way as camera signals?. Does't work for CS. Or should we have
+    "reserved" pins group.
+  - How to specify SPI devices in JSON.
+
+
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
@@ -26,30 +36,14 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_SPI
+#if PINS_SPI || PINS_I2C
 
-/**
-****************************************************************************************************
-
-   @brief Send data to SPI bus and receive reply.
-   @anchor pins_do_spi_bus_transaction
-
-   The pins_do_spi_bus_transaction() function sends buffer content to SPI bus
-   and ...
-
-   @param   photo Pointer to photo to store. The photo is not modified by this function.
-   @param   b Pointer to brick buffer into which to store the photo as "brick".
-   @param   compression Should photo be compressed by this function and is so how?
-   @return  None.
-
-****************************************************************************************************
-*/
-void pins_do_spi_bus_transaction(
-    PinsBus *spi_bus);
+void pins_init_bus(
+    PinsBus *bus)
 {
-    //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
 
-    wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
 }
 
 #endif
+
+

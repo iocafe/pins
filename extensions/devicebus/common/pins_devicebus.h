@@ -40,48 +40,67 @@ THINK ABOUT
 #define PINS_SPI_H_
 #include "pinsx.h"
 
-struct pinsBusDevice;
-struct pinsBus;
+struct PinsBusDevice;
+struct PinsBus;
 
 /** Supported bus types.
  */
 typedef enum {
-    PINS_SPI_BUS,
-    PINS_I2C_BUS
+    PINS_SPI_BUS = 1,
+    PINS_I2C_BUS = 2
 }
 pinsBusType;
 
 /** SPI device callback, when we can send request to device.
  */
-typedef os_short pinsGenerateDeviceRequest(
-    struct pinsBusDevice *device,
-    void *context);
+typedef void pinsGenerateDeviceRequest(
+    struct PinsBusDevice *device);
 
 /** SPI device callback, when reply is received from the device.
  */
 typedef void pinsProcessDeviceResponce(
-    struct pinsBusDevice *device,
-    void *context);
+    struct PinsBusDevice *device);
 
 /** Function type to set value to SPI or I2C device driver. Implemented by driver.
  */
 typedef void pinsBusSet(
-    struct pinsBusDevice *device,
+    struct PinsBusDevice *device,
     os_short addr,
     os_int value);
 
 /** Function type to get value from SPI or I2C device driver. Implemented by driver.
  */
 typedef os_int pinsBusGet(
-    struct pinsBusDevice *device,
-    os_short addr,
-    os_int value);
+    struct PinsBusDevice *device,
+    os_short addr);
 
 
 /** Structure representing either a SPI or I2C device.
  */
-typedef struct pinsBusDevice
+typedef struct PinsBusDevice
 {
+    /** Pointer to pin structure representing the device. This must be the first item
+        in the structure: The structure is initialization code is generated from JSON.
+     */
+    const struct Pin *device_pin;
+
+    /** Pointer to SPI bus to which this device is connected. Must be the second item
+        in the structure.
+     */
+    struct PinsBus *bus;
+
+    /** Netx in linked list of SPI devices, must not be modified when SPI is running.
+        Must be the third item in the structure.
+     */
+    struct PinsBusDevice *next_spi_device;
+
+    /** Driver function pointers. Must be fourth to seventh items in the structure.
+     */
+    pinsGenerateDeviceRequest *gen_req_func;
+    pinsProcessDeviceResponce *proc_resp_func;
+    pinsBusSet *set_func;
+    pinsBusGet *get_func;
+
     /** Pointer to chip select pin structure.
      */
     const struct Pin *cs_pin;
@@ -95,20 +114,11 @@ typedef struct pinsBusDevice
      */
     os_int bus_speed;
 
-    pinsGenerateDeviceRequest *gen_req_func;
-    pinsProcessDeviceResponce *proc_resp_func;
 
     void *custom; // ??????
 
-    /** Pointer to SPI bus to which this device is connected.
-     */
-    struct pinsBus *bus;
-
-    /** Netx in linked list of SPI devices, must not be modified when SPI is running.
-     */
-    struct pinsBusDevice *next_spi_device;
 }
-pinsBusDevice;
+PinsBusDevice;
 
 
 /** SPI message buffer size, bytes.
@@ -116,7 +126,7 @@ pinsBusDevice;
 #define PINS_BUS_BUF_SZ 32
 
 
-typedef struct pinSpiBusVariables
+typedef struct PinsSpiBusVariables
 {
     /** Pointer to pin structure.
      */
@@ -130,31 +140,41 @@ typedef struct pinSpiBusVariables
      */
     const struct Pin *clock_pin;
 }
-pinSpiBusVariables;
+PinsSpiBusVariables;
 
 
-typedef struct pinsI2cBusVariables
+typedef struct PinsI2cBusVariables
 {
     /**
      */
     const struct Pin *xxx;
 }
-pinsI2cBusVariables;
+PinsI2cBusVariables;
 
 
 /**
  */
-typedef struct pinsBus
+typedef struct PinsBus
 {
-    /* Either PINS_SPI_BUS or PINS_I2C_BUS.
+    /** Either PINS_SPI_BUS or PINS_I2C_BUS. This must be the first item
+        in the structure: The structure is initialization code is generated from JSON.
      */
     pinsBusType bus_type;
+
+    /** Linked list of SPI devices, must not be modified when SPI is running.
+     */
+    PinsBusDevice *first_bus_device;
+
+    /** Linked list of SPI buses, must not be modified when SPI is running.
+     */
+    struct PinsBus *next_bus;
+
 
     /* Bus type specific variables.
      */
     union {
-        pinSpiBusVariables spi;
-        pinsI2cBusVariables i2c;
+        PinsSpiBusVariables spi;
+        PinsI2cBusVariables i2c;
     }
     spec;
 
@@ -162,47 +182,35 @@ typedef struct pinsBus
      */
     os_uchar buf[PINS_BUS_BUF_SZ];
 
-    /** Driver function pointers
-     */
-    pinsBusSet *set_func;
-    pinsBusGet *get_func;
-
-    /** Linked list of SPI devices, must not be modified when SPI is running.
-     */
-    pinsBusDevice *first_bus_device;
-
-    /** Linked list of SPI buses, must not be modified when SPI is running.
-     */
-    struct pinsBus *next_bus;
 }
-pinsBus;
+PinsBus;
 
 
 /** SPI state
  */
-typedef struct pinsSpi
+typedef struct PinsDeviceBus
 {
-    pinsBus *first_bus;
+    PinsBus *first_bus;
 }
-pinsSpi;
+PinsDeviceBus;
 
+
+void pins_init_bus(
+    PinsBus *bus);
 
 /*
-void pins_initialize_spi_bus(
-    pinsBus *spi_bus);
-
 void pins_set_spi_bus_speed(
-    pinsBus *spi_bus,
+    PinsBus *spi_bus,
     os_int speed);
 
 void pins_send_spi_request(
-    pinsBus *spi_bus,
+    PinsBus *spi_bus,
     const os_uchar buf,
     os_short buf_sz);
  */
 
 void pins_do_spi_bus_transaction(
-    pinsBus *spi_bus);
+    PinsBus *spi_bus);
 
 
 

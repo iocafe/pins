@@ -20,7 +20,7 @@
 
 struct Pin;
 struct PinInterruptConf;
-struct PinBusDevice;
+struct PinsBusDevice;
 
 /** Enumeration of pin types.
  */
@@ -141,10 +141,9 @@ typedef struct Pin
     const struct iocSignal *signal;
 
 #if PINS_SPI || PINS_I2C
-    /** SPI or IC2 bus device "pin".
+    /** SPI or IC2 bus device structure.
      */
-    // struct PinBusDevice *bus_device;
-    const struct Pin *bus_device;
+    struct PinsBusDevice *bus_device;
 #endif
 
 #if PINS_SIMULATED_INTERRUPTS

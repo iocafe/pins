@@ -36,20 +36,37 @@
    @brief X
    @anchor initialize_mcp3208
 
-   The initialize_mcp3208() function...
+   The mcp3208_initialize() function...
 
    @param   pin Pin structure representing SPI device.
    @return  None.
 
 ****************************************************************************************************
 */
-void initialize_mcp3208(const Pin *pin)
+void mcp3208_initialize(struct PinsBusDevice *device)
+{
+}
+
+void mcp3208_gen_req(struct PinsBusDevice *device)
+{
+}
+
+void mcp3208_proc_resp(struct PinsBusDevice *device)
+{
+}
+void mcp3208_set(struct PinsBusDevice *device, os_short addr, os_int value)
 {
 
 }
 
+os_int mcp3208_get(struct PinsBusDevice *device, os_short addr)
+{
+    return 0;
+}
+
+
 /* static os_short pins_adc_mcp3208_generate_spi_request(
-    struct pinsBusDevice *device,
+    struct PinsBusDevice *device,
     void *context)
 {
   unsigned char buff[3];
@@ -63,7 +80,7 @@ void initialize_mcp3208(const Pin *pin)
 
 
 typedef void pinsProcessDeviceResponce(
-    struct pinsBusDevice *device,
+    struct PinsBusDevice *device,
     void *context)
 {
      buff[1] = 0x0F & buff[1];
