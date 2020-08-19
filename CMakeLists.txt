@@ -29,33 +29,35 @@ file(GLOB BB_CM_HEADERS "${BACKBONE}/common/*.h")
 file(GLOB EX_CM_SOURCES "${EXTENSIONS}/*/common/*.c")
 file(GLOB EX_CM_HEADERS "${EXTENSIONS}/*/common/*.h")
 
-# We use simulation code on Windows and linux
+# We include simulation code on Windows and linux, and pigpio for Raspberry.
 if($ENV{E_OS} MATCHES "windows")
    set(ENV{E_IMPL_DIR} "simulation")
-   set(ENV{E_IMPL_EXTS_DIR} "simulation")
 endif()
 if($ENV{E_OS} MATCHES "linux")
   if($ENV{E_OSVER} MATCHES "pi")
-      set(ENV{E_IMPL_DIR} "pigpio")
+      set(ENV{E_PINS_EXTRA_DIR} "pigpio")
   else()
-      set(ENV{E_IMPL_DIR} "simulation")
-      set(ENV{E_IMPL_EXTS_DIR} "simulation")
-#      set(ENV{E_IMPL_DIR} "pigpio")
+      set(ENV{E_PINS_EXTRA_DIR} "simulation")
   endif()
 endif()
 
 if (NOT DEFINED ENV{E_IMPL_DIR})
    set(ENV{E_IMPL_DIR} $ENV{E_OS})
 endif()
-if (NOT DEFINED ENV{E_IMPL_EXTS_DIR})
-   set(ENV{E_IMPL_EXTS_DIR} $ENV{E_OS})
-endif()
 
-# Add operating system specific files.
-file(GLOB BB_OS_SOURCES "${BACKBONE}/$ENV{E_IMPL_DIR}/*.c" "${BACKBONE}/$ENV{E_IMPL_DIR}/*.cpp")
-file(GLOB BB_OS_HEADERS "${BACKBONE}/$ENV{E_IMPL_DIR}/*.h")
-file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPL_EXTS_DIR}/*.c" "${EXTENSIONS}/*/$ENV{E_IMPL_EXTS_DIR}/*.cpp")
-file(GLOB EX_OS_HEADERS "${EXTENSIONS}/*/$ENV{E_IMPL_EXTS_DIR}/*.h")
+# Add operating system specific files. Filed are always searched from "os" directory, like "linux". We can also seachh from additional
+# directory if E_PINS_EXTRA_DIR is specified, like for pigpio specific files or simulation specific file
+if (DEFINED ENV{E_PINS_EXTRA_DIR})
+   file(GLOB BB_OS_SOURCES "${BACKBONE}/$ENV{E_IMPL_DIR}/*.c" "${BACKBONE}/$ENV{E_IMPL_DIR}/*.cpp" "${BACKBONE}/$ENV{E_PINS_EXTRA_DIR}/*.c" "${BACKBONE}/$ENV{E_PINS_EXTRA_DIR}/*.cpp")
+   file(GLOB BB_OS_HEADERS "${BACKBONE}/$ENV{E_IMPL_DIR}/*.h" "${BACKBONE}/$ENV{E_PINS_EXTRA_DIR}/*.h")
+   file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.c" "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.cpp" "${EXTENSIONS}/*/$ENV{E_PINS_EXTRA_DIR}/*.c" "${EXTENSIONS}/*/$ENV{E_PINS_EXTRA_DIR}/*.cpp")
+   file(GLOB EX_OS_HEADERS "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.h" "${EXTENSIONS}/*/$ENV{E_PINS_EXTRA_DIR}/*.h")
+else()
+   file(GLOB BB_OS_SOURCES "${BACKBONE}/$ENV{E_IMPL_DIR}/*.c" "${BACKBONE}/$ENV{E_IMPL_DIR}/*.cpp")
+   file(GLOB BB_OS_HEADERS "${BACKBONE}/$ENV{E_IMPL_DIR}/*.h")
+   file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.c" "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.cpp")
+   file(GLOB EX_OS_HEADERS "${EXTENSIONS}/*/$ENV{E_IMPL_DIR}/*.h")
+endif()
 
 # Generate the static library
 add_library(${E_PROJECT}${E_POSTFIX} STATIC ${MAIN_HEADERS} ${BB_CM_HEADERS} ${BB_OS_HEADERS} ${EX_CM_HEADERS} ${EX_OS_HEADERS} ${BB_CM_SOURCES} ${BB_OS_SOURCES} ${EX_CM_SOURCES} ${EX_OS_SOURCES})

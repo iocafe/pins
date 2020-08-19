@@ -39,6 +39,7 @@ THINK ABOUT
 #ifndef PINS_SPI_H_
 #define PINS_SPI_H_
 #include "pinsx.h"
+#if PINS_SPI || PINS_I2C
 
 struct PinsBusDevice;
 struct PinsBus;
@@ -200,8 +201,20 @@ typedef struct PinsDeviceBus
 PinsDeviceBus;
 
 
+/* Single threaded use. Call from main loop to run device bus.
+ */
+void pins_run_devicebus(
+    os_int flags);
+
+/* Run multi threaded device bus. The function starts thread for each SPI bus.
+ */
+void pins_start_multithread_devicebus(
+    os_int flags);
+
+
 void pins_init_bus(
     PinsBus *bus);
+
 
 /*
 void pins_set_spi_bus_speed(
@@ -217,6 +230,5 @@ void pins_send_spi_request(
 void pins_do_spi_bus_transaction(
     PinsBus *spi_bus);
 
-
-
+#endif
 #endif

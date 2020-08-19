@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/spi/pigpio/pins_pigpio_devicebus.c
+  @file    extensions/spi/simulation/pins_simulation_devicebus.c
   @brief   SPI and I2C
   @author  Pekka Lehtikoski
   @version 1.0
@@ -26,10 +26,52 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_SPI
+#if PINS_SPI || PINS_I2C
 
 
-      h = pi.spi_open(0, 2e6, 0xE0) # 0xE0 says not to set chip enables
+/**
+****************************************************************************************************
+
+  @brief Clear chaning state variables in bus structure.
+  @anchor pins_init_bus
+
+  The pins_init_bus() function is called at bootup to ensure that there is no old state
+  data in memory after a soft reboot (many microcontroller do not clear memory at soft reboot).
+
+  @param   buf Pointer to bus structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_init_bus(
+    PinsBus *bus)
+{
+    os_memclear(&bus->spec, sizeof(PinsBusVariables));
+
+    // h = pi.spi_open(0, 2e6, 0xE0) # 0xE0 says not to set chip enables
+}
+
+
+/* Single threaded use. Call from main loop to run device bus
+ */
+void pins_run_devicebus(
+    os_int flags)
+{
+    int i;
+    i= 1;
+}
+
+
+#if OSAL_MULTITHREAD_SUPPORT
+/* Run multi threaded device bus. The function starts thread for each SPI bus.
+ */
+void pins_start_multithread_devicebus(
+    os_int flags)
+{
+    int i;
+    i= 1;
+}
+#endif
 
 
 /**
@@ -49,11 +91,11 @@
 ****************************************************************************************************
 */
 void pins_do_spi_bus_transaction(
-    PinsBus *spi_bus);
+    PinsBus *spi_bus)
 {
     //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
 
-    wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
+    // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
 }
 
 #endif

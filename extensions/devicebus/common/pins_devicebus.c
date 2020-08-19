@@ -6,6 +6,8 @@
   @version 1.0
   @date    19.8.2020
 
+  Common code for all devicebus implementations, regardless of operating system.
+
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
@@ -16,7 +18,6 @@
 #include "pinsx.h"
 #if PINS_SPI || PINS_I2C
 
-
 /**
 ****************************************************************************************************
 
@@ -24,19 +25,18 @@
   @anchor pins_init_bus
 
   The pins_init_bus() function is called at bootup to ensure that there is no old state
-  data in memory after a soft reboot. (Many microcontroller do not clear memory at soft reboot).
+  data in memory after a soft reboot (many microcontroller do not clear memory at soft reboot).
 
   @param   buf Pointer to bus structure.
   @return  None.
 
 ****************************************************************************************************
 */
-void pins_init_bus(
+/* void pins_init_bus(
     PinsBus *bus)
 {
     os_memclear(&bus->spec, sizeof(PinsBusVariables));
 }
+*/
 
 #endif
-
-
