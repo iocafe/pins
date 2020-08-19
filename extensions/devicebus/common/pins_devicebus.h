@@ -1,7 +1,7 @@
 /**
 
   @file    extensions/spi/common/pins_devicebus.h
-  @brief   SPI.
+  @brief   SPI and I2C.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    16.8.2020
@@ -103,20 +103,19 @@ typedef struct PinsBusDevice
 
     /** Pointer to chip select pin structure.
      */
-    const struct Pin *cs_pin;
+    // const struct Pin *cs_pin;
 
     /** Enable device flag. Devices can be disabled if not connected,
         or to speed up communication to other device in the bus.
      */
-    os_boolean enable;
+    // os_boolean enable;
 
     /* Bus speed for this device.
      */
-    os_int bus_speed;
+    // os_int bus_speed;
 
-
-    void *custom; // ??????
-
+    /* Extended device data structure */
+    void *ext;
 }
 PinsBusDevice;
 
@@ -151,6 +150,14 @@ typedef struct PinsI2cBusVariables
 }
 PinsI2cBusVariables;
 
+/* Bus type specific union.
+ */
+typedef union {
+    PinsSpiBusVariables spi;
+    PinsI2cBusVariables i2c;
+}
+PinsBusVariables;
+
 
 /**
  */
@@ -169,19 +176,17 @@ typedef struct PinsBus
      */
     struct PinsBus *next_bus;
 
-
     /* Bus type specific variables.
      */
-    union {
-        PinsSpiBusVariables spi;
-        PinsI2cBusVariables i2c;
-    }
-    spec;
+    PinsBusVariables spec;
 
     /** SPI message buffer, used for both outgoing and incoming message.
      */
     os_uchar buf[PINS_BUS_BUF_SZ];
 
+    /** Number of bytes in buffer.
+     */
+    os_short buf_n;
 }
 PinsBus;
 

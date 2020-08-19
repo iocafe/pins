@@ -125,7 +125,17 @@ void pin_set(
     const Pin *pin,
     os_int x)
 {
+#if PINS_SPI || PINS_I2C
+    if (pin->bus_device) {
+        pin->bus_device->set_func(pin->bus_device, pin->addr, x);
+    }
+    else {
+        pin_ll_set(pin, x);
+    }
+#else
     pin_ll_set(pin, x);
+#endif
+
     if (x != *(os_int*)pin->prm)
     {
         *(os_int*)pin->prm = x;
@@ -149,7 +159,7 @@ void pin_set(
   if appropriate, writes the pin value as IOCOM signal.
 
   @param   pin Pointer to pin configuration structure.
-  @return  Pin value from IO hardware.
+  @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
 
 ****************************************************************************************************
 */
@@ -158,7 +168,17 @@ os_int pin_get(
 {
     os_int x;
 
+#if PINS_SPI || PINS_I2C
+    if (pin->bus_device) {
+        x = pin->bus_device->get_func(pin->bus_device, pin->addr);
+    }
+    else {
+        x = pin_ll_get(pin);
+    }
+#else
     x = pin_ll_get(pin);
+#endif
+
     if (x != *(os_int*)pin->prm)
     {
         *(os_int*)pin->prm = x;
@@ -250,7 +270,17 @@ void pins_read_all(
             if (type == PIN_INPUT ||
                 type == PIN_ANALOG_INPUT)
             {
+#if PINS_SPI || PINS_I2C
+                if (pin->bus_device) {
+                    x = pin->bus_device->get_func(pin->bus_device, pin->addr);
+                }
+                else {
+                    x = pin_ll_get(pin);
+                }
+#else
                 x = pin_ll_get(pin);
+#endif
+
                 if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
                 {
                     *(os_int*)pin->prm = x;

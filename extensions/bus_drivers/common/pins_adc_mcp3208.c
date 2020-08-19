@@ -25,95 +25,196 @@
 
 ****************************************************************************************************
 */
-#define PINS_ENABLE_MCP3208_ADC 1
+#ifndef PINS_MAX_MCP3208_ADC
+#define PINS_MAX_MCP3208_ADC 2
+#endif
 
 #include "pinsx.h"
-#if PINS_ENABLE_MCP3208_ADC
+#if PINS_SPI
+#if PINS_MAX_MCP3208_ADC
+
+
+#define MCP3208_NRO_ADC_CHANNELS 8
+
+typedef struct PinsMcp3208Ext
+{
+    os_short adc_value[MCP3208_NRO_ADC_CHANNELS];
+    os_uchar current_ch;
+}
+PinsMcp3208Ext;
+
+static PinsMcp3208Ext mcp3208_ext[PINS_MAX_MCP3208_ADC];
+static os_short mcp3208_nro_chips;
+
 
 /**
 ****************************************************************************************************
 
-   @brief X
+   @brief Initialize driver
+   @anchor mcp3208_initialize_driver
+
+   mcp3208_initialize_driver() function initializes global variables for bus device driver.
+   @return  None.
+
+****************************************************************************************************
+*/
+void mcp3208_initialize_driver()
+{
+    mcp3208_nro_chips = 0;
+    os_memclear(mcp3208_ext, sizeof(mcp3208_ext));
+}
+
+
+/**
+****************************************************************************************************
+
+   @brief Initialize device
    @anchor initialize_mcp3208
 
-   The mcp3208_initialize() function...
+   The mcp3208_initialize() function initializes a bus device structure for a specific
+   MCP3208 chip.
 
-   @param   pin Pin structure representing SPI device.
+   @param   device Structure representing SPI device.
    @return  None.
 
 ****************************************************************************************************
 */
 void mcp3208_initialize(struct PinsBusDevice *device)
 {
+    os_short *adc_value, i;
+
+    if (mcp3208_nro_chips >= PINS_MAX_MCP3208_ADC) {
+        osal_debug_error("Reserved number of MCP3208 chip exceeded in JSON, increase PINS_MAX_MCP3208_ADC");
+        return;
+    }
+
+    device->ext = &mcp3208_ext[mcp3208_nro_chips++];
+    adc_value = ((PinsMcp3208Ext*)(device->ext))->adc_value;
+    for (i = 0; i < MCP3208_NRO_ADC_CHANNELS; i++) {
+        adc_value[i] = -1;
+    }
 }
 
+
+/**
+****************************************************************************************************
+
+   @brief Prepare request to send
+   @anchor mcp3208_gen_req
+
+   The mcp3208_gen_req() function prepares the next request to send to the device into buffer
+   within the bus struture.
+
+   @param   device Structure representing SPI device.
+   @return  None.
+
+****************************************************************************************************
+*/
 void mcp3208_gen_req(struct PinsBusDevice *device)
 {
+    PinsMcp3208Ext *ext;
+    os_uchar *buf, current_ch;
+
+    osal_debug_assert(device->bus);
+    buf = device->bus->buf;
+    ext = (PinsMcp3208Ext*)device->ext;
+    current_ch = ext->current_ch;
+
+    buf[0] = 0x06 | ((current_ch & 0x04) >> 2);
+    buf[1] = ((current_ch & 0x03) << 6);
+    buf[2] = 0;
+    device->bus->buf_n = 3;
 }
 
-void mcp3208_proc_resp(struct PinsBusDevice *device)
+
+/**
+****************************************************************************************************
+
+   @brief Process reply from SPI device
+   @anchor mcp3208_proc_resp
+
+   The mcp3208_proc_resp() function processed the received reply from buffer
+   within the bus struture. It stores ADC value for the channel for the device
+
+   Note: Sensibility checks for replay should be added, plus some kind of error counter would
+   be appropriate to know if the design is failing.
+
+   @param   device Structure representing SPI device.
+   @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
+            so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
+            that there is more to read.
+
+****************************************************************************************************
+*/
+osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
 {
+    PinsMcp3208Ext *ext;
+    os_uchar *buf, current_ch;
+    os_short *adc_value;
+
+    buf = device->bus->buf;
+    ext = (PinsMcp3208Ext*)device->ext;
+    current_ch = ext->current_ch;
+    adc_value = ext->adc_value;
+
+    adc_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+
+    if (++current_ch < PINS_MAX_MCP3208_ADC) {
+        ext->current_ch = current_ch;
+        return OSAL_SUCCESS;
+    }
+
+    ext->current_ch = 0;
+    return OSAL_COMPLETED;
 }
+
+
+/**
+****************************************************************************************************
+
+   @brief Set data to SPI device
+   @anchor mcp3208_set
+
+   The mcp3208_set() function is not needed for ADC, it is read only.
+
+   @param   device Structure representing SPI device.
+   @param   addr ADC channel 0 ... 7.
+   @param   value Value to set, ignored.
+   @return  None
+
+****************************************************************************************************
+*/
 void mcp3208_set(struct PinsBusDevice *device, os_short addr, os_int value)
 {
-
 }
 
+
+/**
+****************************************************************************************************
+
+   @brief Get SPI device data
+   @anchor mcp3208_get
+
+   The mcp3208_get() function reads ASC channel value received from the device.
+
+   @param   device Structure representing SPI device.
+   @param   addr ADC channel 0 ... 7.
+   @return  value ADC value received 0 ... 4095. -1 if none read.
+
+****************************************************************************************************
+*/
 os_int mcp3208_get(struct PinsBusDevice *device, os_short addr)
 {
-    return 0;
+    os_short *adc_value;
+
+    if (addr < 0 || addr >= MCP3208_NRO_ADC_CHANNELS) {
+        return -1;
+    }
+
+    adc_value = ((PinsMcp3208Ext*)(device->ext))->adc_value;
+    return adc_value[addr];
 }
 
 
-/* static os_short pins_adc_mcp3208_generate_spi_request(
-    struct PinsBusDevice *device,
-    void *context)
-{
-  unsigned char buff[3];
-  int adcValue = 0;
-
-  buff[0] = 0x06 | ((adc_channel & 0x04) >> 2);
-  buff[1] = ((adc_channel & 0x03) << 6);
-  buff[2] = 0;
-  return OSAL_SUCCESS;
-}
-
-
-typedef void pinsProcessDeviceResponce(
-    struct PinsBusDevice *device,
-    void *context)
-{
-     buff[1] = 0x0F & buff[1];
-     adcValue = ( buff[1] << 8) | buff[2];
-
-    //  digitalWrite(CS_MCP3208, 1);  // High : CS Inactive
-
-    return adcValue;
-}
-
-#if -
-{
-  unsigned char buff[3];
-  int adcValue = 0;
-
-  buff[0] = 0x06 | ((adc_channel & 0x04) >> 2);
-  buff[1] = ((adc_channel & 0x03) << 6);
-  buff[2] = 0;
-
-//  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
-
-  wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
-
-  buff[1] = 0x0F & buff[1];
-  adcValue = ( buff[1] << 8) | buff[2];
-
-//  digitalWrite(CS_MCP3208, 1);  // High : CS Inactive
-
-  return adcValue;
-}
-
-void add_adc_mcp
-*/
-
-
+#endif
 #endif

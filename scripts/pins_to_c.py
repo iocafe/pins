@@ -227,6 +227,8 @@ def write_device_list(device_list, driver_list, bus_list):
     cfile.write('void pins_initialize_bus_devices(void)\n{\n')
     for bus_name, data in bus_list.items():
         cfile.write('    pins_init_bus(&pins_bus_' + bus_name + ');\n')
+    for driver_name, data in driver_list.items():
+        cfile.write('    ' + driver_name + '_initialize_driver();\n')
     for device_name, data in device_list.items():
         cfile.write('    ' + data[0] + '_initialize(&pins_device_' + data[1] + '_' + data[2] + ');\n')
     cfile.write('}\n');
@@ -249,6 +251,7 @@ def write_device_list(device_list, driver_list, bus_list):
 
     for device_name, data in device_list.items():
         hfile.write('\n/* ' + data[0] + ' driver functions  */\n');
+        hfile.write('void ' + data[0] + '_initialize_driver(void);\n')
         hfile.write('void ' + data[0] + '_initialize(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
