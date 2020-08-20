@@ -238,8 +238,9 @@ def write_device_list(device_list, driver_list, bus_list):
     hfile.write('\n/* SPI and I2C initialization */\n');
     hfile.write('#if PINS_SPI || PINS_I2C\n');
 
-    hfile.write('\n/* Device bus main structure */\n');
-    hfile.write('extern PinsDeviceBus pins_devicebus;\n')
+    # Moved to pins_devicebus.h
+    # hfile.write('\n/* Device bus main structure */\n');
+    # hfile.write('extern PinsDeviceBus pins_devicebus;\n')
 
     hfile.write('\n/* SPI and I2C bus structures */\n');
     for bus_name, data in bus_list.items():
@@ -254,7 +255,7 @@ def write_device_list(device_list, driver_list, bus_list):
         hfile.write('void ' + data[0] + '_initialize_driver(void);\n')
         hfile.write('void ' + data[0] + '_initialize(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
-        hfile.write('void ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
+        hfile.write('osalStatus ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
         hfile.write('os_int ' + data[0] + '_get(struct PinsBusDevice *device, os_short addr);\n')
 

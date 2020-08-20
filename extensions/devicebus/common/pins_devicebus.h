@@ -59,7 +59,7 @@ typedef void pinsGenerateDeviceRequest(
 
 /** SPI device callback, when reply is received from the device.
  */
-typedef void pinsProcessDeviceResponce(
+typedef osalStatus pinsProcessDeviceResponce(
     struct PinsBusDevice *device);
 
 /** Function type to set value to SPI or I2C device driver. Implemented by driver.
@@ -90,10 +90,10 @@ typedef struct PinsBusDevice
      */
     struct PinsBus *bus;
 
-    /** Netx in linked list of SPI devices, must not be modified when SPI is running.
+    /** Netx in linked list of SPI or I2C devices, must not be modified when SPI is running.
         Must be the third item in the structure.
      */
-    struct PinsBusDevice *next_spi_device;
+    struct PinsBusDevice *next_device;
 
     /** Driver function pointers. Must be fourth to seventh items in the structure.
      */
@@ -139,6 +139,11 @@ typedef struct PinsSpiBusVariables
     /**
      */
     const struct Pin *clock_pin;
+
+
+    /* Do we have more than 1 device connected to the bus ?.
+     */
+    os_boolean more_than_1_device;
 }
 PinsSpiBusVariables;
 
@@ -170,14 +175,20 @@ typedef struct PinsBus
     pinsBusType bus_type;
 
     /** Linked list of SPI devices, must not be modified when SPI is running.
+        Must be second item of the structure.
      */
     PinsBusDevice *first_bus_device;
 
     /** Linked list of SPI buses, must not be modified when SPI is running.
+        Must be third item of the structure.
      */
     struct PinsBus *next_bus;
 
-    /* Bus type specific variables.
+    /** Current device (which device has the turn).
+     */
+    PinsBusDevice *current_device;
+
+    /** Bus type specific variables.
      */
     PinsBusVariables spec;
 
@@ -196,9 +207,28 @@ PinsBus;
  */
 typedef struct PinsDeviceBus
 {
+    /** This must be first item, intialized from JSON generated code.
+     */
     PinsBus *first_bus;
+
+    /** Current bus in signle thread mode.
+     */
+    PinsBus *current_bus;
+
+#if OSAL_MULTITHREAD_SUPPORT
+    /** Number of threads running.
+     */
+    volatile os_short thread_count;
+
+    /** Request to terminate devicebus.
+     */
+    volatile os_boolean terminate;
+#endif
 }
 PinsDeviceBus;
+
+/* Device bus main structure */
+extern PinsDeviceBus pins_devicebus;
 
 
 /* Single threaded use. Call from main loop to run device bus.
@@ -206,11 +236,17 @@ PinsDeviceBus;
 void pins_run_devicebus(
     os_int flags);
 
+#if OSAL_MULTITHREAD_SUPPORT
+
 /* Run multi threaded device bus. The function starts thread for each SPI bus.
  */
 void pins_start_multithread_devicebus(
     os_int flags);
 
+void pins_stop_multithread_devicebus(
+    void);
+
+#endif
 
 void pins_init_bus(
     PinsBus *bus);
@@ -227,8 +263,6 @@ void pins_send_spi_request(
     os_short buf_sz);
  */
 
-void pins_do_spi_bus_transaction(
-    PinsBus *spi_bus);
 
 #endif
 #endif
