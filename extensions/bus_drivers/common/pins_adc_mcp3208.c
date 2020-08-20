@@ -115,7 +115,7 @@ void mcp3208_gen_req(struct PinsBusDevice *device)
     PinsMcp3208Ext *ext;
     os_uchar *buf, current_ch;
 
-    osal_debug_assert(device->bus);
+    osal_debug_assert(device->bus != OS_NULL);
     buf = device->bus->buf;
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
