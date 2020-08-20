@@ -43,7 +43,7 @@ static osalStatus pins_bus_run_spi(
   @brief Clear state variables in the SPI/I2C bus structure and initialize the bus.
   @anchor pins_init_bus
 
-  The pins_init_bus() function initializes the spi BUS and clears old state data.
+  The pins_init_bus() function initializes the SPI/I2C bus and clears old state data.
   (many microcontroller do not clear memory at soft reboot).
 
   @param   buf Pointer to bus structure.
