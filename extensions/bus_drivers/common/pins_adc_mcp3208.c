@@ -264,7 +264,7 @@ This code should also work with the MCP3004.
 #define B0 (BX + BITS - 1) // Bit position of data bit B0.
 
 // #define MISO1 6   // ADC 1 MISO.
-#define MISO1 9   // ADC 1 MISO.
+#define MISO1 12   // ADC 1 MISO.
 #define MISO2 26  //     2
 #define MISO3 13  //     3
 #define MISO4 23  //     4
@@ -281,8 +281,8 @@ int MISO[ADCS]={MISO1};
 
 rawSPI_t rawSPI =
 {
-   .clk     =  11, // 5, // GPIO for SPI clock.
-   .mosi    = 10, // 12, // GPIO for SPI MOSI.
+   .clk     =  14, // 5, // GPIO for SPI clock.
+   .mosi    = 13, // 12, // GPIO for SPI MOSI.
    .ss_pol  =  1, // Slave select resting level.
    .ss_us   =  1, // Wait 1 micro after asserting slave select.
    .clk_pol =  0, // Clock resting level.
