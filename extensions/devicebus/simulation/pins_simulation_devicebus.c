@@ -91,6 +91,57 @@ void pins_init_bus(
 }
 
 
+
+/**
+****************************************************************************************************
+
+  @brief Platform specific SPI/I2C device initialization.
+  @anchor pins_init_device
+
+  The pins_init_device() function initializes a SPI/I2C device for platform.
+
+  pigpio example:
+
+    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
+    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
+
+  @param   device Pointer to device structure.
+  @param   prm Device parameters.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_init_device(
+    struct PinsBusDevice *device,
+    struct PinsBusDeviceParams *prm)
+{
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Platform specific SPI/I2C device initialization.
+  @anchor pins_init_device
+
+  The pins_init_device() function initializes a SPI/I2C device for platform.
+
+  pigpio example:
+
+    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
+    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
+
+  @param   device Pointer to device structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_close_device(
+    struct PinsBusDevice *device)
+{
+}
+
+
 /**
 ****************************************************************************************************
 

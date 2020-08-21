@@ -46,8 +46,6 @@ PinsMcp3208Ext;
 static PinsMcp3208Ext mcp3208_ext[PINS_MAX_MCP3208_ADC];
 static os_short mcp3208_nro_chips;
 
-static int ulle_doo(void);
-
 
 /**
 ****************************************************************************************************
@@ -83,6 +81,7 @@ void mcp3208_initialize_driver()
 */
 void mcp3208_initialize(struct PinsBusDevice *device)
 {
+    PinsBusDeviceParams prm;
     os_short *adc_value, i;
 
     if (mcp3208_nro_chips >= PINS_MAX_MCP3208_ADC) {
@@ -95,6 +94,11 @@ void mcp3208_initialize(struct PinsBusDevice *device)
     for (i = 0; i < MCP3208_NRO_ADC_CHANNELS; i++) {
         adc_value[i] = -1;
     }
+
+    /* Call platform specific device initialization.
+     */
+    os_memclear(&prm, sizeof(prm));
+    pins_init_device(device, &prm);
 }
 
 
@@ -126,8 +130,6 @@ void mcp3208_gen_req(struct PinsBusDevice *device)
     buf[1] = ((current_ch & 0x03) << 6);
     buf[2] = 0;
     device->bus->buf_n = 3;
-
-ulle_doo();
 }
 
 
@@ -220,7 +222,7 @@ os_int mcp3208_get(struct PinsBusDevice *device, os_short addr)
 }
 
 
-
+#if 0
 /*
 
 rawMCP3008.c
@@ -503,6 +505,7 @@ static int ulle_doo(void)
 
    return 0;
 }
+#endif
 
 
 #endif

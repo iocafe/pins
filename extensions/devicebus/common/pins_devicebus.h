@@ -227,8 +227,27 @@ typedef struct PinsDeviceBus
 }
 PinsDeviceBus;
 
-/* Device bus main structure */
+/* Parameters fron driver to operating specific bus initialization.
+ */
+typedef struct PinsBusDeviceParams
+{
+    os_int extra_parameters_here;
+}
+PinsBusDeviceParams;
+
+/* Global device bus main structure.
+ */
 extern PinsDeviceBus pins_devicebus;
+
+void pins_init_bus(
+    PinsBus *bus);
+
+void pins_init_device(
+    struct PinsBusDevice *device,
+    struct PinsBusDeviceParams *prm);
+
+void pins_close_device(
+    struct PinsBusDevice *device);
 
 
 /* Single threaded use. Call from main loop to run device bus.
@@ -248,8 +267,7 @@ void pins_stop_multithread_devicebus(
 
 #endif
 
-void pins_init_bus(
-    PinsBus *bus);
+
 
 
 /*

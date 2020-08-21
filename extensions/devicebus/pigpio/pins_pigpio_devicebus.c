@@ -18,6 +18,67 @@
     just return is thing waited for is not yet ready.
   - We can also run SPI without waiting from the single threaded main loop.
 
+    // gcc -Wall -pthread -o bbSPIx_test bbSPIx_test.c -lpigpio
+    // sudo ./bbSPIx_test
+    #include <stdio.h>
+    #include "pigpio.h"
+
+    #define CE0 5
+    #define CE1 6
+    #define MISO 13
+    #define MOSI 19
+    #define SCLK 12
+
+    int main(int argc, char *argv[])
+    {
+       int i, count, set_val, read_val;
+       unsigned char inBuf[3];
+       char cmd1[] = {0, 0};
+       char cmd2[] = {12, 0};
+       char cmd3[] = {1, 128, 0};
+
+       if (gpioInitialise() < 0)
+       {
+          fprintf(stderr, "pigpio initialisation failed.\n");
+          return 1;
+       }
+
+       bbSPIOpen(CE0, MISO, MOSI, SCLK, 10000, 0); // MCP4251 DAC
+       bbSPIOpen(CE1, MISO, MOSI, SCLK, 20000, 3); // MCP3008 ADC
+
+       for (i=0; i<256; i++)
+       {
+          cmd1[1] = i;
+
+          count = bbSPIXfer(CE0, cmd1, (char *)inBuf, 2); // > DAC
+
+          if (count == 2)
+          {
+             count = bbSPIXfer(CE0, cmd2, (char *)inBuf, 2); // < DAC
+
+             if (count == 2)
+             {
+                set_val = inBuf[1];
+
+                count = bbSPIXfer(CE1, cmd3, (char *)inBuf, 3); // < ADC
+
+                if (count == 3)
+                {
+                   read_val = ((inBuf[1]&3)<<8) | inBuf[2];
+                   printf("%d %d\n", set_val, read_val);
+                }
+             }
+          }
+       }
+
+       bbSPIClose(CE0);
+       bbSPIClose(CE1);
+
+       gpioTerminate();
+
+       return 0;
+    }
+
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
@@ -46,7 +107,7 @@ static osalStatus pins_bus_run_spi(
   The pins_init_bus() function initializes the SPI/I2C bus and clears old state data.
   (many microcontroller do not clear memory at soft reboot).
 
-  @param   buf Pointer to bus structure.
+  @param   bus Pointer to bus structure.
   @return  None.
 
 ****************************************************************************************************
@@ -70,7 +131,8 @@ void pins_init_bus(
      */
     pins_devicebus.current_bus = pins_devicebus.first_bus;
 
-#if PINS_SPI
+#if 0
+// #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
         // set speed
@@ -79,6 +141,8 @@ void pins_init_bus(
         /* If we have only one device, we do not need toggle speed and chip selects.
          */
         bus->spec.spi.more_than_1_device = (os_boolean)(bus->current_device->next_device != OS_NULL);
+
+
     }
 #endif
 
@@ -87,6 +151,60 @@ void pins_init_bus(
     {
     }
 #endif
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Platform specific SPI/I2C device initialization.
+  @anchor pins_init_device
+
+  The pins_init_device() function initializes a SPI/I2C device for platform.
+
+  pigpio example:
+
+    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
+    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
+
+  @param   device Pointer to device structure.
+  @param   prm Device parameters.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_init_device(
+    struct PinsBusDevice *device,
+    struct PinsBusDeviceParams *prm)
+{
+
+    int bbSPIOpen(unsigned CS, unsigned MISO, unsigned MOSI, unsigned SCLK, unsigned baud, unsigned spiFlags)
+
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Platform specific SPI/I2C device initialization.
+  @anchor pins_init_device
+
+  The pins_init_device() function initializes a SPI/I2C device for platform.
+
+  pigpio example:
+
+    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
+    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
+
+  @param   device Pointer to device structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_close_device(
+    struct PinsBusDevice *device)
+{
+    int bbSPIClose(unsigned CS);
 }
 
 
@@ -270,6 +388,9 @@ static osalStatus pins_do_bus_transaction(
     //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
 
     // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
+
+int bbSPIXfer(unsigned CS, char *inBuf, char *outBuf, unsigned count)
+
     return s;
 }
 
@@ -304,10 +425,10 @@ static osalStatus pins_bus_run_spi(
      */
     if (s == OSAL_COMPLETED) {
         /* Disable chip select, if we have more than 1 device.
-         */
         if (bus->spec.spi.more_than_1_device) {
             //  current_device : digitalWrite(CS_MCP3208, 1);  // High : CS disable
         }
+         */
 
         /* Move on to the next device.
          */
@@ -317,10 +438,11 @@ static osalStatus pins_bus_run_spi(
             final_s = OSAL_COMPLETED;
         }
 
+        /*
         if (bus->spec.spi.more_than_1_device) {
             // set speed
             // current_device : digitalWrite(CS_MCP3208, 0);  // Low : CS active
-        }
+        } */
 
         bus->current_device = current_device;
     }

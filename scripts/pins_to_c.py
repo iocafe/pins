@@ -86,7 +86,11 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             if c_prm_list != "":
                 c_prm_list = c_prm_list + ", "
 
-            c_prm_list = c_prm_list + c_attr_name + ", " + str(value)
+            c_prm_list = c_prm_list + c_attr_name + ", "
+            if c_attr_name == 'PIN_SPEED':
+                c_prm_list = c_prm_list + str(int(value)//100)
+            else:
+                c_prm_list = c_prm_list + str(value)
 
             if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
