@@ -46,7 +46,7 @@ PinsMcp3208Ext;
 static PinsMcp3208Ext mcp3208_ext[PINS_MAX_MCP3208_ADC];
 static os_short mcp3208_nro_chips;
 
-static void ulle_doo(void);
+static int ulle_doo(void);
 
 
 /**
@@ -258,8 +258,8 @@ This code should also work with the MCP3004.
 
 #define ADCS 1    // Number of connected MCP3008.
 
-// #define BITS 10            // Bits per reading.
-#define BITS 12            // Bits per reading.
+#define BITS 10            // Bits per reading.
+// #define BITS 12            // Bits per reading.
 #define BX 8               // Bit position of data bit B9.
 #define B0 (BX + BITS - 1) // Bit position of data bit B0.
 
@@ -322,7 +322,7 @@ void getReading(
 }
 
 
-static void ulle_doo(void)
+static int ulle_doo(void)
 {
    int i, wid, offset;
    char buf[2];
