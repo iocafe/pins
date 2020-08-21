@@ -52,7 +52,19 @@ void pins_setup(
         pin = (*group)->pin;
 
         while (pcount--) {
-            pin_ll_setup(pin++, flags);
+#if PINS_SPI || PINS_I2C
+            if (pin->bus_device) {
+                // This needs to be implemented
+                // pin->bus_device->setup_pin(pin, flags);
+            }
+            else {
+                pin_ll_setup(pin, flags);
+            }
+#else
+            pin_ll_setup(pin, flags);
+#endif
+
+            pin++;
         }
 
         group++;
