@@ -162,7 +162,7 @@ void pins_init_device(
         /* Get GPIO chip select pin number, baud, flags and optional device number.
          */
         device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, PIN_CS);
-        device->spec.spi.bus_frequency = 100 * pin_get_frequency(device->device_pin, 200000);
+        device->spec.spi.bus_frequency = (os_uint)(100 * pin_get_frequency(device->device_pin, 200000));
         device->spec.spi.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
         device->spec.spi.device_nr = device->device_pin->addr;
 
@@ -412,8 +412,6 @@ static osalStatus pins_do_bus_transaction(
     device->gen_req_func(device);
 
     s = device->proc_resp_func(device);
-    //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
-
     // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
     return s;
 }
@@ -430,8 +428,8 @@ static osalStatus pins_do_bus_transaction(
    to this function transfers only one request/reply pair.
 
    @param   device Pointer to SPI/I2C device structure.
-   @return  OSAL_COMPLETED if this was the last IO message to this of the last IO device device.
-            OSAL_SUCCESS otherwise.
+   @return  OSAL_COMPLETED if this was the last IO message to this of the last IO device
+            in the bus. OSAL_SUCCESS otherwise.
 
 ****************************************************************************************************
 */

@@ -122,7 +122,7 @@ void mcp3208_gen_req(struct PinsBusDevice *device)
     os_uchar *buf, current_ch;
 
     osal_debug_assert(device->bus != OS_NULL);
-    buf = device->bus->buf;
+    buf = device->bus->outbuf;
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
 
@@ -158,7 +158,7 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
     os_uchar *buf, current_ch;
     os_short *adc_value;
 
-    buf = device->bus->buf;
+    buf = device->bus->inbuf;
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
     adc_value = ext->adc_value;

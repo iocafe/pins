@@ -91,7 +91,7 @@
 
 /* Forward referred static functions.
  */
-static osalStatus pins_do_bus_transaction(
+static osalStatus pins_spi_transfer(
     PinsBusDevice *device);
 
 static osalStatus pins_bus_run_spi(
@@ -207,6 +207,7 @@ void pins_init_device(
     struct PinsBusDeviceParams *prm)
 {
     PinsBus *bus;
+    os_int rval;
 #if OSAL_DEBUG
     os_char buf[128], nbuf[OSAL_NBUF_SZ];
 #endif
@@ -223,7 +224,7 @@ void pins_init_device(
         /* Get GPIO chip select pin number, baud, flags and optional device number.
          */
         device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, PIN_CS);
-        device->spec.spi.bus_frequency = 100 * pin_get_frequency(device->device_pin, 200000);
+        device->spec.spi.bus_frequency = (os_uint)(100 * pin_get_frequency(device->device_pin, 200000));
         device->spec.spi.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
         device->spec.spi.device_nr = device->device_pin->addr;
 
@@ -264,9 +265,57 @@ void pins_init_device(
 
         osal_info("pins", OSAL_SUCCESS, buf);
 #endif
-        int bbSPIOpen(device->spec.spi.cs, bus->spec.spi.miso, bus->spec.spi.mosi, bus->spec.spi.sclk, unsigned baud, unsigned spiFlags)
-        /* Here we could set SPI speed for the current_device and enable chip select for it.
+        /* If re are using normal raspberry spi or bit banged version.
          */
+        if (bus->spec.spi.bus_nr >= 10)
+        {
+            rval = bbSPIOpen(device->spec.spi.cs, bus->spec.spi.miso, bus->spec.spi.mosi,
+                bus->spec.spi.sclk, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            if (rval)
+            {
+                osal_debug_error_int("bbSPIOpen failed, rval=", rval);
+            }
+        }
+
+        /* Normal Raspberry SPI.
+         */
+        else {
+#if OSAL_DEBUG
+            if (device->spec.spi.bus_frequency < 32000 ||
+                device->spec.spi.bus_frequency > 30000000)
+            {
+                osal_debug_error_int("SPI baud rate is outside 32k - 30M, setting",
+                    device->spec.spi.bus_frequency);
+            }
+            if (bus->spec.spi.bus_nr) {
+                if (bus->spec.spi.miso != 19 ||
+                    bus->spec.spi.mosi != 20 ||
+                    bus->spec.spi.sclk != 21 ||
+                    (bus->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && bus->spec.spi.cs != 16))
+                {
+                    osal_debug_error("Wrong auxliary SPI channel pins.");
+                    osal_debug_error("Must be: miso=19, mosi=20, sclk=21, cs=18,17 or 16.");
+                }
+            }
+            else {
+                if (bus->spec.spi.miso != 19 ||
+                    bus->spec.spi.mosi != 20 ||
+                    bus->spec.spi.sclk != 21 ||
+                    (bus->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && bus->spec.spi.cs != 16))
+                {
+                    osal_debug_error("Wrong main SPI channel pins.");
+                    osal_debug_error("Must be: miso=9, mosi=10, sclk=11, cs=8 or 7.");
+                }
+            }
+#endif
+            rval = spiOpen(device->spec.spi.cs, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            device->spec.spi.handle = rval;
+            if (rval < 0)
+            {
+                osal_debug_error_int("spiOpen failed, rval=", rval);
+            }
+        }
+
     }
 #endif
 
@@ -294,7 +343,33 @@ void pins_init_device(
 void pins_close_device(
     struct PinsBusDevice *device)
 {
-    int bbSPIClose(unsigned CS);
+#if OSAL_DEBUG
+    os_int rval;
+#endif
+
+    if (bus->spec.spi.bus_nr >= 10)
+    {
+#if OSAL_DEBUG
+        rval = bbSPIClose(device->spec.spi.cs);
+        if (rval)
+        {
+            osal_debug_error_int("bbSPIOpen failed, rval=", rval);
+        }
+#else
+        bbSPIClose(device->spec.spi.cs);
+#endif
+    }
+    else {
+#if OSAL_DEBUG
+        rval = spiClose(device->spec.spi.handle);
+        if (rval)
+        {
+            osal_debug_error_int("spiClose failed, rval=", rval);
+        }
+#else
+        spiClose(device->spec.spi.cs);
+#endif
+    }
 }
 
 
@@ -456,9 +531,9 @@ void pins_stop_multithread_devicebus(
 ****************************************************************************************************
 
    @brief Send data to SPI or I2C bus and receive reply.
-   @anchor pins_do_bus_transaction
+   @anchor pins_spi_transfer
 
-   The pins_do_bus_transaction() function sends a message to current SPI or I2C device and
+   The pins_spi_transfer() function sends a message to current SPI or I2C device and
    gets a reply. If multiple messages are used with the device, gen_req_func() and
    proc_resp_func() functions process one of these at the time.
 
@@ -467,20 +542,35 @@ void pins_stop_multithread_devicebus(
 
 ****************************************************************************************************
 */
-static osalStatus pins_do_bus_transaction(
+static osalStatus pins_spi_transfer(
     PinsBusDevice *device)
 {
+    PinsBus *bus;
     osalStatus s;
 
+    bus = device->bus;
     device->gen_req_func(device);
 
+    if (bus->spec.spi.bus_nr >= 10)
+    {
+        rval = bbSPIXfer(device->spec.spi, bus->oubuf, bus->inbuf, bus->buf_n);
+        if (rval && !device->spec.spi.error_reported) {
+            osal_debug_error_int("bbSPIXfer failed, rval=", rval);
+            device->spec.spi.error_reported = OS_TRUE;
+            return OSAL_COMPLETED;
+        }
+    }
+    else
+    {
+        rval = spiXfer(device->spec.spi.handle, bus->oubuf, bus->inbuf, bus->buf_n);
+        if (rval && !device->spec.spi.error_reported) {
+            osal_debug_error_int("bbSPIXfer failed, rval=", rval);
+            device->spec.spi.error_reported = OS_TRUE;
+            return OSAL_COMPLETED;
+        }
+    }
+
     s = device->proc_resp_func(device);
-    //  digitalWrite(CS_MCP3208, 0);  // Low : CS Active
-
-    // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
-
-int bbSPIXfer(unsigned CS, char *inBuf, char *outBuf, unsigned count)
-
     return s;
 }
 
@@ -496,8 +586,8 @@ int bbSPIXfer(unsigned CS, char *inBuf, char *outBuf, unsigned count)
    to this function transfers only one request/reply pair.
 
    @param   device Pointer to SPI/I2C device structure.
-   @return  OSAL_COMPLETED if this was the last IO message to this of the last IO device device.
-            OSAL_SUCCESS otherwise.
+   @return  OSAL_COMPLETED if this was the last IO message to this of the last IO device
+            in the bus. OSAL_SUCCESS otherwise.
 
 ****************************************************************************************************
 */
@@ -509,30 +599,16 @@ static osalStatus pins_bus_run_spi(
 
     current_device = bus->current_device;
 
-    s = pins_do_bus_transaction(current_device);
+    s = pins_spi_transfer(current_device);
 
-    /* If moving to next device
+    /* If moving to next device, or bus
      */
     if (s == OSAL_COMPLETED) {
-        /* Disable chip select, if we have more than 1 device.
-        if (bus->spec.spi.more_than_1_device) {
-            //  current_device : digitalWrite(CS_MCP3208, 1);  // High : CS disable
-        }
-         */
-
-        /* Move on to the next device.
-         */
         current_device = current_device->next_device;
         if (current_device == OS_NULL) {
             current_device = bus->first_bus_device;
             final_s = OSAL_COMPLETED;
         }
-
-        /*
-        if (bus->spec.spi.more_than_1_device) {
-            // set speed
-            // current_device : digitalWrite(CS_MCP3208, 0);  // Low : CS active
-        } */
 
         bus->current_device = current_device;
     }

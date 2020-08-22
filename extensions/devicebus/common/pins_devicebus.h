@@ -90,9 +90,17 @@ typedef struct PinsSpiDeviceVariables
      */
     os_ushort flags;
 
+    /** SPI device handle
+     */
+    os_int handle;
+
     /** Bus speed (baud) for this device.
      */
     os_uint bus_frequency;
+
+    /** Repeating transer error reported, to not repeat.
+     */
+    os_boolean error_reported;
 }
 PinsSpiDeviceVariables;
 
@@ -214,9 +222,13 @@ typedef struct PinsBus
      */
     PinsBusVariables spec;
 
-    /** SPI message buffer, used for both outgoing and incoming message.
+    /** SPI message buffer, used for both outgoing message.
      */
-    os_uchar buf[PINS_BUS_BUF_SZ];
+    os_uchar outbuf[PINS_BUS_BUF_SZ];
+
+    /** SPI message buffer, used for incoming message.
+     */
+    os_uchar inbuf[PINS_BUS_BUF_SZ];
 
     /** Number of bytes in buffer.
      */
