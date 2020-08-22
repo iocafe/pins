@@ -270,8 +270,9 @@ void pins_init_device(
          */
         if (bus->spec.spi.bus_nr >= 10)
         {
-            rval = bbSPIOpen(device->spec.spi.cs, bus->spec.spi.miso, bus->spec.spi.mosi,
-                bus->spec.spi.sclk, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            rval = bbSPIOpen((unsigned)device->spec.spi.cs, (unsigned)bus->spec.spi.miso,
+                (unsigned)bus->spec.spi.mosi, (unsigned)bus->spec.spi.sclk,
+                device->spec.spi.bus_frequency, device->spec.spi.flags);
             if (rval)
             {
                 osal_debug_error_int("bbSPIOpen failed, rval=", rval);
@@ -292,7 +293,7 @@ void pins_init_device(
                 if (bus->spec.spi.miso != 19 ||
                     bus->spec.spi.mosi != 20 ||
                     bus->spec.spi.sclk != 21 ||
-                    (device->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && device->spec.spi.cs != 16))
+                    (device->spec.spi.cs != 18 && device->spec.spi.cs != 17 && device->spec.spi.cs != 16))
                 {
                     osal_debug_error("Wrong auxliary SPI channel pins.");
                     osal_debug_error("Must be: miso=19, mosi=20, sclk=21, cs=18,17 or 16.");
@@ -302,7 +303,7 @@ void pins_init_device(
                 if (bus->spec.spi.miso != 9 ||
                     bus->spec.spi.mosi != 10 ||
                     bus->spec.spi.sclk != 11 ||
-                    (device->spec.spi.cs != 8 && device->spec.spi.cs != 7)
+                    (device->spec.spi.cs != 8 && device->spec.spi.cs != 7))
                 {
                     osal_debug_error("Wrong main SPI channel pins.");
                     osal_debug_error("Must be: miso=9, mosi=10, sclk=11, cs=8 or 7.");
