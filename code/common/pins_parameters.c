@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -125,4 +125,43 @@ os_int pin_get_frequency(
         }
     }
     return frequency_hz;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Get speed setting for the pin.
+  @anchor pin_get_speed
+
+  The pin_get_speed() function returns a speed setting for pin. Frequency can be
+  specified as bps or kbps, thus the function.
+
+  @param   pin Pointer to static information structure for the pin.
+  @param   default_speed Default speed to return if frequency is unspecified, bps.
+
+  @return  Speed setting, if no speed is specified in JSON, the function returns the default
+           speed given as argument.
+
+****************************************************************************************************
+*/
+os_int pin_get_speed(
+    const Pin *pin,
+    os_int default_speed)
+{
+    os_uint speed;
+
+    speed = pin_get_prm(pin, PIN_SPEED);
+    if (!speed)
+    {
+        speed = 1000 * pin_get_prm(pin, PIN_SPEED_KBPS);
+        if (!speed)
+        {
+            return default_speed;
+        }
+    }
+
+    /* 100, scaling because speed is scaled to 16 bits by JSON.
+     */
+    return speed * 100;
 }

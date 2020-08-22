@@ -6,9 +6,9 @@
   @version 1.0
   @date    21.4.2020
 
-  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used, 
+  Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
-  or distribute this file you indicate that you have read the license and understand and accept 
+  or distribute this file you indicate that you have read the license and understand and accept
   it fully.
 
 ****************************************************************************************************
@@ -36,5 +36,11 @@ os_int pin_get_prm(
 os_int pin_get_frequency(
     const Pin *pin,
     os_int default_frequency);
+
+/* Get speed setting for the pin.
+ */
+os_int pin_get_speed(
+    const Pin *pin,
+    os_int default_speed);
 
 #endif

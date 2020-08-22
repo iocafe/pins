@@ -69,6 +69,8 @@ typedef enum
     PIN_TX,
     PIN_TRANSMITTER_CTRL,
     PIN_SPEED,
+    PIN_SPEED_KBPS,
+    PIN_FLAGS,
     PIN_A,
     PIN_B,
     PIN_C,

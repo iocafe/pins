@@ -55,14 +55,17 @@ static osalStatus pins_bus_run_spi(
 void pins_init_bus(
     PinsBus *bus)
 {
-    os_memclear(&bus->spec, sizeof(PinsBusVariables));
+    PinsBusDevice *device;
+#if OSAL_DEBUG
+    os_char buf[96], nbuf[OSAL_NBUF_SZ];
+#endif
 
-    // h = pi.spi_open(0, 2e6, 0xE0) # 0xE0 says not to set chip enables
-
-    /* Start from the first device.
+    /* Clear sub type specific data and start from the first device.
      */
-    bus->current_device = bus->first_bus_device;
-    if (bus->current_device == OS_NULL) {
+    os_memclear(&bus->spec, sizeof(PinsBusVariables));
+    device = bus->first_bus_device;
+    bus->current_device = device;
+    if (device == OS_NULL) {
         osal_debug_error("SPI/I2C bus without devices?");
         return;
     }
@@ -74,12 +77,40 @@ void pins_init_bus(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        // set speed
-        //  current_device : digitalWrite(CS_MCP3208, 0);  // Low : CS active
-
         /* If we have only one device, we do not need toggle speed and chip selects.
          */
         bus->spec.spi.more_than_1_device = (os_boolean)(bus->current_device->next_device != OS_NULL);
+
+        /* Get GPIO pin numbers and optional bus number.
+         */
+        bus->spec.spi.miso = (os_short)pin_get_prm(device->device_pin, PIN_MISO);
+        bus->spec.spi.mosi = (os_short)pin_get_prm(device->device_pin, PIN_MOSI);
+        bus->spec.spi.sclk = (os_short)pin_get_prm(device->device_pin, PIN_SCLK);
+        bus->spec.spi.bus_nr = device->device_pin->bank;
+
+#if OSAL_DEBUG
+        os_strncpy(buf, "SPI bus init: ", sizeof(buf));
+
+        os_strncat(buf, "bus_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.bus_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", miso=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.miso);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", mosi=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.mosi);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", sclk=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.sclk);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        osal_info("pins", OSAL_SUCCESS, buf);
+#endif
+        /* Here we could set SPI speed for the current_device and enable chip select for it.
+         */
     }
 #endif
 
@@ -89,7 +120,6 @@ void pins_init_bus(
     }
 #endif
 }
-
 
 
 /**
@@ -115,21 +145,84 @@ void pins_init_device(
     struct PinsBusDevice *device,
     struct PinsBusDeviceParams *prm)
 {
+    PinsBus *bus;
+#if OSAL_DEBUG
+    os_char buf[128], nbuf[OSAL_NBUF_SZ];
+#endif
+
+    bus = device->bus;
+
+    /* Clear bus type specific variables for the device.
+     */
+    os_memclear(&device->spec, sizeof (PinsDeviceVariables));
+
+#if PINS_SPI
+    if (bus->bus_type == PINS_SPI_BUS)
+    {
+        /* Get GPIO chip select pin number, baud, flags and optional device number.
+         */
+        device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, PIN_CS);
+        device->spec.spi.bus_frequency = 100 * pin_get_frequency(device->device_pin, 200000);
+        device->spec.spi.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
+        device->spec.spi.device_nr = device->device_pin->addr;
+
+#if OSAL_DEBUG
+        os_strncpy(buf, "SPI device init: ", sizeof(buf));
+
+        os_strncat(buf, "device_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.spi.device_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", bus_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.bus_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", miso=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.miso);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", mosi=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.mosi);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", sclk=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.spi.sclk);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", cs=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.spi.cs);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", frequency=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.spi.bus_frequency);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", flags=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.spi.flags);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        osal_info("pins", OSAL_SUCCESS, buf);
+#endif
+        /* Here we could set SPI speed for the current_device and enable chip select for it.
+         */
+    }
+#endif
+
+#if PINS_I2C
+    if (bus->bus_type == PINS_I2C_BUS)
+    {
+    }
+#endif
 }
 
 
 /**
 ****************************************************************************************************
 
-  @brief Platform specific SPI/I2C device initialization.
-  @anchor pins_init_device
+  @brief Close a specific SPI/I2C device.
+  @anchor pins_close_device
 
-  The pins_init_device() function initializes a SPI/I2C device for platform.
-
-  pigpio example:
-
-    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
-    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
+  The pins_close_device() function...
 
   @param   device Pointer to device structure.
   @return  None.

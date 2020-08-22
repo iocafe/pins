@@ -76,6 +76,40 @@ typedef os_int pinsBusGet(
     os_short addr);
 
 
+typedef struct PinsSpiDeviceVariables
+{
+    /** Chip select pin. Typically active LOW.
+     */
+    os_short cs;
+
+    /** SPI device number or "addr". This can be zero if not needed.
+     */
+    os_short device_nr;
+
+    /** SPI bus flags.
+     */
+    os_ushort flags;
+
+    /** Bus speed (baud) for this device.
+     */
+    os_uint bus_frequency;
+}
+PinsSpiDeviceVariables;
+
+typedef struct PinsI2cDeviceVariables
+{
+    os_short xxx;
+}
+PinsI2cDeviceVariables;
+
+typedef union {
+    PinsSpiDeviceVariables spi;
+    PinsI2cDeviceVariables i2c;
+}
+PinsDeviceVariables;
+
+
+
 /** Structure representing either a SPI or I2C device.
  */
 typedef struct PinsBusDevice
@@ -102,18 +136,14 @@ typedef struct PinsBusDevice
     pinsBusSet *set_func;
     pinsBusGet *get_func;
 
-    /** Pointer to chip select pin structure.
-     */
-    // const struct Pin *cs_pin;
-
     /** Enable device flag. Devices can be disabled if not connected,
         or to speed up communication to other device in the bus.
      */
     // os_boolean enable;
 
-    /* Bus speed for this device.
+    /** Bus type specific variables.
      */
-    // os_int bus_speed;
+    PinsDeviceVariables spec;
 
     /* Extended device data structure */
     void *ext;
@@ -128,31 +158,23 @@ PinsBusDevice;
 
 typedef struct PinsSpiBusVariables
 {
-    /** Pointer to pin structure.
+    /** Bus pins.
      */
-    const struct Pin *miso_pin;
+    os_short miso, mosi, sclk;
 
-    /**
+    /** SPI bus number or "bank". This can be zero if not needed.
      */
-    const struct Pin *mosi_pin;
+    os_short bus_nr;
 
-    /**
-     */
-    const struct Pin *clock_pin;
-
-
-    /* Do we have more than 1 device connected to the bus ?.
+    /** Do we have more than 1 device connected to the bus ?.
      */
     os_boolean more_than_1_device;
 }
 PinsSpiBusVariables;
 
-
 typedef struct PinsI2cBusVariables
 {
-    /**
-     */
-    const struct Pin *xxx;
+    os_short xxx;
 }
 PinsI2cBusVariables;
 

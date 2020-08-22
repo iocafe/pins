@@ -36,6 +36,8 @@ prm_type_list = {
     "tx": "PIN_TX",
     "tc": "PIN_TRANSMITTER_CTRL",
     "speed": "PIN_SPEED",
+    "speed-kbps": "PIN_SPEED_KBPS",
+    "flags": "PIN_FLAGS",
     "pin-a": "PIN_A",
     "pin-b": "PIN_B",
     "pin-c": "PIN_C",
@@ -87,7 +89,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
                 c_prm_list = c_prm_list + ", "
 
             c_prm_list = c_prm_list + c_attr_name + ", "
-            if c_attr_name == 'PIN_SPEED':
+            if c_attr_name == 'PIN_SPEED' or c_attr_name == 'PIN_SPEED_KBPS':
                 c_prm_list = c_prm_list + str(int(value)//100)
             else:
                 c_prm_list = c_prm_list + str(value)
@@ -208,7 +210,7 @@ def write_device_list(device_list, driver_list, bus_list):
         cfile.write('PinsBus pins_bus_' + bus_name + ' = {')
         if bus_name[:3] == 'spi':
             cfile.write('PINS_SPI_BUS, ')
-        else:            
+        else:
             cfile.write('PINS_I2C_BUS, ')
         cfile.write(data + ', ' + next_bus + '};\n')
         next_bus = '&pins_bus_' + bus_name
@@ -448,7 +450,7 @@ def process_io_device(io):
     for d in define_list:
         hfile.write('#define ' +d + '\n')
 
-    write_device_list(device_list, driver_list, bus_list)        
+    write_device_list(device_list, driver_list, bus_list)
 
 def process_source_file(path):
     read_file = open(path, "r")
