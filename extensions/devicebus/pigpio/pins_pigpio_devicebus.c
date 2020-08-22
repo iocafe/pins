@@ -88,6 +88,7 @@
 */
 #include "pinsx.h"
 #if PINS_SPI || PINS_I2C
+#include <pigpio.h>
 
 /* Forward referred static functions.
  */
@@ -291,17 +292,17 @@ void pins_init_device(
                 if (bus->spec.spi.miso != 19 ||
                     bus->spec.spi.mosi != 20 ||
                     bus->spec.spi.sclk != 21 ||
-                    (bus->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && bus->spec.spi.cs != 16))
+                    (device->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && device->spec.spi.cs != 16))
                 {
                     osal_debug_error("Wrong auxliary SPI channel pins.");
                     osal_debug_error("Must be: miso=19, mosi=20, sclk=21, cs=18,17 or 16.");
                 }
             }
             else {
-                if (bus->spec.spi.miso != 19 ||
-                    bus->spec.spi.mosi != 20 ||
-                    bus->spec.spi.sclk != 21 ||
-                    (bus->spec.spi.cs != 18 && bus->spec.spi.cs != 17 && bus->spec.spi.cs != 16))
+                if (bus->spec.spi.miso != 9 ||
+                    bus->spec.spi.mosi != 10 ||
+                    bus->spec.spi.sclk != 11 ||
+                    (device->spec.spi.cs != 8 && device->spec.spi.cs != 7)
                 {
                     osal_debug_error("Wrong main SPI channel pins.");
                     osal_debug_error("Must be: miso=9, mosi=10, sclk=11, cs=8 or 7.");
@@ -343,10 +344,12 @@ void pins_init_device(
 void pins_close_device(
     struct PinsBusDevice *device)
 {
+    PinsBus *bus;
 #if OSAL_DEBUG
     os_int rval;
 #endif
 
+    bus = device->bus;
     if (bus->spec.spi.bus_nr >= 10)
     {
 #if OSAL_DEBUG
