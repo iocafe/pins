@@ -212,6 +212,7 @@ void pins_init_device(
 #if OSAL_DEBUG
     os_char buf[128], nbuf[OSAL_NBUF_SZ];
 #endif
+    OSAL_UNUSED(prm);
 
     bus = device->bus;
 
@@ -310,7 +311,7 @@ void pins_init_device(
                 }
             }
 #endif
-            rval = spiOpen(device->spec.spi.cs, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            rval = spiOpen((unsigned)device->spec.spi.cs, device->spec.spi.bus_frequency, device->spec.spi.flags);
             device->spec.spi.handle = rval;
             if (rval < 0)
             {
@@ -354,7 +355,7 @@ void pins_close_device(
     if (bus->spec.spi.bus_nr >= 10)
     {
 #if OSAL_DEBUG
-        rval = bbSPIClose(device->spec.spi.cs);
+        rval = bbSPIClose((unsigned)device->spec.spi.cs);
         if (rval)
         {
             osal_debug_error_int("bbSPIOpen failed, rval=", rval);
@@ -365,7 +366,7 @@ void pins_close_device(
     }
     else {
 #if OSAL_DEBUG
-        rval = spiClose(device->spec.spi.handle);
+        rval = spiClose((unsigned)device->spec.spi.handle);
         if (rval)
         {
             osal_debug_error_int("spiClose failed, rval=", rval);
@@ -395,6 +396,7 @@ void pins_run_devicebus(
 {
     PinsBus *bus;
     osalStatus s;
+    OSAL_UNUSED(flags);
 
     bus = pins_devicebus.current_bus;
     s = pins_bus_run_spi(bus);
@@ -492,6 +494,7 @@ void pins_start_multithread_devicebus(
     os_int flags)
 {
     PinsBus *bus;
+    OSAL_UNUSED(flags);
 
     pins_devicebus.thread_count = 0;
     pins_devicebus.terminate = OS_FALSE;
@@ -558,7 +561,7 @@ static osalStatus pins_spi_transfer(
 
     if (bus->spec.spi.bus_nr >= 10)
     {
-        rval = bbSPIXfer((unsigned)device->spec.spi, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
+        rval = bbSPIXfer((unsigned)device->spec.spi.cs, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
         if (rval && !device->spec.spi.error_reported) {
             osal_debug_error_int("bbSPIXfer failed, rval=", rval);
             device->spec.spi.error_reported = OS_TRUE;
@@ -567,7 +570,7 @@ static osalStatus pins_spi_transfer(
     }
     else
     {
-        rval = spiXfer(device->spec.spi.handle, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
+        rval = spiXfer((unsigned)device->spec.spi.handle, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
         if (rval && !device->spec.spi.error_reported) {
             osal_debug_error_int("bbSPIXfer failed, rval=", rval);
             device->spec.spi.error_reported = OS_TRUE;
