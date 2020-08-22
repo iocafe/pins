@@ -162,7 +162,7 @@ void pins_init_device(
         /* Get GPIO chip select pin number, baud, flags and optional device number.
          */
         device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, PIN_CS);
-        device->spec.spi.bus_frequency = (os_uint)(100 * pin_get_frequency(device->device_pin, 200000));
+        device->spec.spi.bus_frequency = (os_uint)pin_get_frequency(device->device_pin, 20000);
         device->spec.spi.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
         device->spec.spi.device_nr = device->device_pin->addr;
 
