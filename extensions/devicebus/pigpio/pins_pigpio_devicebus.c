@@ -561,7 +561,8 @@ static osalStatus pins_spi_transfer(
 
     if (bus->spec.spi.bus_nr >= 10)
     {
-        rval = bbSPIXfer((unsigned)device->spec.spi.cs, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
+        rval = bbSPIXfer((unsigned)device->spec.spi.cs, (char*)bus->outbuf,
+            (char*)bus->inbuf, (unsigned)bus->buf_n);
         if (rval && !device->spec.spi.error_reported) {
             osal_debug_error_int("bbSPIXfer failed, rval=", rval);
             device->spec.spi.error_reported = OS_TRUE;
@@ -570,7 +571,8 @@ static osalStatus pins_spi_transfer(
     }
     else
     {
-        rval = spiXfer((unsigned)device->spec.spi.handle, (char*)bus->outbuf, (char*)bus->inbuf, (unsigned)bus->buf_n);
+        rval = spiXfer((unsigned)device->spec.spi.handle, (char*)bus->outbuf,
+            (char*)bus->inbuf, (unsigned)bus->buf_n);
         if (rval && !device->spec.spi.error_reported) {
             osal_debug_error_int("bbSPIXfer failed, rval=", rval);
             device->spec.spi.error_reported = OS_TRUE;
