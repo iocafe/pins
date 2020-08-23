@@ -138,11 +138,6 @@ void pins_init_bus(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-
-        /* If we have only one device, we do not need toggle speed and chip selects.
-         */
-        bus->spec.spi.more_than_1_device = (os_boolean)(bus->current_device->next_device != OS_NULL);
-
         /* Get GPIO pin numbers and optional bus number.
          */
         bus->spec.spi.miso = (os_short)pin_get_prm(device->device_pin, PIN_MISO);
@@ -311,7 +306,13 @@ void pins_init_device(
                 }
             }
 #endif
-            rval = spiOpen((unsigned)device->spec.spi.cs, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            /* If auxiliary SPI bus
+             */
+            if (bus->spec.spi.bus_nr) {
+                device->spec.spi.flags |= 256;
+            }
+
+            rval = spiOpen((unsigned)bus->spec.spi.device_nr, device->spec.spi.bus_frequency, device->spec.spi.flags);
             device->spec.spi.handle = rval;
             if (rval < 0)
             {
