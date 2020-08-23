@@ -459,7 +459,7 @@ static void ioc_devicebus_thread(
         {
             s = pins_bus_run_spi(bus);
             if (s == OSAL_COMPLETED) {
-                os_timeslice();
+            //    os_timeslice();
             }
         }
     }
