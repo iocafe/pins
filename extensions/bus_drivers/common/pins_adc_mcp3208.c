@@ -148,7 +148,8 @@ void mcp3208_gen_req(struct PinsBusDevice *device)
    @param   device Structure representing SPI device.
    @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
             so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
-            that there is more to read.
+            that there is more to read. Other values indicate that SPI reply was not
+            recieved or was errornous.
 
 ****************************************************************************************************
 */
