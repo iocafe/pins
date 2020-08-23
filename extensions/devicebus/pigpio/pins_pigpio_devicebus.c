@@ -319,7 +319,6 @@ void pins_init_device(
                 osal_debug_error_int("spiOpen failed, rval=", rval);
             }
         }
-
     }
 #endif
 
