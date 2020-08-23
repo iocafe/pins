@@ -312,7 +312,7 @@ void pins_init_device(
                 device->spec.spi.flags |= 256;
             }
 
-            rval = spiOpen((unsigned)bus->spec.spi.device_nr, device->spec.spi.bus_frequency, device->spec.spi.flags);
+            rval = spiOpen((unsigned)device->spec.spi.device_nr, device->spec.spi.bus_frequency, device->spec.spi.flags);
             device->spec.spi.handle = rval;
             if (rval < 0)
             {
