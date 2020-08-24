@@ -32,6 +32,7 @@ typedef enum
     PIN_ANALOG_OUTPUT,
     PIN_PWM,
     PIN_SPI,
+    PIN_I2C,
     PIN_TIMER,
     PIN_UART,
     PIN_CAMERA
@@ -64,6 +65,8 @@ typedef enum
     PIN_MOSI,
     PIN_SCLK,
     PIN_CS,
+    PIN_SDA,
+    PIN_SCL,
     PIN_DC,
     PIN_RX,
     PIN_TX,

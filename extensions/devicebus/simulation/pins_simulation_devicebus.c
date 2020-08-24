@@ -31,10 +31,16 @@
 
 /* Forward referred static functions.
  */
-static osalStatus pins_do_bus_transaction(
+static osalStatus pins_spi_transfer(
     PinsBusDevice *device);
 
 static osalStatus pins_bus_run_spi(
+    PinsBus *bus);
+
+static osalStatus pins_i2c_transfer(
+    PinsBusDevice *device);
+
+static osalStatus pins_bus_run_i2c(
     PinsBus *bus);
 
 
@@ -77,10 +83,6 @@ void pins_init_bus(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        /* If we have only one device, we do not need toggle speed and chip selects.
-         */
-        bus->spec.spi.more_than_1_device = (os_boolean)(bus->current_device->next_device != OS_NULL);
-
         /* Get GPIO pin numbers and optional bus number.
          */
         bus->spec.spi.miso = (os_short)pin_get_prm(device->device_pin, PIN_MISO);
@@ -117,6 +119,30 @@ void pins_init_bus(
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
+        /* Get GPIO pin numbers and bus number.
+         */
+        bus->spec.i2c.sda = (os_short)pin_get_prm(device->device_pin, PIN_SDA);
+        bus->spec.i2c.scl = (os_short)pin_get_prm(device->device_pin, PIN_SCL);
+        bus->spec.i2c.bus_nr = device->device_pin->bank;
+
+#if OSAL_DEBUG
+        os_strncpy(buf, "I2C bus init: ", sizeof(buf));
+
+        os_strncat(buf, "bus_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.bus_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", sda=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.sda);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", scl=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.scl);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        osal_info("pins", OSAL_SUCCESS, buf);
+#endif
+
     }
 #endif
 }
@@ -211,6 +237,53 @@ void pins_init_device(
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
+        /* Get flags and device number.
+         */
+        device->spec.i2c.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
+        device->spec.i2c.device_nr = device->device_pin->addr;
+
+#if OSAL_DEBUG
+        os_strncpy(buf, "I2C device init: ", sizeof(buf));
+
+        os_strncat(buf, "device_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.i2c.device_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, "bus_nr=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.bus_nr);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", sda=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.sda);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", scl=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.scl);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        os_strncat(buf, ", flags=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.i2c.flags);
+        os_strncat(buf, nbuf, sizeof(buf));
+
+        osal_info("pins", OSAL_SUCCESS, buf);
+
+        if (bus->spec.i2c.bus_nr) {
+            if (bus->spec.i2c.sda != 2 ||
+                bus->spec.i2c.scl != 3)
+            {
+                osal_debug_error("Wrong I2C bus 1 pins.");
+                osal_debug_error("Must be: sda=2, scl=3.");
+            }
+        }
+        else {
+            if (bus->spec.i2c.sda != 0 ||
+                bus->spec.i2c.scl != 1)
+            {
+                osal_debug_error("Wrong I2C bus 0 pins.");
+                osal_debug_error("Must be: sda=0, scl=1.");
+            }
+        }
+#endif
     }
 #endif
 }
@@ -252,10 +325,21 @@ void pins_run_devicebus(
     os_int flags)
 {
     PinsBus *bus;
-    osalStatus s;
+    osalStatus s = OSAL_STATUS_NOT_SUPPORTED;
 
     bus = pins_devicebus.current_bus;
-    s = pins_bus_run_spi(bus);
+
+#if PINS_SPI
+    if (bus->bus_type == PINS_SPI_BUS) {
+        s = pins_bus_run_spi(bus);
+    }
+#endif
+#if PINS_I2C
+    if (bus->bus_type == PINS_I2C_BUS) {
+        s = pins_bus_run_i2c(bus);
+    }
+#endif
+
     if (s == OSAL_COMPLETED) {
         bus = bus->next_bus;
         if (bus == OS_NULL) {
@@ -324,6 +408,16 @@ static void ioc_devicebus_thread(
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
+        /* Run the the device bus, until program or SPI/I2C communication is
+           to be terminated.
+         */
+        while (osal_go() && !pins_devicebus.terminate)
+        {
+            s = pins_bus_run_i2c(bus);
+            if (s == OSAL_COMPLETED) {
+                os_timeslice();
+            }
+        }
     }
 #endif
 
@@ -350,6 +444,7 @@ void pins_start_multithread_devicebus(
     os_int flags)
 {
     PinsBus *bus;
+    OSAL_UNUSED(flags);
 
     pins_devicebus.thread_count = 0;
     pins_devicebus.terminate = OS_FALSE;
@@ -386,25 +481,27 @@ void pins_stop_multithread_devicebus(
     }
 }
 
+/* OSAL_MULTITHREAD_SUPPORT */
 #endif
 
 
+#if PINS_SPI
 /**
 ****************************************************************************************************
 
-   @brief Send data to SPI or I2C bus and receive reply.
-   @anchor pins_do_bus_transaction
+   @brief Send data to SPI bus and receive reply.
+   @anchor pins_spi_transfer
 
-   The pins_do_bus_transaction() function sends a message to current SPI or I2C device and
-   gets a reply. If multiple messages are used with the device, gen_req_func() and
-   proc_resp_func() functions process one of these at the time.
+   The pins_spi_transfer() function sends a message to current SPI device and gets a reply.
+   If multiple messages are used with the device, gen_req_func() and proc_resp_func()
+   functions process one of these at the time.
 
    @param   device Pointer to SPI/I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
 
 ****************************************************************************************************
 */
-static osalStatus pins_do_bus_transaction(
+static osalStatus pins_spi_transfer(
     PinsBusDevice *device)
 {
     osalStatus s;
@@ -424,7 +521,7 @@ static osalStatus pins_do_bus_transaction(
    @anchor pins_do_spi_bus_transaction
 
    The pins_do_spi_bus_transaction() function sends buffer content to SPI bus gets a reply.
-   Here we give turn to every SPI/I2C device and every message for the device. But one call
+   Here we give turn to every SPI device and every message for the device. But one call
    to this function transfers only one request/reply pair.
 
    @param   device Pointer to SPI/I2C device structure.
@@ -441,28 +538,18 @@ static osalStatus pins_bus_run_spi(
 
     current_device = bus->current_device;
 
-    s = pins_do_bus_transaction(current_device);
+    s = pins_spi_transfer(current_device);
 
-    /* If moving to next device
+    /* Move on to the next device ?
      */
     if (s == OSAL_COMPLETED) {
-        /* Disable chip select, if we have more than 1 device.
+        /* Change chip select, if we have more than 1 device.
          */
-        if (bus->spec.spi.more_than_1_device) {
-            //  current_device : digitalWrite(CS_MCP3208, 1);  // High : CS disable
-        }
 
-        /* Move on to the next device.
-         */
         current_device = current_device->next_device;
         if (current_device == OS_NULL) {
             current_device = bus->first_bus_device;
             final_s = OSAL_COMPLETED;
-        }
-
-        if (bus->spec.spi.more_than_1_device) {
-            // set speed
-            // current_device : digitalWrite(CS_MCP3208, 0);  // Low : CS active
         }
 
         bus->current_device = current_device;
@@ -470,5 +557,82 @@ static osalStatus pins_bus_run_spi(
 
     return final_s;
 }
+
+/* PINS_SPI */
+#endif
+
+
+#if PINS_I2C
+/**
+****************************************************************************************************
+
+   @brief Send data to I2C bus and receive reply.
+   @anchor pins_i2c_transfer
+
+   The pins_i2c_transfer() function sends a message to current SPI or I2C device and
+   gets a reply. If multiple messages are used with the device, gen_req_func() and
+   proc_resp_func() functions process one of these at the time.
+
+   @param   device Pointer to I2C device structure.
+   @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
+
+****************************************************************************************************
+*/
+static osalStatus pins_i2c_transfer(
+    PinsBusDevice *device)
+{
+    osalStatus s;
+
+    device->gen_req_func(device);
+
+    s = device->proc_resp_func(device);
+    // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
+    return s;
+}
+
+
+/**
+****************************************************************************************************
+
+   @brief Send one I2C bus request and receive reply.
+   @anchor pins_do_i2c_bus_transaction
+
+   The pins_do_i2c_bus_transaction() function sends buffer content to SPI bus gets a reply.
+   Here we give turn to every SPI/I2C device and every message for the device. But one call
+   to this function transfers only one request/reply pair.
+
+   @param   device Pointer to I2C device structure.
+   @return  OSAL_COMPLETED if this was the last IO message to this of the last IO device
+            in the bus. OSAL_SUCCESS otherwise.
+
+****************************************************************************************************
+*/
+static osalStatus pins_bus_run_i2c(
+    PinsBus *bus)
+{
+    PinsBusDevice *current_device;
+    osalStatus s, final_s = OSAL_SUCCESS;
+
+    current_device = bus->current_device;
+
+    s = pins_i2c_transfer(current_device);
+
+    /* Move on to the next device ?
+     */
+    if (s == OSAL_COMPLETED) {
+        current_device = current_device->next_device;
+        if (current_device == OS_NULL) {
+            current_device = bus->first_bus_device;
+            final_s = OSAL_COMPLETED;
+        }
+
+        bus->current_device = current_device;
+    }
+
+    return final_s;
+}
+
+/* PINS_I2C */
+#endif
 
 #endif

@@ -106,7 +106,13 @@ PinsSpiDeviceVariables;
 
 typedef struct PinsI2cDeviceVariables
 {
-    os_short xxx;
+    /** I2C device number or "addr".
+     */
+    os_short device_nr;
+
+    /** I2C bus flags.
+     */
+    os_ushort flags;
 }
 PinsI2cDeviceVariables;
 
@@ -173,16 +179,18 @@ typedef struct PinsSpiBusVariables
     /** SPI bus number or "bank". This can be zero if not needed.
      */
     os_short bus_nr;
-
-    /** Do we have more than 1 device connected to the bus ?.
-     */
-    os_boolean more_than_1_device;
 }
 PinsSpiBusVariables;
 
 typedef struct PinsI2cBusVariables
 {
-    os_short xxx;
+    /** Bus pins.
+     */
+    os_short sda, scl;
+
+    /** i2c bus number or "bank".
+     */
+    os_short bus_nr;
 }
 PinsI2cBusVariables;
 
@@ -222,17 +230,13 @@ typedef struct PinsBus
      */
     PinsBusVariables spec;
 
-    /** SPI message buffer, used for both outgoing message.
+    /** SPI message buffer, for outgoing and incoming messages.
      */
-    os_uchar outbuf[PINS_BUS_BUF_SZ];
-
-    /** SPI message buffer, used for incoming message.
-     */
-    os_uchar inbuf[PINS_BUS_BUF_SZ];
+    os_uchar outbuf[PINS_BUS_BUF_SZ], inbuf[PINS_BUS_BUF_SZ];
 
     /** Number of bytes in buffer.
      */
-    os_short buf_n;
+    os_short outbuf_n, inbuf_n;
 }
 PinsBus;
 

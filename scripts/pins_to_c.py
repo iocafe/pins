@@ -11,6 +11,7 @@ pin_types = {
     "analog_outputs" : "PIN_ANALOG_OUTPUT",
     "pwm" : "PIN_PWM",
     "spi" : "PIN_SPI",
+    "i2c" : "PIN_I2C",
     "timers" : "PIN_TIMER",
     "cameras" : "PIN_CAMERA",
     "uart" : "PIN_UART"}
@@ -30,6 +31,8 @@ prm_type_list = {
     "miso": "PIN_MISO",
     "mosi": "PIN_MOSI",
     "sclk": "PIN_SCLK",
+    "sda": "PIN_SDA",
+    "scl": "PIN_SCL",
     "cs": "PIN_CS",
     "dc": "PIN_DC",
     "rx": "PIN_RX",
@@ -174,7 +177,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     driver = pin_attr.get("driver", None)
     if driver != None:
         if pin_type == 'i2c':
-            bus_id = pin_type + '_' + str(pin_attr.get('sclk', 0))
+            bus_id = pin_type + '_' + str(pin_attr.get('bank', 0))
         else:
             bus_id = pin_type + '_' + str(pin_attr.get('sclk', 0))
 

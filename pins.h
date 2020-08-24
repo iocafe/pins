@@ -77,7 +77,7 @@ OSAL_C_HEADER_BEGINS
   #define PINS_SPI 1
 #endif
 #ifndef PINS_I2C
-  #define PINS_I2C 0
+  #define PINS_I2C 1
 #endif
 
 /* Include generic pins library headers.
