@@ -225,7 +225,7 @@ static void pca9685_set_pwm_freq(struct PinsBus *bus, os_int frequency)
 
     /* totem pole (default)
      */
-    *(p++) = OEPI_MODE1;
+    *(p++) = OEPI_MODE2;
     *(p++) = 0x04;
 
     bus->outbuf_n = p - bus->outbuf;
