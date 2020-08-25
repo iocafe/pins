@@ -778,7 +778,7 @@ static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
     PinsBus *bus;
-    osalStatus s = OSAL_S;
+    osalStatus s = OSAL_SUCCESS;
     os_short n;
     int rval;
 

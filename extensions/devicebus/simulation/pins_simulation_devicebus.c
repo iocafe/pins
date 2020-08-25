@@ -582,8 +582,10 @@ static osalStatus pins_i2c_transfer(
 {
     osalStatus s;
 
-    device->gen_req_func(device);
-    s = device->proc_resp_func(device);
+    s = device->gen_req_func(device);
+    if (device->bus->outbuf_n > 0) {
+        s = device->proc_resp_func(device);
+    }
     return s;
 }
 
