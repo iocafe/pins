@@ -209,7 +209,7 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
 
     adc_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
 
-    if (++current_ch < PINS_MAX_MCP3208_ADC) {
+    if (++current_ch < MCP3208_NRO_ADC_CHANNELS) {
         ext->current_ch = current_ch;
         return OSAL_SUCCESS;
     }

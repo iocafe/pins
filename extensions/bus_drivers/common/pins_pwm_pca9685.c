@@ -159,12 +159,7 @@ void pca9685_initialize_pin(const struct Pin *pin)
     osal_debug_assert(device != OS_NULL);
 
     addr = pin->addr;
-    osal_debug_assert(addr >= 0 && addr < PINS_MAX_PCA9685_PWM);
-
-    if (addr < 0 || addr >= PINS_MAX_PCA9685_PWM) {
-
-        return;
-    }
+    osal_debug_assert(addr >= 0 && addr < PCA9685_NRO_PWM_CHANNELS);
 
     ext = (PinsPca9685Ext*)(device->ext);
     osal_debug_assert(ext != OS_NULL);
@@ -358,7 +353,7 @@ osalStatus pca9685_proc_resp(struct PinsBusDevice *device)
     pwm_value = ext->pwm_value;
     pwm_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
 
-    if (++current_ch < PINS_MAX_PCA9685_PWM) {
+    if (++current_ch < PCA9685_NRO_PWM_CHANNELS) {
         ext->current_ch = current_ch;
         return OSAL_SUCCESS;
     }
