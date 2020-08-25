@@ -195,40 +195,58 @@ void pca9685_initialize_pin(const struct Pin *pin)
 
    Notice that same frequency needs to be used for all PWM outputs of the PCA9625 chip.
 
-   @param   pin Structure representing I2C bus.
-   @param   frequency PWM frequency, typically 60 Hz for servos. Higher for LEDs.
+   /............ @param   pin Structure representing I2C bus.
+   ........ @param   frequency PWM frequency, typically 60 Hz for servos. Higher for LEDs.
    @return  None.
 
 ****************************************************************************************************
 */
-static void pca9685_set_pwm_freq(struct PinsBus *bus, os_int frequency)
+static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
 {
+    struct PinsBus *bus;
+    PinsPca9685Ext *ext;
     os_uchar prescale_val, *p;
+    os_int frequency;
 
-    prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
+    bus = device->bus;
+    ext = (PinsPca9685Ext*)device->ext;
     p = bus->outbuf;
+    frequency = ext->pwm_frequency;
+    prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
 
-    /* sleep
-     */
-    *(p++) = OEPI_MODE1;
-    *(p++) = 0x10;
+    switch (ext->pwm_freq_count)
+    {
+        case 0:
+            /* sleep
+             */
+            *(p++) = OEPI_MODE1;
+            *(p++) = 0x10;
 
-    /* multiplyer for PWM frequency.
-     */
-    *(p++) = PRE_SCALE;
-    *(p++) = prescale_val;
+            /* multiplyer for PWM frequency.
+             */
+            *(p++) = PRE_SCALE;
+            *(p++) = prescale_val;
+            break;
 
-    /* restart.
-     */
-    *(p++) = OEPI_MODE1;
-    *(p++) = 0x80;
+        case 1:
+            os_timeslice();
+            /* restart.
+             */
+            *(p++) = OEPI_MODE1;
+            *(p++) = 0x80;
+            break;
 
-    /* totem pole (default)
-     */
-    *(p++) = OEPI_MODE2;
-    *(p++) = 0x04;
+        case 2:
+            os_timeslice();
+            /* totem pole (default)
+             */
+            *(p++) = OEPI_MODE2;
+            *(p++) = 0x04;
+            break;
+    }
 
-    bus->outbuf_n = p - bus->outbuf;
+    ext->pwm_freq_count++;
+    bus->outbuf_n = (os_short)(p - bus->outbuf);
     bus->inbuf_n = 0;
 }
 
@@ -264,10 +282,10 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     buf = bus->outbuf;
     ext = (PinsPca9685Ext*)device->ext;
 
-    if (ext->pwm_freq_count == 0)
+    if (ext->pwm_freq_count <= 2)
     {
-        pca9685_set_pwm_freq(bus, ext->pwm_frequency);
-        ext->pwm_freq_count = 1;
+        pca9685_set_pwm_freq(device);
+        // ext->pwm_freq_count++;
         return s;
     }
 
@@ -302,7 +320,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     }
 
     ext->current_ch = current_ch;
-    bus->outbuf_n = p - buf;
+    bus->outbuf_n = (os_short)(p - buf);
     bus->inbuf_n = 0;
     return s;
 }

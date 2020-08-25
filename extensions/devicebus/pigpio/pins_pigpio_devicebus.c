@@ -778,8 +778,9 @@ static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
     PinsBus *bus;
+    os_uchar *buf;
     osalStatus s = OSAL_SUCCESS;
-    os_short n;
+    os_short n, i;
     int rval;
 
     bus = device->bus;
@@ -787,18 +788,18 @@ static osalStatus pins_i2c_transfer(
 
     n = bus->outbuf_n;
     if (n) {
-        /* buf = bus->outbuf;
-        for (i = 0; i < n; i++) {
-            rval = i2cWriteByte((unsigned)device->spec.i2c.handle, buf[i]);
-        } */
-        rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, (unsigned)n);
+        buf = bus->outbuf;
+        for (i = 0; i < n; i+=2) {
+            rval = i2cWriteByte((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
+        }
+        /* rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, (unsigned)n);
         if (rval) {
             if (!device->spec.i2c.error_reported) {
                 osal_debug_error_int("Error writing i2c bus ", bus->spec.i2c.bus_nr);
                 device->spec.i2c.error_reported = OS_TRUE;
             }
             return OSAL_COMPLETED;
-        }
+        } */
     }
 
     n = bus->inbuf_n;
