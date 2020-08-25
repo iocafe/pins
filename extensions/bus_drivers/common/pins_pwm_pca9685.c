@@ -243,17 +243,20 @@ static void pca9685_set_pwm_freq(struct PinsBus *bus, os_int frequency)
    within the bus struture.
 
    @param   device Structure representing SPI device.
-   @return  None.
+   @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
+            so that all data has been transferred to device. Value OSAL_SUCCESS to indicates
+            that there is more to write (or that checking is done when processing reply).
 
 ****************************************************************************************************
 */
-void pca9685_gen_req(struct PinsBusDevice *device)
+osalStatus pca9685_gen_req(struct PinsBusDevice *device)
 {
     PinsBus *bus;
     PinsPca9685Ext *ext;
     os_uchar *buf, *p, current_ch;
     os_short ch_count, check_count, value;
     const os_int max_ch_at_once = 1;
+    osalStatus s = OSAL_SUCCESS;
 
     bus = device->bus;
     osal_debug_assert(bus != OS_NULL);
@@ -265,7 +268,7 @@ void pca9685_gen_req(struct PinsBusDevice *device)
     {
         pca9685_set_pwm_freq(bus, ext->pwm_frequency);
         ext->pwm_freq_count = 1;
-        return;
+        return s;
     }
 
     current_ch = ext->current_ch;
@@ -289,6 +292,7 @@ void pca9685_gen_req(struct PinsBusDevice *device)
         }
 
         if (++current_ch >= PCA9685_NRO_PWM_CHANNELS) {
+            s = OSAL_COMPLETED;
             current_ch = 0;
         }
     }
@@ -296,6 +300,7 @@ void pca9685_gen_req(struct PinsBusDevice *device)
     ext->current_ch = current_ch;
     bus->outbuf_n = p - buf;
     bus->inbuf_n = 0;
+    return s;
 }
 
 
@@ -314,7 +319,7 @@ void pca9685_gen_req(struct PinsBusDevice *device)
    @param   device Structure representing SPI device.
    @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
             so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
-            that there is more to read. Other values indicate that SPI reply was not
+            that there is more to read. Other values indicate that I2C reply was not
             recieved or was errornous.
 
 ****************************************************************************************************

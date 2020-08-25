@@ -405,9 +405,10 @@ void pins_init_device(
         }
 #endif
 
-        device->spec.i2c.handle = i2cOpen((unsigned)bus->spec.i2c.bus_nr,
+        rval = i2cOpen((unsigned)bus->spec.i2c.bus_nr,
             (unsigned)device->spec.i2c.device_nr, (unsigned)device->spec.i2c.flags);
-        if (device->spec.i2c.handle < 0) {
+        device->spec.i2c.handle = rval;
+        if (rval < 0) {
             osal_debug_error_int("bbSPIOpen failed, rval=", rval);
         }
     }
@@ -501,7 +502,7 @@ void pins_run_devicebus(
     os_int flags)
 {
     PinsBus *bus;
-    osalStatus s;
+    osalStatus s = OSAL_COMPLETED;
     OSAL_UNUSED(flags);
 
     bus = pins_devicebus.current_bus;
@@ -777,12 +778,12 @@ static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
     PinsBus *bus;
-    osalStatus s;
+    osalStatus s = OSAL_S;
     os_short n;
     int rval;
 
     bus = device->bus;
-    device->gen_req_func(device);
+    s = device->gen_req_func(device);
 
     n = bus->outbuf_n;
     if (n) {
@@ -790,7 +791,7 @@ static osalStatus pins_i2c_transfer(
         for (i = 0; i < n; i++) {
             rval = i2cWriteByte((unsigned)device->spec.i2c.handle, buf[i]);
         } */
-        rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, n);
+        rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, (unsigned)n);
         if (rval) {
             if (!device->spec.i2c.error_reported) {
                 osal_debug_error_int("Error writing i2c bus ", bus->spec.i2c.bus_nr);
@@ -802,7 +803,7 @@ static osalStatus pins_i2c_transfer(
 
     n = bus->inbuf_n;
     if (n) {
-        rval = i2cReadDevice((unsigned)device->spec.i2c.handle, (char*)bus->inbuf, n);
+        rval = i2cReadDevice((unsigned)device->spec.i2c.handle, (char*)bus->inbuf, (unsigned)n);
         if (rval) {
             if (!device->spec.i2c.error_reported) {
                 osal_debug_error_int("Error reading 2c bus ", bus->spec.i2c.bus_nr);

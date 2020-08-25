@@ -54,7 +54,7 @@ pinsBusType;
 
 /** SPI device callback, when we can send request to device.
  */
-typedef void pinsGenerateDeviceRequest(
+typedef osalStatus pinsGenerateDeviceRequest(
     struct PinsBusDevice *device);
 
 /** SPI device callback, when reply is received from the device.

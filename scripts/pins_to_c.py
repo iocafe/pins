@@ -271,7 +271,7 @@ def write_device_list(device_list, driver_list, bus_list):
         hfile.write('void ' + data[0] + '_initialize_driver(void);\n')
         hfile.write('void ' + data[0] + '_initialize_device(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_initialize_pin(const struct Pin *pin);\n')
-        hfile.write('void ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
+        hfile.write('osalStatus ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
         hfile.write('os_int ' + data[0] + '_get(struct PinsBusDevice *device, os_short addr);\n')

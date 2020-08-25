@@ -154,11 +154,11 @@ void mcp3208_initialize_pin(const struct Pin *pin)
    within the bus struture.
 
    @param   device Structure representing SPI device.
-   @return  None.
+   @return  Always OSAL_SUCCESS. Device change checking is done when processing reply.
 
 ****************************************************************************************************
 */
-void mcp3208_gen_req(struct PinsBusDevice *device)
+osalStatus mcp3208_gen_req(struct PinsBusDevice *device)
 {
     PinsMcp3208Ext *ext;
     os_uchar *buf, current_ch;
@@ -172,6 +172,7 @@ void mcp3208_gen_req(struct PinsBusDevice *device)
     buf[1] = (os_uchar)((current_ch & 0x03) << 6);
     buf[2] = 0;
     device->bus->inbuf_n = device->bus->outbuf_n = 3;
+    return OSAL_SUCCESS;
 }
 
 
