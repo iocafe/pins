@@ -507,9 +507,8 @@ static osalStatus pins_spi_transfer(
     osalStatus s;
 
     device->gen_req_func(device);
-
+    /* spi transfer here */
     s = device->proc_resp_func(device);
-    // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
     return s;
 }
 

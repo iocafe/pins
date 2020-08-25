@@ -38,7 +38,8 @@ typedef struct PinsPca9685Ext
 {
     os_short pwm_value[PCA9685_NRO_PWM_CHANNELS];
     os_uchar current_ch;
-    os_uchar state;
+    os_short pwm_frequency;
+    os_short pwm_freq_count;
     os_boolean connected;
 }
 PinsPca9685Ext;
@@ -72,7 +73,6 @@ PinsPca9685Ext;
 #define ALLLED_OFF_H 0xFD	//load all the LEDn_OFF registers, byte 1 (turn 8-15 channels off)
 */
 
-
 static PinsPca9685Ext pca9685_ext[PINS_MAX_PCA9685_PWM];
 static os_short pca9685_nro_chips;
 
@@ -98,9 +98,9 @@ void pca9685_initialize_driver()
 ****************************************************************************************************
 
    @brief Initialize device
-   @anchor initialize_pca9685
+   @anchor pca9685_initialize_device
 
-   The pca9685_initialize() function initializes a bus device structure for a specific
+   The pca9685_initialize_device() function initializes a bus device structure for a specific
    PCA9685 chip.
 
    @param   device Structure representing SPI device.
@@ -108,7 +108,7 @@ void pca9685_initialize_driver()
 
 ****************************************************************************************************
 */
-void pca9685_initialize(struct PinsBusDevice *device)
+void pca9685_initialize_device(struct PinsBusDevice *device)
 {
     PinsBusDeviceParams prm;
     os_short *pwm_value, i;
@@ -134,21 +134,103 @@ void pca9685_initialize(struct PinsBusDevice *device)
 }
 
 
-/* \param freq desired frequency. 40Hz to 1000Hz using internal 25MHz oscillator.
-void pins_set_pwm_freq(
-    int fd,
-    int freq)
-{
-    unsigned char
-        prescale_val;
+/**
+****************************************************************************************************
 
-    prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / freq)  - 1);
-    PCA9685_write_byte(fd, OEPI_MODE1, 0x10); //sleep
-    PCA9685_write_byte(fd, PRE_SCALE, prescale_val); // multiplyer for PWM frequency
-    PCA9685_write_byte(fd, OEPI_MODE1, 0x80); //restart
-    PCA9685_write_byte(fd, OEPI_MODE2, 0x04); //totem pole (default)
+   @brief Initialize "pin" of bus device.
+   @anchor pca9685_initialize_pin
+
+   The pca9685_initialize_pin() function initializes a bus device's pin. In practice this
+   function may set some data in device strucure.
+
+   @param   pin Structure representing bus device "pin".
+   @return  None.
+
+****************************************************************************************************
+*/
+void pca9685_initialize_pin(const struct Pin *pin)
+{
+    PinsBusDevice *device;
+    PinsPca9685Ext*ext;
+    os_short addr;
+    os_int value;
+
+    device = pin->bus_device;
+    osal_debug_assert(device != OS_NULL);
+
+    addr = pin->addr;
+    osal_debug_assert(addr >= 0 && addr < PINS_MAX_PCA9685_PWM);
+
+    if (addr < 0 || addr >= PINS_MAX_PCA9685_PWM) {
+
+        return;
+    }
+
+    ext = (PinsPca9685Ext*)(device->ext);
+    osal_debug_assert(ext != OS_NULL);
+
+    value = pin_get_prm(pin, PIN_INIT);
+    ext->pwm_value[addr] = value;
+
+    value = pin_get_prm(pin, PIN_FREQENCY);
+    if (value) {
+#if OSAL_DEBUG
+        if (ext->pwm_frequency && value != ext->pwm_frequency) {
+            osal_debug_error("pca9685: Frequency must be same for all pins");
+        }
+#endif
+        ext->pwm_frequency = value;
+    }
 }
- */
+
+
+/**
+****************************************************************************************************
+
+   @brief Set PWM frequency for the device.
+   @anchor pca9685_set_pwm_freq
+
+   The pca9685_set_pwm_freq() function sets PWM pulse frequency for all PWM channels
+   40Hz to 1000Hz using internal 25MHz oscillator.
+
+   Notice that same frequency needs to be used for all PWM outputs of the PCA9625 chip.
+
+   @param   pin Structure representing I2C bus.
+   @param   frequency PWM frequency, typically 60 Hz for servos. Higher for LEDs.
+   @return  None.
+
+****************************************************************************************************
+*/
+static void pca9685_set_pwm_freq(struct PinsBus *bus, os_int frequency)
+{
+    os_uchar prescale_val, *p;
+
+    prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
+    p = bus->outbuf;
+
+    /* sleep
+     */
+    *(p++) = OEPI_MODE1;
+    *(p++) = 0x10;
+
+    /* multiplyer for PWM frequency.
+     */
+    *(p++) = PRE_SCALE;
+    *(p++) = prescale_val;
+
+    /* restart.
+     */
+    *(p++) = OEPI_MODE1;
+    *(p++) = 0x80;
+
+    /* totem pole (default)
+     */
+    *(p++) = OEPI_MODE1;
+    *(p++) = 0x04;
+
+    bus->outbuf_n = p - bus->outbuf;
+    bus->inbuf_n = 0;
+}
 
 
 /**
@@ -167,20 +249,26 @@ void pins_set_pwm_freq(
 */
 void pca9685_gen_req(struct PinsBusDevice *device)
 {
+    PinsBus *bus;
     PinsPca9685Ext *ext;
     os_uchar *buf, *p, current_ch;
     os_short ch_count, check_count, value;
     const os_int max_ch_at_once = 1;
 
-    osal_debug_assert(device->bus != OS_NULL);
-    buf = device->bus->outbuf;
+    bus = device->bus;
+    osal_debug_assert(bus != OS_NULL);
+
+    buf = bus->outbuf;
     ext = (PinsPca9685Ext*)device->ext;
+
+    if (ext->pwm_freq_count == 0)
+    {
+        pca9685_set_pwm_freq(bus, ext->pwm_frequency);
+        ext->pwm_freq_count = 1;
+        return;
+    }
+
     current_ch = ext->current_ch;
-
-    buf[0] = 0x06 | ((current_ch & 0x04) >> 2);
-    buf[1] = (os_uchar)((current_ch & 0x03) << 6);
-    buf[2] = 0;
-
     p = buf;
     ch_count = 0;
     check_count = PCA9685_NRO_PWM_CHANNELS;
@@ -206,8 +294,8 @@ void pca9685_gen_req(struct PinsBusDevice *device)
     }
 
     ext->current_ch = current_ch;
-    device->bus->outbuf_n = p - buf;
-    device->bus->inbuf_n = 0;
+    bus->outbuf_n = p - buf;
+    bus->inbuf_n = 0;
 }
 
 
@@ -241,7 +329,6 @@ osalStatus pca9685_proc_resp(struct PinsBusDevice *device)
     ext = (PinsPca9685Ext*)device->ext;
     current_ch = ext->current_ch;
     pwm_value = ext->pwm_value;
-
     pwm_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
 
     if (++current_ch < PINS_MAX_PCA9685_PWM) {

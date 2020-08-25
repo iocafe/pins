@@ -81,7 +81,7 @@ def write_pin_to_c_header(pin_name):
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     global known_groups, prefix, ccontent, c_prm_comment_written
-    global nro_pins, pin_nr, define_list, device_list, driver_list, bus_list
+    global nro_pins, pin_nr, define_list, device_list, driver_list, bus_list, bus_pin_list
 
     # Generate C parameter list for the pin
     c_prm_list = "PIN_RV, PIN_RV"
@@ -170,6 +170,8 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += ' PINS_DEVCONF_PTR('
         ccontent += 'pins_device_' + bus_device.replace('.',  '_')
         ccontent += ')'
+        tmp = bus_device.split('.')
+        bus_pin_list.append( (tmp[1], full_pin_name) )
 
     else:
         ccontent += ' PINS_DEVCONF_NULL'
@@ -228,6 +230,7 @@ def write_device_list(device_list, driver_list, bus_list):
         cfile.write('&' + prefix + '.' + data[1] + '.' + data[2] + ', ')
         cfile.write('&pins_bus_' +  data[4] + ', ')
         cfile.write(data[3] + ', ')
+        cfile.write('&' + data[0] + '_initialize_pin, ')
         cfile.write('&' + data[0] + '_gen_req, ')
         cfile.write('&' + data[0] + '_proc_resp, ')
         cfile.write('&' + data[0] + '_set, ')
@@ -240,7 +243,10 @@ def write_device_list(device_list, driver_list, bus_list):
     for driver_name, data in driver_list.items():
         cfile.write('    ' + driver_name + '_initialize_driver();\n')
     for device_name, data in device_list.items():
-        cfile.write('    ' + data[0] + '_initialize(&pins_device_' + data[1] + '_' + data[2] + ');\n')
+        cfile.write('    ' + data[0] + '_initialize_device(&pins_device_' + data[1] + '_' + data[2] + ');\n')
+    for pin in bus_pin_list:
+        data = device_list[pin[0]];
+        cfile.write('    ' + data[0] + '_initialize_pin(&' + pin[1] + ');\n')
     cfile.write('}\n');
 
     cfile.write('#endif\n');
@@ -263,7 +269,8 @@ def write_device_list(device_list, driver_list, bus_list):
     for device_name, data in device_list.items():
         hfile.write('\n/* ' + data[0] + ' driver functions  */\n');
         hfile.write('void ' + data[0] + '_initialize_driver(void);\n')
-        hfile.write('void ' + data[0] + '_initialize(struct PinsBusDevice *device);\n')
+        hfile.write('void ' + data[0] + '_initialize_device(struct PinsBusDevice *device);\n')
+        hfile.write('void ' + data[0] + '_initialize_pin(const struct Pin *pin);\n')
         hfile.write('void ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
@@ -388,7 +395,7 @@ def list_signals_in_file(path):
         printf ("Opening file " + path + " failed")
 
 def process_io_device(io):
-    global device_name, known_groups, prefix, signallist, device_list, driver_list, bus_list
+    global device_name, known_groups, prefix, signallist, device_list, driver_list, bus_list, bus_pin_list
     global nro_groups, group_nr, ccontent, pin_group_list, define_list
 
     device_name = io.get("name", "ioblock")
@@ -404,6 +411,7 @@ def process_io_device(io):
     device_list = {}
     driver_list = {}
     bus_list = {}
+    bus_pin_list = []
 
     hfile.write("/* " + device_name.upper() + " IO configuration structure */\n")
     hfile.write('typedef struct\n{')

@@ -365,7 +365,7 @@ void pins_init_device(
         osal_int_to_str(nbuf, sizeof(nbuf), device->spec.i2c.device_nr);
         os_strncat(buf, nbuf, sizeof(buf));
 
-        os_strncat(buf, "bus_nr=", sizeof(buf));
+        os_strncat(buf, ", bus_nr=", sizeof(buf));
         osal_int_to_str(nbuf, sizeof(nbuf), bus->spec.i2c.bus_nr);
         os_strncat(buf, nbuf, sizeof(buf));
 
@@ -806,8 +806,8 @@ static osalStatus pins_i2c_transfer(
             }
             return OSAL_COMPLETED;
         }
+        s = device->proc_resp_func(device);
     }
-    s = device->proc_resp_func(device);
     return s;
 }
 

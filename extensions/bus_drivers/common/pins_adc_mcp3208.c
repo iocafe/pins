@@ -92,9 +92,9 @@ void mcp3208_initialize_driver()
 ****************************************************************************************************
 
    @brief Initialize device
-   @anchor initialize_mcp3208
+   @anchor mcp3208_initialize_device
 
-   The mcp3208_initialize() function initializes a bus device structure for a specific
+   The mcp3208_initialize_device() function initializes a bus device structure for a specific
    MCP3208 chip.
 
    @param   device Structure representing SPI device.
@@ -102,7 +102,7 @@ void mcp3208_initialize_driver()
 
 ****************************************************************************************************
 */
-void mcp3208_initialize(struct PinsBusDevice *device)
+void mcp3208_initialize_device(struct PinsBusDevice *device)
 {
     PinsBusDeviceParams prm;
     os_short *adc_value, i;
@@ -122,6 +122,25 @@ void mcp3208_initialize(struct PinsBusDevice *device)
      */
     os_memclear(&prm, sizeof(prm));
     pins_init_device(device, &prm);
+}
+
+
+/**
+****************************************************************************************************
+
+   @brief Initialize "pin" of bus device.
+   @anchor mcp3208_initialize_pin
+
+   The mcp3208_initialize_pin() function initializes a bus device's pin. In practice this
+   function may set some data in device strucure.
+
+   @param   pin Structure representing bus device "pin".
+   @return  None.
+
+****************************************************************************************************
+*/
+void mcp3208_initialize_pin(const struct Pin *pin)
+{
 }
 
 

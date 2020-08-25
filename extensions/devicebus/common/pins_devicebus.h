@@ -62,6 +62,11 @@ typedef void pinsGenerateDeviceRequest(
 typedef osalStatus pinsProcessDeviceResponce(
     struct PinsBusDevice *device);
 
+/** Function type to initialize SPI or I2C device pin. Implemented by driver.
+ */
+typedef void pinsBusInitializePin(
+    const struct Pin *pin);
+
 /** Function type to set value to SPI or I2C device driver. Implemented by driver.
  */
 typedef osalStatus pinsBusSet(
@@ -152,6 +157,7 @@ typedef struct PinsBusDevice
 
     /** Driver function pointers. Must be fourth to seventh items in the structure.
      */
+    pinsBusInitializePin *initialize_pin_func;
     pinsGenerateDeviceRequest *gen_req_func;
     pinsProcessDeviceResponce *proc_resp_func;
     pinsBusSet *set_func;
