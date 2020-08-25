@@ -383,6 +383,10 @@ void pins_init_device(
 
         osal_info("pins", OSAL_SUCCESS, buf);
 
+        if (bus->spec.i2c.bus_nr != 1) {
+            osal_debug_error("Warning, other than I2C bus 1 selected. The bus 0 is reserved for camera, etc.");
+        }
+
         if (bus->spec.i2c.bus_nr) {
             if (bus->spec.i2c.sda != 2 ||
                 bus->spec.i2c.scl != 3)
