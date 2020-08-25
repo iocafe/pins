@@ -206,12 +206,23 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
     bus = device->bus;
     ext = (PinsPca9685Ext*)device->ext;
     p = bus->outbuf;
-    frequency = ext->pwm_frequency;
-    prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
 
     switch (ext->pwm_freq_count)
     {
         case 0:
+            *(p++) = OEPI_MODE1;
+            *(p++) = 0x00;
+            *(p++) = OEPI_MODE2;
+            *(p++) = 0x04;
+            break;
+
+        case 1:
+            os_timeslice();
+
+            frequency = ext->pwm_frequency;
+            if (frequency <= 0) frequency = 60;
+            prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
+
             /* sleep
              */
             *(p++) = OEPI_MODE1;
@@ -223,7 +234,7 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
             *(p++) = prescale_val;
             break;
 
-        case 1:
+        case 2:
             os_timeslice();
             /* restart.
              */
@@ -231,7 +242,7 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
             *(p++) = 0x80;
             break;
 
-        case 2:
+        case 3:
             os_timeslice();
             /* totem pole (default)
              */
