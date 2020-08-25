@@ -253,8 +253,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
 {
     PinsBus *bus;
     PinsPca9685Ext *ext;
-    os_uchar *buf, *p, current_ch;
-    os_int offs;
+    os_uchar *buf, *p, current_ch, offs;
     os_short ch_count, check_count, on_value = 0, off_value;
     const os_int max_ch_at_once = 1;
     osalStatus s = OSAL_SUCCESS;
@@ -279,7 +278,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     while (check_count--) {
         off_value = ext->pwm_value[current_ch];
         if (off_value >= 0) {
-            offs = OEPI_CH_MULTIPLYER * current_ch;
+            offs = (os_uchar)(OEPI_CH_MULTIPLYER * current_ch);
 
             /*  0-4095 value to turn on the pulse */
             *(p++) = OEPI_CH0_ON_L + offs;
