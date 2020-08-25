@@ -254,7 +254,8 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     PinsBus *bus;
     PinsPca9685Ext *ext;
     os_uchar *buf, *p, current_ch;
-    os_short ch_count, check_count, value;
+    os_int offs;
+    os_short ch_count, check_count, on_value = 0, off_value;
     const os_int max_ch_at_once = 1;
     osalStatus s = OSAL_SUCCESS;
 
@@ -276,17 +277,21 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     ch_count = 0;
     check_count = PCA9685_NRO_PWM_CHANNELS;
     while (check_count--) {
-        value = ext->pwm_value[current_ch];
-        if (value > 0) {
-            *(p++) = OEPI_CH0_ON_L + OEPI_CH_MULTIPLYER * current_ch;
+        off_value = ext->pwm_value[current_ch];
+        if (off_value >= 0) {
+            offs = OEPI_CH_MULTIPLYER * current_ch;
 
             /*  0-4095 value to turn on the pulse */
-            *(p++) = (os_uchar)0;
-            *(p++) = (os_uchar)0;
+            *(p++) = OEPI_CH0_ON_L + offs;
+            *(p++) = (os_uchar)on_value;
+            *(p++) = OEPI_CH0_ON_H + offs;
+            *(p++) = (os_uchar)(on_value >> 8);
 
             /*  0-4095 value to turn off the pulse */
-            *(p++) = (os_uchar)value;
-            *(p++) = (os_uchar)(value >> 8);
+            *(p++) = OEPI_CH0_OFF_L + offs;
+            *(p++) = (os_uchar)off_value;
+            *(p++) = OEPI_CH0_OFF_H + offs;
+            *(p++) = (os_uchar)(off_value >> 8);
 
             if (++ch_count >= max_ch_at_once) break;
         }
