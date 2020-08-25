@@ -790,7 +790,7 @@ static osalStatus pins_i2c_transfer(
     if (n) {
         buf = bus->outbuf;
         for (i = 0; i < n; i+=2) {
-            rval = i2cWriteByte((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
+            rval = i2cWriteByteData((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
         }
         /* rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, (unsigned)n);
         if (rval) {
