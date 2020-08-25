@@ -288,7 +288,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     buf = bus->outbuf;
     ext = (PinsPca9685Ext*)device->ext;
 
-    if (ext->pwm_freq_count <= 2)
+    if (ext->pwm_freq_count <= 3)
     {
         pca9685_set_pwm_freq(device);
         // ext->pwm_freq_count++;
