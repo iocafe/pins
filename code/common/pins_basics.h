@@ -55,6 +55,7 @@ typedef enum
     PIN_TOUCH,
     PIN_FREQENCY,
     PIN_FREQENCY_KHZ,
+    PIN_FREQENCY_MHZ,
     PIN_RESOLUTION,
     PIN_INIT,
     PIN_HPOINT,

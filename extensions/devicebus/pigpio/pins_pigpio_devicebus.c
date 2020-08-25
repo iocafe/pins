@@ -1,7 +1,7 @@
 /**
 
   @file    extensions/spi/pigpio/pins_pigpio_devicebus.c
-  @brief   SPI and I2C
+  @brief   SPI and I2C for Raspberry PI using pigpio library.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    20.8.2020
@@ -400,6 +400,12 @@ void pins_init_device(
             }
         }
 #endif
+
+        device->spec.i2c.handle = i2cOpen((unsigned)bus->spec.i2c.bus_nr,
+            (unsigned)device->spec.i2c.device_nr, (unsigned)device->spec.i2c.flags);
+        if (device->spec.i2c.handle < 0) {
+            osal_debug_error_int("bbSPIOpen failed, rval=", rval);
+        }
     }
 #endif
 }
@@ -766,12 +772,42 @@ static osalStatus pins_bus_run_spi(
 static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
+    PinsBus *bus;
     osalStatus s;
+    os_short n;
+    int rval;
 
+    bus = device->bus;
     device->gen_req_func(device);
 
+    n = bus->outbuf_n;
+    if (n) {
+        /* buf = bus->outbuf;
+        for (i = 0; i < n; i++) {
+            rval = i2cWriteByte((unsigned)device->spec.i2c.handle, buf[i]);
+        } */
+        rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, n);
+        if (rval) {
+            if (!device->spec.i2c.error_reported) {
+                osal_debug_error_int("Error writing i2c bus ", bus->spec.i2c.bus_nr);
+                device->spec.i2c.error_reported = OS_TRUE;
+            }
+            return OSAL_COMPLETED;
+        }
+    }
+
+    n = bus->inbuf_n;
+    if (n) {
+        rval = i2cReadDevice((unsigned)device->spec.i2c.handle, (char*)bus->inbuf, n);
+        if (rval) {
+            if (!device->spec.i2c.error_reported) {
+                osal_debug_error_int("Error reading 2c bus ", bus->spec.i2c.bus_nr);
+                device->spec.i2c.error_reported = OS_TRUE;
+            }
+            return OSAL_COMPLETED;
+        }
+    }
     s = device->proc_resp_func(device);
-    // wiringPiSPIDataRW(SPI_CHANNEL, buff, 3);
     return s;
 }
 
@@ -819,7 +855,6 @@ static osalStatus pins_bus_run_i2c(
 
 /* PINS_I2C */
 #endif
-
 
 #endif
 

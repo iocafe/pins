@@ -210,15 +210,17 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
    @param   device Structure representing SPI device.
    @param   addr ADC channel 0 ... 7.
    @param   value Value to set, ignored.
-   @return  None
+   @return  OSAL_STATUS if successfull. Other values indicate a hardware error, specifically
+            OSAL_STATUS_NOT_CONNECTED if SPI device is not connected.
 
 ****************************************************************************************************
 */
-void mcp3208_set(struct PinsBusDevice *device, os_short addr, os_int value)
+osalStatus mcp3208_set(struct PinsBusDevice *device, os_short addr, os_int value)
 {
     OSAL_UNUSED(device);
     OSAL_UNUSED(addr);
     OSAL_UNUSED(value);
+    return OSAL_SUCCESS;
 }
 
 

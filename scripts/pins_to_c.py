@@ -22,6 +22,7 @@ prm_type_list = {
     "touch": "PIN_TOUCH",
     "frequency": "PIN_FREQENCY",
     "frequency-kHz": "PIN_FREQENCY_KHZ",
+    "frequency-MHz": "PIN_FREQENCY_MHZ",
     "resolution": "PIN_RESOLUTION",
     "init": "PIN_INIT",
     "hpoint": "PIN_HPOINT",
@@ -265,7 +266,7 @@ def write_device_list(device_list, driver_list, bus_list):
         hfile.write('void ' + data[0] + '_initialize(struct PinsBusDevice *device);\n')
         hfile.write('void ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
-        hfile.write('void ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
+        hfile.write('osalStatus ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
         hfile.write('os_int ' + data[0] + '_get(struct PinsBusDevice *device, os_short addr);\n')
 
     # for driver_name, func_decl in driver_list.items():

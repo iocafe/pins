@@ -64,7 +64,7 @@ typedef osalStatus pinsProcessDeviceResponce(
 
 /** Function type to set value to SPI or I2C device driver. Implemented by driver.
  */
-typedef void pinsBusSet(
+typedef osalStatus pinsBusSet(
     struct PinsBusDevice *device,
     os_short addr,
     os_int value);
@@ -113,6 +113,14 @@ typedef struct PinsI2cDeviceVariables
     /** I2C bus flags.
      */
     os_ushort flags;
+
+    /** I2C device handle
+     */
+    os_int handle;
+
+    /** Repeating transer error reported, to not repeat.
+     */
+    os_boolean error_reported;
 }
 PinsI2cDeviceVariables;
 
@@ -121,7 +129,6 @@ typedef union {
     PinsI2cDeviceVariables i2c;
 }
 PinsDeviceVariables;
-
 
 
 /** Structure representing either a SPI or I2C device.

@@ -121,7 +121,11 @@ os_int pin_get_frequency(
         frequency_hz = 1000 * pin_get_prm(pin, PIN_FREQENCY_KHZ);
         if (!frequency_hz)
         {
-            frequency_hz = default_frequency;
+            frequency_hz = 1000000 * pin_get_prm(pin, PIN_FREQENCY_MHZ);
+            if (!frequency_hz)
+            {
+                frequency_hz = default_frequency;
+            }
         }
     }
     return frequency_hz;
