@@ -165,7 +165,7 @@ void pca9685_initialize_pin(const struct Pin *pin)
     osal_debug_assert(ext != OS_NULL);
 
     value = pin_get_prm(pin, PIN_INIT);
-    ext->pwm_value[addr] = value;
+    ext->pwm_value[addr] = (os_short)value;
 
     value = pin_get_prm(pin, PIN_FREQENCY);
     if (value) {
@@ -174,7 +174,7 @@ void pca9685_initialize_pin(const struct Pin *pin)
             osal_debug_error("pca9685: Frequency must be same for all pins");
         }
 #endif
-        ext->pwm_frequency = value;
+        ext->pwm_frequency = (os_short)value;
     }
 }
 
@@ -397,11 +397,11 @@ osalStatus pca9685_set(struct PinsBusDevice *device, os_short addr, os_int value
     osal_debug_assert(ext != OS_NULL);
 
     if (addr < 0 || addr >= PCA9685_NRO_PWM_CHANNELS) {
-        return -1;
+        return OSAL_STATUS_FAILED;
     }
 
     ext = (PinsPca9685Ext*)(device->ext);
-    ext->pwm_value[addr] = value;
+    ext->pwm_value[addr] = (os_short)value;
     return ext->connected ? OSAL_SUCCESS : OSAL_STATUS_NOT_CONNECTED;
 }
 
