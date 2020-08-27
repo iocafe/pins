@@ -269,7 +269,7 @@ static osalStatus pca9685_initialization_sequence(struct PinsBusDevice *device)
             break;
 
         case PCA0685_INIT_MODE_QUARY:
-            if (ext->reply_byte[2] == -1) {
+            if (ext->reply_byte[0] == -1) {
                 ext->initialization_step = PCA0685_NOT_INITIALIZED;
                 s = OSAL_STATUS_NOT_CONNECTED;
                 goto getout;
