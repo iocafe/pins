@@ -778,7 +778,7 @@ static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
     PinsBus *bus;
-    os_uchar *buf;
+    os_uchar *buf, *inbuf;
     osalStatus s;
     os_short n, i;
     int rval = -1;
@@ -815,7 +815,7 @@ static osalStatus pins_i2c_transfer(
                 if (rval < 0) break;
                 inbuf[i] = (os_uchar)rval;
             }
-            buf->inbuf_n = i;
+            bus->inbuf_n = i;
 
             if (rval < 0) {
                 if (!device->spec.i2c.error_reported) {
