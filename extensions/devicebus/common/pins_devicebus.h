@@ -195,6 +195,14 @@ typedef struct PinsSpiBusVariables
 }
 PinsSpiBusVariables;
 
+
+typedef enum PinsI2cBusOperation
+{
+    PINS_I2C_WRITE_BYTE_DATA,
+    PINS_I2C_READ_BYTE_DATA
+}
+PinsI2cBusOperation;
+
 typedef struct PinsI2cBusVariables
 {
     /** Bus pins.
@@ -204,6 +212,10 @@ typedef struct PinsI2cBusVariables
     /** i2c bus number or "bank".
      */
     os_short bus_nr;
+
+    /* I2C bus operation, like write, read
+     */
+    PinsI2cBusOperation bus_operation;
 }
 PinsI2cBusVariables;
 

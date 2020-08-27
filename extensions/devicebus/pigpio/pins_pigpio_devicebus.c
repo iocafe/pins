@@ -779,40 +779,54 @@ static osalStatus pins_i2c_transfer(
 {
     PinsBus *bus;
     os_uchar *buf;
-    osalStatus s = OSAL_SUCCESS;
+    osalStatus s;
     os_short n, i;
-    int rval;
+    int rval = -1;
 
     bus = device->bus;
     s = device->gen_req_func(device);
 
-    n = bus->outbuf_n;
-    if (n) {
-        buf = bus->outbuf;
-        for (i = 0; i < n; i+=2) {
-            rval = i2cWriteByteData((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
-        }
-        /* rval = i2cWriteDevice((unsigned)device->spec.i2c.handle, (char*)bus->outbuf, (unsigned)n);
-        if (rval) {
-            if (!device->spec.i2c.error_reported) {
-                osal_debug_error_int("Error writing i2c bus ", bus->spec.i2c.bus_nr);
-                device->spec.i2c.error_reported = OS_TRUE;
+    switch (bus->spec.i2c.bus_operation)
+    {
+        case PINS_I2C_WRITE_BYTE_DATA:
+            n = bus->outbuf_n;
+            buf = bus->outbuf;
+            for (i = 0; i < n; i+=2) {
+                rval = i2cWriteByteData((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
+                if (rval) break;
             }
-            return OSAL_COMPLETED;
-        } */
-    }
 
-    n = bus->inbuf_n;
-    if (n) {
-        rval = i2cReadDevice((unsigned)device->spec.i2c.handle, (char*)bus->inbuf, (unsigned)n);
-        if (rval) {
-            if (!device->spec.i2c.error_reported) {
-                osal_debug_error_int("Error reading 2c bus ", bus->spec.i2c.bus_nr);
-                device->spec.i2c.error_reported = OS_TRUE;
+            if (rval) {
+                if (!device->spec.i2c.error_reported) {
+                    osal_debug_error_int("i2cWriteByteData failed on bus ", bus->spec.i2c.bus_nr);
+                    device->spec.i2c.error_reported = OS_TRUE;
+                }
+                return OSAL_COMPLETED;
             }
-            return OSAL_COMPLETED;
-        }
-        s = device->proc_resp_func(device);
+            break;
+
+        case PINS_I2C_READ_BYTE_DATA:
+            n = bus->outbuf_n;
+            buf = bus->outbuf;
+            inbuf = bus->inbuf;
+
+            for (i = 0; i < n; i++) {
+                rval = i2cReadByteData((unsigned)device->spec.i2c.handle, buf[i]);
+                if (rval < 0) break;
+                inbuf[i] = (os_uchar)rval;
+            }
+            buf->inbuf_n = i;
+
+            if (rval < 0) {
+                if (!device->spec.i2c.error_reported) {
+                    osal_debug_error_int("i2cReadByteData failed on bus ", bus->spec.i2c.bus_nr);
+                    device->spec.i2c.error_reported = OS_TRUE;
+                }
+                return OSAL_COMPLETED;
+            }
+
+            s = device->proc_resp_func(device);
+            break;
     }
     return s;
 }

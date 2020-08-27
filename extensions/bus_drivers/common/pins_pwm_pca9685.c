@@ -17,6 +17,8 @@
     at 60Hz update rate.
   - Configurable push-pull or open-drain output.
 
+  I2c device address 64 (0x40) is default for Adafruit PCA9685.
+
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
@@ -34,44 +36,71 @@
 
 #define PCA9685_NRO_PWM_CHANNELS 16
 
+#define PCA9685_MAX_REPLY_BYTES 2
+
+typedef enum {
+    PCA0685_NOT_INITIALIZED = 0,
+    PCA0685_INIT_STARTING,
+    PCA0685_INIT_MODE_QUARY,
+    PCA0685_SET_PWM_FREQ,
+    PCA0685_SET_PWM_FREQ2,
+    PCA0685_INIT_FINISHED
+}
+pca9685InitStep;
+
 typedef struct PinsPca9685Ext
 {
     os_short pwm_value[PCA9685_NRO_PWM_CHANNELS];
     os_uchar current_ch;
+    os_uchar mode_1;
     os_short pwm_frequency;
-    os_short pwm_freq_count;
-    os_boolean connected;
+
+    /* Initialization sequence step and status */
+    pca9685InitStep initialization_step;
+    osalStatus init_status;
+
+    /* Byte reply 0 - 255 from device. os_short as type because -1 indicates not set */
+    os_short reply_byte[PCA9685_MAX_REPLY_BYTES];
+
+    // os_boolean connected;
 }
 PinsPca9685Ext;
 
 
-/** I2c device address, 0x40 is default for Adafruit PCA9685.
+/** Registers.
  */
-/*static int
-    oepwm_i2c_address = 0x40;
-*/
-#define OEPI_MODE1 0x00			//Mode  register  1
-#define OEPI_MODE2 0x01			//Mode  register  2
-#define PRE_SCALE 0xFE		//prescaler for output frequency
-#define CLOCK_FREQ 25000000.0 //25MHz default osc clock
+
+#define PCA9685_MODE1 0x00			//Mode  register  1
+#define PCA9685_MODE2 0x01			//Mode  register  2
+#define PCA9685_PRE_SCALE 0xFE		//prescaler for output frequency
+#define PCA9685_CLOCK_FREQ 25000000.0 //25MHz default osc clock
 
 /* #define SUBADR1 0x02		//I2C-bus subaddress 1
 #define SUBADR2 0x03		//I2C-bus subaddress 2
 #define SUBADR3 0x04		//I2C-bus subaddress 3
 #define ALLCALLADR 0x05     //LED All Call I2C-bus address
 */
-#define OEPI_CH0 0x6			//OEPI_CH0 start register
-#define OEPI_CH0_ON_L 0x6		//OEPI_CH0 output and brightness control byte 0
-#define OEPI_CH0_ON_H 0x7		//OEPI_CH0 output and brightness control byte 1
-#define OEPI_CH0_OFF_L 0x8		//OEPI_CH0 output and brightness control byte 2
-#define OEPI_CH0_OFF_H 0x9		//OEPI_CH0 output and brightness control byte 3
-#define OEPI_CH_MULTIPLYER 4	// For the other 15 channels
+#define PCA9685_CH0 0x6			//CH0 start register
+#define PCA9685_CH0_ON_L 0x6		//CH0 output and brightness control byte 0
+#define PCA9685_CH0_ON_H 0x7		//CH0 output and brightness control byte 1
+#define PCA9685_CH0_OFF_L 0x8		//CH0 output and brightness control byte 2
+#define PCA9685_CH0_OFF_H 0x9		//CH0 output and brightness control byte 3
+#define PCA9685_CH_MULTIPLYER 4	// For the other 15 channels
 
-/* #define ALLLED_ON_L 0xFA    //load all the LEDn_ON registers, byte 0 (turn 0-7 channels on)
-#define ALLLED_ON_H 0xFB	//load all the LEDn_ON registers, byte 1 (turn 8-15 channels on)
-#define ALLLED_OFF_L 0xFC	//load all the LEDn_OFF registers, byte 0 (turn 0-7 channels off)
-#define ALLLED_OFF_H 0xFD	//load all the LEDn_OFF registers, byte 1 (turn 8-15 channels off)
-*/
+#define PCA9685_ALL_LED_ON_L 0xFA    //load all the LEDn_ON registers, byte 0 (turn 0-7 channels on)
+#define PCA9685_ALL_LED_ON_H 0xFB	//load all the LEDn_ON registers, byte 1 (turn 8-15 channels on)
+#define PCA9685_ALL_LED_OFF_L 0xFC	//load all the LEDn_OFF registers, byte 0 (turn 0-7 channels off)
+#define PCA9685_ALL_LED_OFF_H 0xFD	//load all the LEDn_OFF registers, byte 1 (turn 8-15 channels off)
+
+/* Mode bits
+ */
+#define PCA9685_RESTART 0x80
+#define PCA9685_SLEEP   0x10
+#define PCA9685_ALLCALL 0x01
+#define PCA9685_INVRT   0x10
+#define PCA9685_OUTDRV  0x04
+
+
 
 static PinsPca9685Ext pca9685_ext[PINS_MAX_PCA9685_PWM];
 static os_short pca9685_nro_chips;
@@ -125,7 +154,7 @@ void pca9685_initialize_device(struct PinsBusDevice *device)
     }
 
 // First test without error handling
-((PinsPca9685Ext*)(device->ext))->connected = OS_TRUE;
+// ((PinsPca9685Ext*)(device->ext))->connected = OS_TRUE;
 
     /* Call platform specific device initialization.
      */
@@ -171,7 +200,7 @@ void pca9685_initialize_pin(const struct Pin *pin)
     if (value) {
 #if OSAL_DEBUG
         if (ext->pwm_frequency && value != ext->pwm_frequency) {
-            osal_debug_error("pca9685: Frequency must be same for all pins");
+            osal_debug_error("pca9685: PWM frequency must be same for all the pins");
         }
 #endif
         ext->pwm_frequency = (os_short)value;
@@ -183,36 +212,108 @@ void pca9685_initialize_pin(const struct Pin *pin)
 ****************************************************************************************************
 
    @brief Set PWM frequency for the device.
-   @anchor pca9685_set_pwm_freq
+   @anchor pca9685_initialization_sequence
 
-   The pca9685_set_pwm_freq() function sets PWM pulse frequency for all PWM channels
+   The pca9685_initialization_sequence() function sets PWM pulse frequency for all PWM channels
    40Hz to 1000Hz using internal 25MHz oscillator.
 
    Notice that same frequency needs to be used for all PWM outputs of the PCA9625 chip.
 
    /............ @param   pin Structure representing I2C bus.
    ........ @param   frequency PWM frequency, typically 60 Hz for servos. Higher for LEDs.
-   @return  None.
+
+   @return  OSAL_COMPLETE if initialization sequence has been completed successfully.
+            OSAL_SUCCESS if installation sequence step is prepared.
+            Other values indicate an installation sequence error.
 
 ****************************************************************************************************
 */
-static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
+static osalStatus pca9685_initialization_sequence(struct PinsBusDevice *device)
 {
     struct PinsBus *bus;
     PinsPca9685Ext *ext;
     os_uchar prescale_val, *p;
     os_int frequency;
+    osalStatus s = OSAL_SUCCESS;
 
     bus = device->bus;
     ext = (PinsPca9685Ext*)device->ext;
     p = bus->outbuf;
 
-    switch (ext->pwm_freq_count)
+    os_timeslice();
+
+    switch (ext->initialization_step)
     {
-        case 0:
-            *(p++) = OEPI_MODE1;
+        case PCA0685_NOT_INITIALIZED:
+            *(p++) = PCA9685_ALL_LED_ON_L;
             *(p++) = 0x00;
-            *(p++) = OEPI_MODE2;
+            *(p++) = PCA9685_ALL_LED_ON_H;
+            *(p++) = 0x00;
+            *(p++) = PCA9685_ALL_LED_OFF_L;
+            *(p++) = 0x00;
+            *(p++) = PCA9685_ALL_LED_OFF_H;
+            *(p++) = 0x00;
+
+            *(p++) = PCA9685_MODE2;
+            *(p++) = PCA9685_OUTDRV;
+            *(p++) = PCA9685_MODE1;
+            *(p++) = PCA9685_ALLCALL;
+            bus->spec.i2c.bus_operation = PINS_I2C_WRITE_BYTE_DATA;
+            break;
+
+        case PCA0685_INIT_STARTING:
+            *(p++) = PCA9685_MODE1;
+            *(p++) = PCA9685_MODE2;
+            bus->spec.i2c.bus_operation = PINS_I2C_READ_BYTE_DATA;
+            ext->reply_byte[0] = ext->reply_byte[1] = -1;
+            break;
+
+        case PCA0685_INIT_MODE_QUARY:
+            if (ext->reply_byte[2] == -1) {
+                ext->initialization_step = PCA0685_NOT_INITIALIZED;
+                s = OSAL_STATUS_NOT_CONNECTED;
+                goto getout;
+            }
+            ext->mode_1 = (os_uchar)ext->reply_byte[0] & ~PCA9685_RESTART;
+
+            *(p++) = PCA9685_MODE1;
+            *(p++) = PCA9685_RESTART | ext->mode_1;
+            bus->spec.i2c.bus_operation = PINS_I2C_WRITE_BYTE_DATA;
+            break;
+
+        case PCA0685_SET_PWM_FREQ:
+            frequency = ext->pwm_frequency;
+            if (frequency <= 0) frequency = 60;
+            prescale_val = (unsigned char)((PCA9685_CLOCK_FREQ / (4096 * frequency)) - 1);
+
+            *(p++) = PCA9685_MODE1;
+            *(p++) = PCA9685_SLEEP | ext->mode_1;
+
+            *(p++) = PCA9685_PRE_SCALE;
+            *(p++) = prescale_val;
+
+            *(p++) = PCA9685_MODE1;
+            *(p++) = ext->mode_1;
+            break;
+
+        case PCA0685_SET_PWM_FREQ2:
+            *(p++) = PCA9685_RESTART;
+            *(p++) = ext->mode_1;
+            break;
+
+        default:
+        case PCA0685_INIT_FINISHED:
+            s = OSAL_COMPLETED;
+            break;
+
+
+#if 0
+
+xxxx
+        case 0:
+            *(p++) = PCA9685_MODE1;
+            *(p++) = 0x00;
+            *(p++) = PCA9685_MODE2;
             *(p++) = 0x04;
             break;
 
@@ -221,16 +322,16 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
 
             frequency = ext->pwm_frequency;
             if (frequency <= 0) frequency = 60;
-            prescale_val = (unsigned char)((CLOCK_FREQ / 4096 / frequency) - 1);
+            prescale_val = (unsigned char)((PCA9685_CLOCK_FREQ / 4096 / frequency) - 1);
 
             /* sleep
              */
-            *(p++) = OEPI_MODE1;
+            *(p++) = PCA9685_MODE1;
             *(p++) = 0x10;
 
             /* multiplyer for PWM frequency.
              */
-            *(p++) = PRE_SCALE;
+            *(p++) = PCA9685_PRE_SCALE;
             *(p++) = prescale_val;
             break;
 
@@ -238,7 +339,7 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
             os_timeslice();
             /* restart.
              */
-            *(p++) = OEPI_MODE1;
+            *(p++) = PCA9685_MODE1;
             *(p++) = 0x80;
             break;
 
@@ -246,14 +347,17 @@ static void pca9685_set_pwm_freq(struct PinsBusDevice *device)
             os_timeslice();
             /* totem pole (default)
              */
-            *(p++) = OEPI_MODE2;
+            *(p++) = PCA9685_MODE2;
             *(p++) = 0x04;
             break;
+#endif
     }
 
-    ext->pwm_freq_count++;
+    ext->initialization_step++;
+
+getout:
     bus->outbuf_n = (os_short)(p - bus->outbuf);
-    bus->inbuf_n = 0;
+    return s;
 }
 
 
@@ -288,11 +392,12 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     buf = bus->outbuf;
     ext = (PinsPca9685Ext*)device->ext;
 
-    if (ext->pwm_freq_count <= 3)
+    if (ext->init_status != OSAL_COMPLETED)
     {
-        pca9685_set_pwm_freq(device);
-        // ext->pwm_freq_count++;
-        return s;
+        ext->init_status = pca9685_initialization_sequence(device);
+        if (ext->init_status != OSAL_COMPLETED) {
+            return ext->init_status;
+        }
     }
 
     current_ch = ext->current_ch;
@@ -302,18 +407,18 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     while (check_count--) {
         off_value = ext->pwm_value[current_ch];
         if (off_value >= 0) {
-            offs = (os_uchar)(OEPI_CH_MULTIPLYER * current_ch);
+            offs = (os_uchar)(PCA9685_CH_MULTIPLYER * current_ch);
 
             /*  0-4095 value to turn on the pulse */
-            *(p++) = OEPI_CH0_ON_L + offs;
+            *(p++) = PCA9685_CH0_ON_L + offs;
             *(p++) = (os_uchar)on_value;
-            *(p++) = OEPI_CH0_ON_H + offs;
+            *(p++) = PCA9685_CH0_ON_H + offs;
             *(p++) = (os_uchar)(on_value >> 8);
 
             /*  0-4095 value to turn off the pulse */
-            *(p++) = OEPI_CH0_OFF_L + offs;
+            *(p++) = PCA9685_CH0_OFF_L + offs;
             *(p++) = (os_uchar)off_value;
-            *(p++) = OEPI_CH0_OFF_H + offs;
+            *(p++) = PCA9685_CH0_OFF_H + offs;
             *(p++) = (os_uchar)(off_value >> 8);
 
             if (++ch_count >= max_ch_at_once) break;
@@ -327,7 +432,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
 
     ext->current_ch = current_ch;
     bus->outbuf_n = (os_short)(p - buf);
-    bus->inbuf_n = 0;
+    bus->spec.i2c.bus_operation = PINS_I2C_WRITE_BYTE_DATA;
     return s;
 }
 
@@ -354,13 +459,22 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
 */
 osalStatus pca9685_proc_resp(struct PinsBusDevice *device)
 {
+    PinsBus *bus;
     PinsPca9685Ext *ext;
-    os_uchar *buf, current_ch;
-    os_short *pwm_value;
+    os_short i;
 
-    buf = device->bus->inbuf;
+    bus = device->bus;
     ext = (PinsPca9685Ext*)device->ext;
-    current_ch = ext->current_ch;
+
+    /* Save byte reply */
+    if (bus->inbuf_n <= PCA9685_MAX_REPLY_BYTES)
+    {
+        for (i = 0; i<bus->inbuf_n; i++) {
+            ext->reply_byte[i] = bus->inbuf[i];
+        }
+    }
+
+    /* current_ch = ext->current_ch;
     pwm_value = ext->pwm_value;
     pwm_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
 
@@ -370,6 +484,7 @@ osalStatus pca9685_proc_resp(struct PinsBusDevice *device)
     }
 
     ext->current_ch = 0;
+    */
     return OSAL_COMPLETED;
 }
 
@@ -402,7 +517,8 @@ osalStatus pca9685_set(struct PinsBusDevice *device, os_short addr, os_int value
 
     ext = (PinsPca9685Ext*)(device->ext);
     ext->pwm_value[addr] = (os_short)value;
-    return ext->connected ? OSAL_SUCCESS : OSAL_STATUS_NOT_CONNECTED;
+    return ext->initialization_step == PCA0685_INIT_FINISHED
+        ? OSAL_SUCCESS : OSAL_STATUS_NOT_CONNECTED;
 }
 
 
@@ -426,7 +542,8 @@ os_int pca9685_get(struct PinsBusDevice *device, os_short addr)
     ext = (PinsPca9685Ext*)(device->ext);
     osal_debug_assert(ext != OS_NULL);
 
-    if (addr < 0 || addr >= PCA9685_NRO_PWM_CHANNELS || !ext->connected)
+    if (addr < 0 || addr >= PCA9685_NRO_PWM_CHANNELS ||
+        ext->initialization_step != PCA0685_INIT_FINISHED)
     {
         return -1;
     }
