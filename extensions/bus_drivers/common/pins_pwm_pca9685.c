@@ -404,7 +404,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
     p = buf;
     ch_count = 0;
     check_count = PCA9685_NRO_PWM_CHANNELS;
-    while (check_count--) {
+    while (check_count-- && ch_count < max_ch_at_once) {
         off_value = ext->pwm_value[current_ch];
         if (off_value >= 0) {
             offs = (os_uchar)(PCA9685_CH_MULTIPLYER * current_ch);
@@ -421,7 +421,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
             *(p++) = PCA9685_CH0_OFF_H + offs;
             *(p++) = (os_uchar)(off_value >> 8);
 
-            if (++ch_count >= max_ch_at_once) break;
+            ++ch_count;
         }
 
         if (++current_ch >= PCA9685_NRO_PWM_CHANNELS) {
