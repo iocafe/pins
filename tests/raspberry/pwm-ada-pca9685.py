@@ -7,11 +7,16 @@ import time
 
 # Import the PCA9685 module.
 import Adafruit_PCA9685
+import Adafruit_GPIO.I2C as I2C
 
+device = I2C.get_i2c_device(0x00)
+device.writeRaw8(0x06)
 
 # Uncomment to enable debug output.
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
+
+
 
 # Initialise the PCA9685 using the default address (0x40).
 pwm = Adafruit_PCA9685.PCA9685()

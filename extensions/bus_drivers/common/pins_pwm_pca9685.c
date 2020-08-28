@@ -44,7 +44,9 @@ typedef enum {
     PCA0685_INIT_MODE_QUARY,
     PCA0685_SET_PWM_FREQ,
     PCA0685_SET_PWM_FREQ2,
-    PCA0685_INIT_FINISHED
+    PCA0685_INIT_FINISHED,
+
+    PCA0685_RESET_I2C_BUS
 }
 pca9685InitStep;
 
@@ -258,6 +260,7 @@ static osalStatus pca9685_initialization_sequence(struct PinsBusDevice *device)
             *(p++) = PCA9685_OUTDRV;
             *(p++) = PCA9685_MODE1;
             *(p++) = PCA9685_ALLCALL;
+
             bus->spec.i2c.bus_operation = PINS_I2C_WRITE_BYTE_DATA;
             break;
 
@@ -270,7 +273,7 @@ static osalStatus pca9685_initialization_sequence(struct PinsBusDevice *device)
 
         case PCA0685_INIT_MODE_QUARY:
             if (ext->reply_byte[0] == -1) {
-                ext->initialization_step = PCA0685_NOT_INITIALIZED;
+                ext->initialization_step = PCA0685_RESET_I2C_BUS; // PCA0685_NOT_INITIALIZED;
                 s = OSAL_STATUS_NOT_CONNECTED;
                 goto getout;
             }
@@ -305,6 +308,11 @@ static osalStatus pca9685_initialization_sequence(struct PinsBusDevice *device)
         case PCA0685_INIT_FINISHED:
             s = OSAL_COMPLETED;
             break;
+
+        case PCA0685_RESET_I2C_BUS:
+            ext->initialization_step = PCA0685_NOT_INITIALIZED;
+            s = OSAL_STATUS_NOT_CONNECTED;
+            goto getout;
 
 
 #if 0

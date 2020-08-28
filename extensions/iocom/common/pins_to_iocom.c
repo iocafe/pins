@@ -196,7 +196,17 @@ void forward_signal_change_to_io_pin(
     if (state_bits & OSAL_STATE_CONNECTED)
     {
         pin = (const Pin *)sig->ptr;
+
+#if PINS_SPI || PINS_I2C
+        if (pin->bus_device) {
+            pin->bus_device->set_func(pin->bus_device, pin->addr, x);
+        }
+        else {
+            pin_ll_set(pin, x);
+        }
+#else
         pin_ll_set(pin, x);
+#endif
         *(os_int*)pin->prm = x;
     }
 }
