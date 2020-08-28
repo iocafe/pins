@@ -159,7 +159,7 @@ osal_debug_error("planning to OBSOLETE this function, replaced by more efficient
             }
         }
 
-        /* We found mathing memory block, no need to check further.
+        /* We found a matching memory block, no need to check further.
          */
         break;
     }
