@@ -1,10 +1,12 @@
 /**
 
-  @file    extensions/camera/windows/pins_windows_raspi_camera.cpp
-  @brief   Windows USB camera wrapper.
+  @file    extensions/camera/linux/pins_linux_usb_camera.cpp
+  @brief   Linux USB camera wrapper.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    28.4.2020
+  @date    29.8.2020
+
+  Credits to example code by Mohamed Thalib and Søren Holm. https://github.com/sgh/v4l2
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -14,19 +16,18 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_RASPI_CAMERA
-#include "raspicam/raspicam.h"
+#include <malloc.h>
+#if PINS_CAMERA == PINS_USB_CAMERA
 
+#include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
 
 #define TESTSUM_N 20
 
-/* Raspberry specific extensions to PinsCamera structure
+/* Wrapper specific extensions to PinsCamera structure
  */
 typedef struct PinsCameraExt
 {
-    raspicam::RaspiCam *cam;
-
     os_uchar *buf;
     os_memsz alloc_sz;
     os_int w;
@@ -42,23 +43,22 @@ typedef struct PinsCameraExt
 }
 PinsCameraExt;
 
-#define TCAM c->ext->cam
-
 
 /* Forward referred static functions.
  */
-static void raspi_cam_stop(
+static void usb_cam_stop(
     pinsCamera *c);
 
-static void raspi_cam_check_image_dims(
+static void usb_cam_check_image_dims(
     pinsCamera *c);
 
-static void raspi_cam_task(
+static void usb_cam_task(
     void *prm,
     osalEvent done);
 
-static void raspi_cam_set_parameters(
+static void usb_cam_set_parameters(
     pinsCamera *c,
+    videoInput *VI,
     os_int camera_nr);
 
 
@@ -66,16 +66,16 @@ static void raspi_cam_set_parameters(
 ****************************************************************************************************
 
   @brief Initialize global variables for cameras.
-  @anchor raspi_cam_initialize
+  @anchor usb_cam_initialize
 
-  The raspi_cam_initialize() clear global variables for the camera(s). This is not needed for
+  The usb_cam_initialize() clear global variables for the camera(s). This is not needed for
   Windows USB camera, just filler.
 
   @return  None
 
 ****************************************************************************************************
 */
-static void raspi_cam_initialize(
+static void usb_cam_initialize(
     void)
 {
 }
@@ -85,9 +85,9 @@ static void raspi_cam_initialize(
 ****************************************************************************************************
 
   @brief Get information about available cameras.
-  @anchor raspi_cam_enumerate_cameras
+  @anchor usb_cam_enumerate_cameras
 
-  The raspi_cam_enumerate_cameras() function returns number of cameras currently available
+  The usb_cam_enumerate_cameras() function returns number of cameras currently available
   and optionally camera information.
 
   @param   camera_info Where to store pointer to camera info. The argument can be OS_NULL if
@@ -101,12 +101,10 @@ static void raspi_cam_initialize(
 
 ****************************************************************************************************
 */
-static os_int raspi_cam_enumerate_cameras(
+static os_int usb_cam_enumerate_cameras(
     pinsCameraInfo **camera_info)
 {
-    if (camera_info) {
-        *camera_info = OS_NULL;
-    }
+    if (camera_info) *camera_info = OS_NULL;
     return 1;
 }
 
@@ -114,17 +112,18 @@ static os_int raspi_cam_enumerate_cameras(
 /**
 ****************************************************************************************************
 
-  @brief Set up for a Raspberry camera.
-  @anchor raspi_cam_open
+  @brief Open the camera, set it up.
+  @anchor usb_cam_open
 
-  The raspi_cam_open() function prepares pinsCamera structure for use.
+  The usb_cam_open() sets ip camera for use. This function is called from application trough
+  camera interface pins_usb_camera_iface.open().
 
   @param   c Pointer to camera structure.
   @return  OSAL_SUCCESS if all is fine. Other return values indicate an error.
 
 ****************************************************************************************************
 */
-static osalStatus raspi_cam_open(
+static osalStatus usb_cam_open(
     pinsCamera *c,
     const pinsCameraParams *prm)
 {
@@ -134,7 +133,7 @@ static osalStatus raspi_cam_open(
     c->camera_pin = prm->camera_pin;
     c->callback_func = prm->callback_func;
     c->callback_context = prm->callback_context;
-    c->iface = &pins_raspi_camera_iface;
+    c->iface = &pins_usb_camera_iface;
 
     c->ext = (PinsCameraExt*)os_malloc(sizeof(PinsCameraExt), OS_NULL);
     if (c->ext == OS_NULL) {
@@ -153,25 +152,27 @@ static osalStatus raspi_cam_open(
 ****************************************************************************************************
 
   @brief Close the camera (release resources).
-  @anchor raspi_cam_close
+  @anchor usb_cam_close
 
-  The raspi_cam_close() stops the video and releases any resources reserved for the camera.
-  This function is called from application trough camera interface pins_raspi_camera_iface.close().
+  The usb_cam_close() stops the video and releases any resources reserved for the camera.
+  This function is called from application trough camera interface pins_usb_camera_iface.close().
 
   @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
 */
-static void raspi_cam_close(
+static void usb_cam_close(
     pinsCamera *c)
 {
-    raspi_cam_stop(c);
+    usb_cam_stop(c);
 
-    if (c->ext) {
+    if (c->ext)
+    {
         if (c->ext->buf) {
             os_free(c->ext->buf, c->ext->alloc_sz);
         }
+
         os_free(c->ext, sizeof(PinsCameraExt));
         c->ext = OS_NULL;
     }
@@ -182,25 +183,30 @@ static void raspi_cam_close(
 ****************************************************************************************************
 
   @brief Start vido stream.
-  @anchor raspi_cam_start
+  @anchor usb_cam_start
 
-  The raspi_cam_start() function creates thread which transfers camera images.
-  This function is called from application trough camera interface pins_raspi_camera_iface.start().
+  The usb_cam_start() starts the video. This function is called from application trough
+  camera interface pins_usb_camera_iface.start().
 
   @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
 */
-static void raspi_cam_start(
+static void usb_cam_start(
     pinsCamera *c)
 {
     osalThreadOptParams opt;
     if (c->camera_thread) return;
+
+    /* Create thread that transfers camera frames.
+     */
     os_memclear(&opt, sizeof(opt));
     opt.priority = OSAL_THREAD_PRIORITY_LOW;
-    opt.thread_name = "raspicam";
-    c->camera_thread = osal_thread_create(raspi_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
+    opt.thread_name = "usbcam";
+    opt.pin_to_core = OS_TRUE;
+    opt.pin_to_core_nr = 0;
+    c->camera_thread = osal_thread_create(usb_cam_task, c, &opt, OSAL_THREAD_ATTACHED);
 }
 
 
@@ -208,17 +214,17 @@ static void raspi_cam_start(
 ****************************************************************************************************
 
   @brief Stop vido stream.
-  @anchor raspi_cam_stop
+  @anchor usb_cam_stop
 
-  The raspi_cam_stop() stops the video. This function is called from application trough
-  camera interface pins_raspi_camera_iface.stop().
+  The usb_cam_stop() stops the video. This function is called from application trough
+  camera interface pins_usb_camera_iface.stop().
 
   @param   c Pointer to camera structure.
   @return  None
 
 ****************************************************************************************************
 */
-static void raspi_cam_stop(
+static void usb_cam_stop(
     pinsCamera *c)
 {
     if (c->camera_thread == OS_NULL) return;
@@ -234,10 +240,10 @@ static void raspi_cam_stop(
 ****************************************************************************************************
 
   @brief Set camera parameter.
-  @anchor raspi_cam_set_parameter
+  @anchor usb_cam_set_parameter
 
-  The raspi_cam_set_parameter() sets value of a camera parameter. This function is called from
-  application trough camera interface pins_raspi_camera_iface.set_parameter().
+  The usb_cam_set_parameter() sets value of a camera parameter. This function is called from
+  application trough camera interface pins_usb_camera_iface.set_parameter().
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
@@ -246,7 +252,7 @@ static void raspi_cam_stop(
 
 ****************************************************************************************************
 */
-static void raspi_cam_set_parameter(
+static void usb_cam_set_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix,
     os_long x)
@@ -266,7 +272,7 @@ static void raspi_cam_set_parameter(
 
         case PINS_CAM_IMG_WIDTH:
         case PINS_CAM_IMG_HEIGHT:
-            raspi_cam_check_image_dims(c);
+            usb_cam_check_image_dims(c);
             c->ext->reconfigure_camera = OS_TRUE;
             break;
 
@@ -282,9 +288,9 @@ static void raspi_cam_set_parameter(
 ****************************************************************************************************
 
   @brief Check that image dimensions are valid for camera.
-  @anchor raspi_cam_check_image_dims
+  @anchor usb_cam_check_image_dims
 
-  The raspi_cam_check_image_dims() makes sure that image width is legimate and selects closest
+  The usb_cam_check_image_dims() makes sure that image width is legimate and selects closest
   supported image width. Then image height is forced to match the image width. If multiple image
   heights are supported for given image with, one matching closest to current height setting
   is selected.
@@ -294,7 +300,7 @@ static void raspi_cam_set_parameter(
 
 ****************************************************************************************************
 */
-static void raspi_cam_check_image_dims(
+static void usb_cam_check_image_dims(
     pinsCamera *c)
 {
     os_int w, h;
@@ -316,10 +322,10 @@ static void raspi_cam_check_image_dims(
 ****************************************************************************************************
 
   @brief Get camera parameter.
-  @anchor raspi_cam_get_parameter
+  @anchor usb_cam_get_parameter
 
-  The raspi_cam_get_parameter() gets value of a camera parameter. This function is called from
-  application trough camera interface pins_raspi_camera_iface.get_parameter().
+  The usb_cam_get_parameter() gets value of a camera parameter. This function is called from
+  application trough camera interface pins_usb_camera_iface.get_parameter().
 
   @param   c Pointer to camera structure.
   @param   ix Parameter index, see enumeration pinsCameraParamIx.
@@ -327,7 +333,7 @@ static void raspi_cam_check_image_dims(
 
 ****************************************************************************************************
 */
-static os_long raspi_cam_get_parameter(
+static os_long usb_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
 {
@@ -341,9 +347,9 @@ static os_long raspi_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor raspi_cam_finalize_camera_photo
+  @anchor usb_cam_finalize_camera_photo
 
-  The raspi_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The usb_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   @param   c Pointer to camera structure.
@@ -352,7 +358,7 @@ static os_long raspi_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static osalStatus raspi_cam_finalize_camera_photo(
+static osalStatus usb_cam_finalize_camera_photo(
     pinsCamera *c)
 {
     pinsPhoto photo;
@@ -370,18 +376,10 @@ static osalStatus raspi_cam_finalize_camera_photo(
     photo.camera = c;
     photo.data = c->ext->buf;
     photo.byte_w = w * c->ext->bytes_per_pix;
-    switch (c->ext->bytes_per_pix)
-    {
-        case 1: photo.format = OSAL_GRAYSCALE8; break;
-        case 2: photo.format = OSAL_GRAYSCALE16; break;
-        case 3: photo.format = OSAL_RGB24; break;
-        case 4: photo.format = OSAL_RGBA32; break;
-
-    }
-
+    photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
 
-#if 0
+#if 1
     os_int y, h2, count, i;
     os_uchar *top, *bottom, u, *p;
     os_ulong testsum = 1234;
@@ -429,7 +427,7 @@ static osalStatus raspi_cam_finalize_camera_photo(
     /* This can be done here or by VI->getPixels()
        First flip image, top to bottom.
      */
-    os_uchar *tmp = (os_uchar*)alloca(photo.byte_w);
+    os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
     h2 = h/2;
     for (y = 0; y<h2; y++) {
         top = photo.data + photo.byte_w * (size_t)y;
@@ -453,21 +451,28 @@ static osalStatus raspi_cam_finalize_camera_photo(
     return OSAL_SUCCESS;
 }
 
+static void usb_cam_stop_event(int deviceID, void *userData)
+{
+    videoInput *VI = &videoInput::getInstance();
+
+    VI->closeDevice(deviceID);
+}
+
 
 /**
 ****************************************************************************************************
 
   @brief Make sure that buffer is large enough for image including header.
-  @anchor raspi_cam_allocate_buffer
+  @anchor usb_cam_allocate_buffer
 
-  The raspi_cam_allocate_buffer() function...
+  The usb_cam_allocate_buffer() function...
 
   @param   c Pointer to camera structure.
   @return  None.
 
 ****************************************************************************************************
 */
-static osalStatus raspi_cam_allocate_buffer(
+static osalStatus usb_cam_allocate_buffer(
     pinsCamera *c)
 {
     os_int sz;
@@ -494,9 +499,9 @@ static osalStatus raspi_cam_allocate_buffer(
 ****************************************************************************************************
 
   @brief Thread to process camera data.
-  @anchor raspi_cam_task
+  @anchor usb_cam_task
 
-  The raspi_cam_task() thread to process data from camera.
+  The usb_cam_task() thread to process data from camera.
 
   @param   prm Pointer to pinsCamera structure.
   @param   done Even to be set to allow thread which created this one to proceed.
@@ -504,16 +509,18 @@ static osalStatus raspi_cam_allocate_buffer(
 
 ****************************************************************************************************
 */
-static void raspi_cam_task(
+static void usb_cam_task(
     void *prm,
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, sz, w, h, fr;
-    os_int bytes_per_line, bytes_per_pix;
+    os_int camera_nr, nro_cameras, w, h, fr;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
+
+
+    videoInput *VI = &videoInput::getInstance();
 
     while (!c->stop_thread && osal_go())
     {
@@ -521,67 +528,89 @@ static void raspi_cam_task(
         if (camera_nr < 0) camera_nr = 0;
         c->camera_nr = camera_nr;
 
+        nro_cameras = 1;
+        if(camera_nr >= nro_cameras) {
+            osal_debug_error_int("usb_cam_task: Camera number too big", camera_nr);
+            goto tryagain;
+        }
+
         w = c->ext->prm[PINS_CAM_IMG_WIDTH];
         h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
         fr = c->ext->prm[PINS_CAM_FRAMERATE];
         if (fr <= 0) fr = 30;
 
-        TCAM = new raspicam::RaspiCam;
-        raspi_cam_set_parameters(c, camera_nr);
-        if (!TCAM->open())
-        {
-            osal_debug_error("Opening raspi cam failed");
-            goto tryagain;
-        }
-        c->ext->reconfigure_camera = OS_FALSE;
+    fd = open("/dev/video0",O_RDWR);
+    if (!fd) {
+        perror("Error opening device");
+        exit (EXIT_FAILURE);
+    }
+    set_input();
+    get_info();
+    get_video_info();
 
+
+        /* if(!VI->setupDevice(camera_nr, w, h, fr))
+        {
+            osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
+            goto tryagain;
+        } */
+
+        usb_cam_set_parameters(c, VI, camera_nr);
+
+        VI->setEmergencyStopEvent(camera_nr, NULL, usb_cam_stop_event);
+        c->ext->reconfigure_camera = OS_FALSE;
         while (!c->stop_thread && osal_go())
         {
-            TCAM->grab();
-            w = TCAM->getWidth();
-            h = TCAM->getHeight();
-            sz = TCAM->getImageBufferSize();
-            if (w < 10 || h < 10 || sz < 100) {os_sleep(50); continue;}
-            bytes_per_line = (sz+h-1) / h;
-            bytes_per_pix = bytes_per_line / w;
-            if (bytes_per_pix < 1 || bytes_per_pix > 4) {os_sleep(50); continue;}
-            w = bytes_per_line / bytes_per_pix;
+             if(VI->isFrameNew(camera_nr))
+             {
+                 c->ext->w = VI->getWidth(camera_nr);
+                 c->ext->h = VI->getHeight(camera_nr);
+                 c->ext->bytes_per_pix = 3;
 
-            c->ext->w = w;
-            c->ext->h = h;
-            c->ext->bytes_per_pix = bytes_per_pix;
+                 if (usb_cam_allocate_buffer(c)) {
+                     VI->closeDevice(camera_nr);
+                     goto getout;
+                 }
 
-            if (sz > c->ext->alloc_sz) {
-                if (raspi_cam_allocate_buffer(c)) break;
+                 /* Two last arguments are correction of RedAndBlue flipping
+                    flipRedAndBlue and vertical flipping flipImage
+                  */
+#if 1
+                 VI->getPixels(camera_nr, c->ext->buf, false, false);
+#else
+                 VI->getPixels(camera_nr, c->ext->buf, true, true);
+#endif
+                 if (usb_cam_finalize_camera_photo(c)) {
+                    os_timeslice();
+                 }
+            }
+            os_timeslice();
+
+            if(!VI->isDeviceSetup(camera_nr)) {
+                break;
             }
 
-
-            TCAM->retrieve(c->ext->buf);
-
-             if (raspi_cam_finalize_camera_photo(c)) {
-                os_timeslice();
-             }
-
             if (c->ext->prm_changed) {
-                if (os_has_elapsed(&c->ext->prm_timer, 50)) {
+                if (os_has_elapsed(&c->ext->prm_timer, 50))
+                {
                     if (c->ext->reconfigure_camera) {
                         break;
                     }
-                    raspi_cam_set_parameters(c, camera_nr);
+                    usb_cam_set_parameters(c, VI, camera_nr);
                 }
             }
         }
 
-tryagain:
-        if (TCAM) {
-            TCAM->release(); delete TCAM; TCAM = OS_NULL;
+        if (VI->isDeviceSetup(camera_nr))
+        {
+            VI->closeDevice(camera_nr);
         }
-        os_sleep(100);
+
+tryagain:
+        os_sleep(300);
     }
 
-    if (TCAM) {
-        TCAM->release(); delete TCAM; TCAM = OS_NULL;
-    }
+getout:;
 }
 
 
@@ -589,90 +618,77 @@ tryagain:
 ****************************************************************************************************
 
   @brief Write parameters to camera driver.
-  @anchor raspi_cam_set_parameters
+  @anchor usb_cam_set_parameters
 
-  The raspi_cam_set_parameters() function....
+  The usb_cam_set_parameters() function....
 
   See VideoProcAmpProperty Enumeration for description of property values.
   https://docs.microsoft.com/en-us/windows/win32/api/strmif/ne-strmif-videoprocampproperty
 
   @param   c Pointer to pinsCamera structure.
+  @param   VI Video input device.
   @return  None.
 
 ****************************************************************************************************
 */
-static void raspi_cam_set_parameters(
+static void usb_cam_set_parameters(
     pinsCamera *c,
+    videoInput *VI,
     os_int camera_nr)
 {
-    os_int w, h;
+#define PINCAM_SETPRM_MACRO(a, b, f) \
+    x = c->ext->prm[b]; \
+    delta = CP.a.Max - CP.a.Min; \
+    if (delta > 0) \
+    { \
+        if (x < 0) x = 50; \
+        y = (os_int)(0.01 * delta * x + 0.5); \
+        if (y < CP.a.Min) y = CP.a.Min; \
+        if (y > CP.a.Max) y = CP.a.Max; \
+        CP.a.Flag = f;  /* 1 = KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
+                        /* 2 = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
+        CP.a.CurrentValue = y; \
+    }
 
-    w = c->ext->prm[PINS_CAM_IMG_WIDTH];
-    if (w > 10 && w < 10000) TCAM->setWidth(w);
-    h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
-    if (h > 10 && h < 10000) TCAM->setHeight(h);
+    os_int x, y;
+    os_double delta;
 
+    c->ext->prm_changed = OS_FALSE;
 
-    /* Set shutter speed us.
-     */
-    // TCAM->setShutterSpeed(t->exposure_time * 1000.0);
+    CamParametrs CP = VI->getParametrs(camera_nr);
 
-    /* Set color format: RGB or grayscale. (note we use BGR byte order
-     * internally within oecore)
-     */
-    // TCAM->setFormat(t->colorformat==2
-    //        ? raspicam::RASPICAM_FORMAT_BGR
-    //    : raspicam::RASPICAM_FORMAT_GRAY);
+    /* Brightness */
+    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
 
-    /* Automatic color balancing always off.
+    /* Saruration */
     PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2)
-    switch (t->whitebalance)
+
+    /* Focus  */
+    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */
+    CP.Focus.CurrentValue = 100;
+
+    /* White balance */
+    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */
+    CP.WhiteBalance.CurrentValue = 1;
+
+    VI->setParametrs(camera_nr, CP);
+    if(!VI->isDeviceSetup(camera_nr))
     {
-        case OEPI_WHITE_BALANCE_OFF:
-            TCAM->setAWB(raspicam::RASPICAM_AWB_OFF);
-            break;
-
-        case OEPI_AUTO_WHITE_BALANCE:
-            TCAM->setAWB(raspicam::RASPICAM_AWB_AUTO);
-            break;
     }
-     */
-
-    /* Rotate image 180 degrees if needed.
-     */
-    // TCAM->setHorizontalFlip ((bool)(t->rotate180));
-    // TCAM->setVerticalFlip ((bool)(t->rotate180));
-
-
-    /* Set exposure control.
-     *     PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
-
-    switch (t->exposurectrl)
-    {
-        default:
-        case OEPI_EXPOSURE_CTRL_OFF:
-            TCAM->setExposure(raspicam::RASPICAM_EXPOSURE_OFF);
-            break;
-
-        case OEPI_AUTO_EXPOSURE_CTRL:
-            TCAM->setExposure(raspicam::RASPICAM_EXPOSURE_AUTO);
-        break;
-    }
-     */
 }
 
 /* Camera interface (structure with function pointers, polymorphism)
  */
-const pinsCameraInterface pins_raspi_camera_iface
+const pinsCameraInterface pins_usb_camera_iface
 = {
-    raspi_cam_initialize,
-    raspi_cam_enumerate_cameras,
-    raspi_cam_open,
-    raspi_cam_close,
-    raspi_cam_start,
-    raspi_cam_stop,
-    raspi_cam_set_parameter,
-    raspi_cam_get_parameter
+    usb_cam_initialize,
+    usb_cam_enumerate_cameras,
+    usb_cam_open,
+    usb_cam_close,
+    usb_cam_start,
+    usb_cam_stop,
+    usb_cam_set_parameter,
+    usb_cam_get_parameter
 };
 
 #endif
