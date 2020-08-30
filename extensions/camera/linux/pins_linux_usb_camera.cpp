@@ -394,25 +394,27 @@ static osalStatus usb_cam_finalize_camera_photo(
     os_uchar *ptr,
     os_memsz bytes)
 {
+    os_uchar *d, *s, *simg, *dimg;
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_int alloc_sz, w, h;
+    os_int alloc_sz, w, h, y, count;
+    os_int y1, pb, pr, r, g, b, Y1, Cb, Cr;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
     photo.hdr = &hdr;
 
-    usb_cam_allocate_buffer(c->ext);
+    usb_cam_allocate_buffer(ext);
 
-    w = c->ext->w;
-    h = c->ext->h;
+    w = ext->w;
+    h = ext->h;
 
 
 
     photo.iface = c->iface;
     photo.camera = c;
-    photo.data = c->ext->buf;
-    photo.byte_w = w * c->ext->target_bytes_per_pix;
+    photo.data = ext->buf;
+    photo.byte_w = w * ext->target_bytes_per_pix;
     photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
 
@@ -420,41 +422,67 @@ static osalStatus usb_cam_finalize_camera_photo(
         return OSAL_STATUS_FAILED;
     }
 
-    os_memcpy(photo.data, ptr, bytes);
+    // os_memcpy(photo.data, ptr, bytes);
 
+    simg = ptr;
+    dimg = photo.data;
 
-#if 0
-    os_int y, h2, count, i;
-    os_uchar *top, *bottom, u, *p;
-    os_ulong testsum = 1234;
+    if (ext->target_bytes_per_pix == 3 && ext->src_bytes_per_pix == 2)
+    {
+        for (y = 0; y < h; y++) {
+            s = simg + (h-y-1) * ext->src_bytes_per_line;
+            d = dimg + y * photo.byte_w;
 
-    /* BGR - RGB flip (RGB24 format).
-    for (y = 0; y<h; y++) {
-        p = photo.data + photo.byte_w * (size_t)y;
-        count = w;
-        while (count --) {
-            u = p[0];
-            p[0] = p[2];
-            p[2] = u;
-            testsum += *(os_uint*)p;
-            p += 3;
+            count = w/2;
+
+            while (count--)
+            {
+                Y1 = s[0];
+                Cb = s[1];
+                Cr = s[3];
+                y1 = (255 * (Y1 -  16)) / 219;
+                pb = (255 * (Cb - 128)) / 224;
+                pr = (255 * (Cr - 128)) / 224;
+
+                r = y1 + (0    * pb + 1402 * pr)/1000;
+                g = y1 + (-344 * pb - 714  * pr)/1000;
+                b = y1 + (1772 * pb + 0    * pr)/1000;
+                r = r>255?255:r;
+                r = r<0?0:r;
+                g = g>255?255:g;
+                g = g<0?0:g;
+                b = b>255?255:b;
+                b = b<0?0:b;
+
+                *(d++) = (os_uchar)r;
+                *(d++) = (os_uchar)g;
+                *(d++) = (os_uchar)b;
+
+                Y1 = s[2];
+                Cb = s[1];
+                Cr = s[3];
+                y1 = (255 * (Y1 -  16)) / 219;
+                pb = (255 * (Cb - 128)) / 224;
+                pr = (255 * (Cr - 128)) / 224;
+                r = y1 + (0    * pb + 1402 * pr)/1000;
+                g = y1 + (-344 * pb - 714  * pr)/1000;
+                b = y1 + (1772 * pb + 0    * pr)/1000;
+
+                r = r>255?255:r;
+                r = r<0?0:r;
+                g = g>255?255:g;
+                g = g<0?0:g;
+                b = b>255?255:b;
+                b = b<0?0:b;
+
+                *(d++) = (os_uchar)r;
+                *(d++) = (os_uchar)g;
+                *(d++) = (os_uchar)b;
+
+                s += 4;
+            }
         }
     }
-     */
-
-    /* This can be done here or by VI->getPixels()
-       First flip image, top to bottom.
-     */
-    os_uchar *tmp = (os_uchar*)_alloca(photo.byte_w);
-    h2 = h/2;
-    for (y = 0; y<h2; y++) {
-        top = photo.data + photo.byte_w * (size_t)y;
-        bottom = photo.data + photo.byte_w * (size_t)(h - y - 1);
-        os_memcpy(tmp, top, photo.byte_w);
-        os_memcpy(top, bottom, photo.byte_w);
-        os_memcpy(bottom, tmp, photo.byte_w);
-    }
-#endif
 
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
@@ -578,8 +606,9 @@ osalStatus setup_usb_set_input(
     fmt.fmt.pix.width       = w;
     fmt.fmt.pix.height      = h;
     //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR24;
-    fmt.fmt.pix.field       = V4L2_FIELD_NONE; // V4L2_FIELD_INTERLACED;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+    // fmt.fmt.pix.field       = V4L2_FIELD_NONE; // V4L2_FIELD_INTERLACED;
+    fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
     if (-1 == ioctl (ext->fd, VIDIOC_S_FMT, &fmt)) {
         osal_debug_error("VIDIOC_S_FMT");
