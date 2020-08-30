@@ -35,15 +35,12 @@
 #include <sys/ioctl.h> */
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX THIS WILL NOT WORK
-struct buffer {
+typedef struct usbcamBuffer {
         void *                  start;
         size_t                  length;
-};
-struct buffer *         buffers         = NULL;
-static unsigned int     n_buffers       = 0;
+}
+usbcamBuffer;
 
-
-struct v4l2_buffer buf;
 
 
 /* Wrapper specific extensions to PinsCamera structure
@@ -65,6 +62,10 @@ typedef struct PinsCameraExt
     volatile os_boolean reconfigure_camera;
 
     int fd;
+
+    usbcamBuffer *buffers;
+    os_int n_buffers;
+    struct v4l2_buffer v4l_buf;
 }
 PinsCameraExt;
 
@@ -85,8 +86,7 @@ static void usb_cam_task(
     osalEvent done);
 
 static void usb_cam_set_parameters(
-    pinsCamera *c,
-    os_int camera_nr);
+    pinsCamera *c);
 
 
 /**
@@ -382,6 +382,8 @@ static os_long usb_cam_get_parameter(
   The usb_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
+  This function converts YUV image to RGB, and flips it in memory as "top first".
+
   @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
   @return  OSAL_SUCCESS if all is fine.
@@ -409,8 +411,6 @@ static osalStatus usb_cam_finalize_camera_photo(
     w = ext->w;
     h = ext->h;
 
-
-
     photo.iface = c->iface;
     photo.camera = c;
     photo.data = ext->buf;
@@ -421,8 +421,6 @@ static osalStatus usb_cam_finalize_camera_photo(
     if (bytes > photo.data_sz) {
         return OSAL_STATUS_FAILED;
     }
-
-    // os_memcpy(photo.data, ptr, bytes);
 
     simg = ptr;
     dimg = photo.data;
@@ -498,7 +496,6 @@ static osalStatus usb_cam_finalize_camera_photo(
 }
 
 
-
 /**
 ****************************************************************************************************
 
@@ -507,7 +504,7 @@ static osalStatus usb_cam_finalize_camera_photo(
 
   The usb_cam_allocate_buffer() function...
 
-  @param   ext Pointer to extension structure.
+  @param   ext Pointer to camera extension structure.
   @return  None.
 
 ****************************************************************************************************
@@ -535,11 +532,23 @@ static osalStatus usb_cam_allocate_buffer(
 }
 
 
-osalStatus setup_usb_set_input(
+/**
+****************************************************************************************************
+
+  @brief Configure video format and memory maps video buffer.
+  @anchor configure_usb_camera
+
+  The configure_usb_camera() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+osalStatus configure_usb_camera(
     PinsCameraExt *ext)
 {
-    os_int w, h;
-    int index;
+    os_int index, i;
 
     index = 0;
     if (-1 == ioctl(ext->fd, VIDIOC_S_INPUT, &index)) {
@@ -597,25 +606,19 @@ osalStatus setup_usb_set_input(
         /* Errors ignored. */
     }
 
-    w = ext->prm[PINS_CAM_IMG_WIDTH];
-    h = ext->prm[PINS_CAM_IMG_HEIGHT];
-
-
     os_memclear(&fmt, sizeof(fmt));
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width       = w;
-    fmt.fmt.pix.height      = h;
-    //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+    fmt.fmt.pix.width       = ext->prm[PINS_CAM_IMG_WIDTH];
+    fmt.fmt.pix.height      = ext->prm[PINS_CAM_IMG_HEIGHT];
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    // fmt.fmt.pix.field       = V4L2_FIELD_NONE; // V4L2_FIELD_INTERLACED;
-    fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
+    fmt.fmt.pix.field       = V4L2_FIELD_NONE;
 
+    /* Note VIDIOC_S_FMT may change width and height.
+     */
     if (-1 == ioctl (ext->fd, VIDIOC_S_FMT, &fmt)) {
         osal_debug_error("VIDIOC_S_FMT");
         return OSAL_STATUS_FAILED;
     }
-
-    /* Note VIDIOC_S_FMT may change width and height. */
 
     /* Buggy driver paranoia. */
     min = fmt.fmt.pix.width * 2;
@@ -662,35 +665,39 @@ osalStatus setup_usb_set_input(
         return OSAL_STATUS_FAILED;
     }
 
-    buffers = (struct buffer*)calloc (req.count, sizeof (*buffers));
-    if (!buffers) {
+    // ext->buffers = (struct buffer*)calloc (req.count, sizeof (*buffers));
+    ext->n_buffers = req.count;
+    ext->buffers = (usbcamBuffer *)os_malloc(ext->n_buffers * sizeof(usbcamBuffer), OS_NULL);
+    if (ext->buffers == OS_NULL) {
         osal_debug_error("Out of memory");
         return OSAL_STATUS_FAILED;
     }
+    os_memclear(ext->buffers, ext->n_buffers * sizeof(usbcamBuffer));
 
-    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+    for (i = 0; i < ext->n_buffers; i++)
+    {
         struct v4l2_buffer buf;
 
         os_memclear(&buf, sizeof(buf));
 
         buf.type        = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory      = V4L2_MEMORY_MMAP;
-        buf.index       = n_buffers;
+        buf.index       = i;
 
         if (-1 == ioctl (ext->fd, VIDIOC_QUERYBUF, &buf)) {
             osal_debug_error("VIDIOC_QUERYBUF");
             return OSAL_STATUS_FAILED;
         }
 
-        buffers[n_buffers].length = buf.length;
-        buffers[n_buffers].start =
+        ext->buffers[i].length = buf.length;
+        ext->buffers[i].start =
             mmap (NULL /* start anywhere */,
                   buf.length,
                   PROT_READ | PROT_WRITE /* required */,
                   MAP_SHARED /* recommended */,
                   ext->fd, buf.m.offset);
 
-        if (MAP_FAILED == buffers[n_buffers].start) {
+        if (MAP_FAILED == ext->buffers[i].start) {
             osal_debug_error("mmap");
             return OSAL_STATUS_FAILED;
         }
@@ -700,6 +707,63 @@ osalStatus setup_usb_set_input(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Configure video format and memory maps video buffer.
+  @anchor configure_usb_camera
+
+  The configure_usb_camera() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void release_usb_camera_buffers_and_close_fd(
+    PinsCameraExt *ext)
+{
+    os_int i;
+
+    /* Close camera device
+     */
+    if (ext->fd != -1) {
+        close(ext->fd);
+        ext->fd = -1;
+    }
+
+    if (ext->buffers)
+    {
+        for (i = 0; i < ext->n_buffers; i++)
+        {
+            if (ext->buffers[i].start) {
+                if (munmap(ext->buffers[i].start, ext->buffers[i].length)) {
+                    osal_debug_error("mummap");
+                }
+
+                ext->buffers[i].start = OS_NULL;
+            }
+        }
+        os_free(ext->buffers, ext->n_buffers * sizeof(usbcamBuffer));
+        ext->buffers = OS_NULL;
+    }
+    ext->n_buffers = 0;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Configure video format, etc.
+  @anchor configure_usb_camera
+
+  The configure_usb_camera() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static osalStatus get_usb_camera_info(
     PinsCameraExt *ext)
 {
@@ -758,8 +822,6 @@ static osalStatus get_usb_video_info(
 }
 
 
-
-
 static osalStatus setup_usb_camera(
     PinsCameraExt *ext,
     os_int camera_nr)
@@ -777,24 +839,18 @@ static osalStatus setup_usb_camera(
         return OSAL_STATUS_FAILED;
     }
 
-    s = setup_usb_set_input(ext);
+    s = configure_usb_camera(ext);
     if (s) {
-        close(ext->fd);
-        ext->fd = -1;
         return s;
     }
 
     s = get_usb_camera_info(ext);
     if (s) {
-        close(ext->fd);
-        ext->fd = -1;
         return s;
     }
 
     s = get_usb_video_info(ext);
     if (s) {
-        close(ext->fd);
-        ext->fd = -1;
         return s;
     }
 
@@ -805,11 +861,10 @@ static osalStatus setup_usb_camera(
 static osalStatus start_capturing_video(
     PinsCameraExt *ext)
 {
-    unsigned int i;
+    os_int i;
     enum v4l2_buf_type type;
 
-
-    for (i = 0; i < n_buffers; ++i) {
+    for (i = 0; i < ext->n_buffers; ++i) {
         struct v4l2_buffer buf;
 
         os_memclear(&buf, sizeof(buf));
@@ -843,12 +898,12 @@ static osalStatus read_video_frame(
     os_memsz bytes;
     osalStatus s;
 
-    os_memclear(&buf, sizeof(buf));
+    os_memclear(&ext->v4l_buf, sizeof(v4l2_buffer));
 
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
+    ext->v4l_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    ext->v4l_buf.memory = V4L2_MEMORY_MMAP;
 
-    if (-1 == ioctl (ext->fd, VIDIOC_DQBUF, &buf)) {
+    if (-1 == ioctl (ext->fd, VIDIOC_DQBUF, &ext->v4l_buf)) {
         switch (errno) {
         case EAGAIN:
             /* EAGAIN - continue select loop. */
@@ -865,22 +920,19 @@ static osalStatus read_video_frame(
         }
     }
 
-    osal_debug_assert(buf.index < n_buffers);
+    osal_debug_assert(ext->v4l_buf.index < (unsigned)ext->n_buffers);
 
-    // printf ("%d %d: ", buf.index, buf.bytesused);
-
-    ptr = (os_uchar*)buffers[buf.index].start;
-    bytes = buf.bytesused;
+    ptr = (os_uchar*)ext->buffers[ext->v4l_buf.index].start;
+    bytes = ext->v4l_buf.bytesused;
     s = usb_cam_finalize_camera_photo(c, ext, ptr, bytes);
 
-    if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &buf)) {
+    if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &ext->v4l_buf)) {
         osal_debug_error("VIDIOC_DQBUF-2");
         return OSAL_STATUS_FAILED;
     }
 
     return s;
 }
-
 
 
 /**
@@ -922,9 +974,9 @@ static void usb_cam_task(
         /* Open and setup camera device
          */
         s = setup_usb_camera(ext, camera_nr);
-        if (s) goto try_again;
+        if (s) goto close_it;
 
-        usb_cam_set_parameters(c, camera_nr);
+        usb_cam_set_parameters(c);
 
         s = start_capturing_video(ext);
         if (s) {
@@ -970,7 +1022,7 @@ static void usb_cam_task(
                     if (c->ext->reconfigure_camera) {
                         break;
                     }
-                    usb_cam_set_parameters(c, camera_nr);
+                    usb_cam_set_parameters(c);
                 }
             }
         }
@@ -978,10 +1030,7 @@ static void usb_cam_task(
 close_it:
         /* Close camera device
          */
-        close(ext->fd);
-        ext->fd = -1;
-
-try_again:
+        release_usb_camera_buffers_and_close_fd(ext);
         os_sleep(300);
     }
 }
@@ -995,7 +1044,7 @@ try_again:
 
   The usb_cam_set_parameters() function....
 
-  See VideoProcAmpProperty Enumeration for description of property values.
+  Camera parameters not implemented.
   https://docs.microsoft.com/en-us/windows/win32/api/strmif/ne-strmif-videoprocampproperty
 
   @param   c Pointer to pinsCamera structure.
@@ -1005,49 +1054,12 @@ try_again:
 ****************************************************************************************************
 */
 static void usb_cam_set_parameters(
-    pinsCamera *c,
-    os_int camera_nr)
+    pinsCamera *c)
 {
 #if 0
-#define PINCAM_SETPRM_MACRO(a, b, f) \
-    x = c->ext->prm[b]; \
-    delta = CP.a.Max - CP.a.Min; \
-    if (delta > 0) \
-    { \
-        if (x < 0) x = 50; \
-        y = (os_int)(0.01 * delta * x + 0.5); \
-        if (y < CP.a.Min) y = CP.a.Min; \
-        if (y > CP.a.Max) y = CP.a.Max; \
-        CP.a.Flag = f;  /* 1 = KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  \
-                        /* 2 = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  \
-        CP.a.CurrentValue = y; \
-    }
-
-    os_int x, y;
-    os_double delta;
-
-    c->ext->prm_changed = OS_FALSE;
-
-    CamParametrs CP = VI->getParametrs(camera_nr);
-
-    /* Brightness */
-    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
-
-    /* Saruration */
-    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2)
-
-    /* Focus  */
-    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */
-    CP.Focus.CurrentValue = 100;
-
-    /* White balance */
-    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */
-    CP.WhiteBalance.CurrentValue = 1;
-
-    VI->setParametrs(camera_nr, CP);
-    if(!VI->isDeviceSetup(camera_nr))
-    {
-    }
+    c->camera_nr
+    c->ext->prm[PINS_CAM_BRIGHTNESS]
+    c->ext->prm[PINS_CAM_SATURATION]
 #endif
 }
 
