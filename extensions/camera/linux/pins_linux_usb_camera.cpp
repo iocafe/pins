@@ -16,13 +16,35 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#include <malloc.h>
 #if PINS_CAMERA == PINS_USB_CAMERA
 
-#include "extensions\camera\windows\ep_usbcamera\videoInput.h"
+#include <malloc.h>
+#include <libv4l2.h>
+#include <linux/videodev2.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
+
+/*#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <assert.h>
+#include <sys/ioctl.h> */
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX THIS WILL NOT WORK
+struct buffer {
+        void *                  start;
+        size_t                  length;
+};
+struct buffer *         buffers         = NULL;
+static unsigned int     n_buffers       = 0;
 
 
-#define TESTSUM_N 20
+struct v4l2_buffer buf;
+
 
 /* Wrapper specific extensions to PinsCamera structure
  */
@@ -39,7 +61,7 @@ typedef struct PinsCameraExt
     volatile os_boolean prm_changed;
     volatile os_boolean reconfigure_camera;
 
-    os_ulong testsum[TESTSUM_N];
+    int fd;
 }
 PinsCameraExt;
 
@@ -58,7 +80,6 @@ static void usb_cam_task(
 
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI,
     os_int camera_nr);
 
 
@@ -143,6 +164,7 @@ static osalStatus usb_cam_open(
     for (i = 0; i < PINS_NRO_CAMERA_PARAMS; i++) {
         c->ext->prm[i] = -1;
     }
+    c->ext->fd = -1;
 
     return OSAL_SUCCESS;
 }
@@ -379,7 +401,7 @@ static osalStatus usb_cam_finalize_camera_photo(
     photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
 
-#if 1
+#if 0
     os_int y, h2, count, i;
     os_uchar *top, *bottom, u, *p;
     os_ulong testsum = 1234;
@@ -451,12 +473,6 @@ static osalStatus usb_cam_finalize_camera_photo(
     return OSAL_SUCCESS;
 }
 
-static void usb_cam_stop_event(int deviceID, void *userData)
-{
-    videoInput *VI = &videoInput::getInstance();
-
-    VI->closeDevice(deviceID);
-}
 
 
 /**
@@ -495,6 +511,340 @@ static osalStatus usb_cam_allocate_buffer(
 }
 
 
+osalStatus setup_usb_set_input(
+    PinsCameraExt *ext)
+{
+    os_int w, h;
+    int index;
+
+    index = 0;
+    if (-1 == ioctl(ext->fd, VIDIOC_S_INPUT, &index)) {
+        osal_debug_error("VIDIOC_S_INPUT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    struct v4l2_capability cap;
+    struct v4l2_cropcap cropcap;
+    struct v4l2_crop crop;
+    struct v4l2_format fmt;
+    unsigned int min;
+
+    if (-1 == ioctl (ext->fd, VIDIOC_QUERYCAP, &cap)) {
+        if (EINVAL == errno) {
+            osal_debug_error("Device is no V4L2 device");
+            return OSAL_STATUS_FAILED;
+        }
+        else {
+            osal_debug_error("VIDIOC_QUERYCAP");
+            return OSAL_STATUS_FAILED;
+        }
+    }
+
+    if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
+        osal_debug_error("Device is no video capture device");
+        return OSAL_STATUS_FAILED;
+    }
+
+
+    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+        osal_debug_error("Device does not support streaming i/o");
+        return OSAL_STATUS_FAILED;
+    }
+
+    os_memclear(&cropcap, sizeof(cropcap));
+
+    cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+    if (0 == ioctl(ext->fd, VIDIOC_CROPCAP, &cropcap)) {
+        crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        crop.c = cropcap.defrect; /* reset to default */
+
+        if (-1 == ioctl(ext->fd, VIDIOC_S_CROP, &crop)) {
+            switch (errno) {
+            case EINVAL:
+                /* Cropping not supported. */
+                break;
+            default:
+                /* Errors ignored. */
+                break;
+            }
+        }
+    } else {
+        /* Errors ignored. */
+    }
+
+    w = ext->prm[PINS_CAM_IMG_WIDTH];
+    h = ext->prm[PINS_CAM_IMG_HEIGHT];
+
+
+    os_memclear(&fmt, sizeof(fmt));
+    fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt.fmt.pix.width       = w;
+    fmt.fmt.pix.height      = h;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // V4L2_PIX_FMT_BRG24
+    fmt.fmt.pix.field       = V4L2_FIELD_NONE; // V4L2_FIELD_INTERLACED;
+
+    if (-1 == ioctl (ext->fd, VIDIOC_S_FMT, &fmt)) {
+        osal_debug_error("VIDIOC_S_FMT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    /* Note VIDIOC_S_FMT may change width and height. */
+
+    /* Buggy driver paranoia. */
+    min = fmt.fmt.pix.width * 2;
+    if (fmt.fmt.pix.bytesperline < min)
+        fmt.fmt.pix.bytesperline = min;
+
+    min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
+
+    if (fmt.fmt.pix.sizeimage < min)
+        fmt.fmt.pix.sizeimage = min;
+
+    printf("%d %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
+    printf("%d\n",fmt.fmt.pix.sizeimage);
+
+    // Init mmap
+    struct v4l2_requestbuffers req;
+
+    os_memclear(&req, sizeof(req));
+
+    req.count               = 2;
+    req.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory              = V4L2_MEMORY_MMAP;
+
+    if (-1 == ioctl(ext->fd, VIDIOC_REQBUFS, &req)) {
+        if (EINVAL == errno) {
+            osal_debug_error("Device does not support memory mapping");
+            return OSAL_STATUS_FAILED;
+        } else {
+            osal_debug_error("VIDIOC_REQBUFS");
+            return OSAL_STATUS_FAILED;
+        }
+    }
+
+    if (req.count < 2) {
+        osal_debug_error("Insufficient buffer memory on device");
+        return OSAL_STATUS_FAILED;
+    }
+
+    buffers = (struct buffer*)calloc (req.count, sizeof (*buffers));
+    if (!buffers) {
+        osal_debug_error("Out of memory");
+        return OSAL_STATUS_FAILED;
+    }
+
+    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        struct v4l2_buffer buf;
+
+        os_memclear(&buf, sizeof(buf));
+
+        buf.type        = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory      = V4L2_MEMORY_MMAP;
+        buf.index       = n_buffers;
+
+        if (-1 == ioctl (ext->fd, VIDIOC_QUERYBUF, &buf)) {
+            osal_debug_error("VIDIOC_QUERYBUF");
+            return OSAL_STATUS_FAILED;
+        }
+
+        buffers[n_buffers].length = buf.length;
+        buffers[n_buffers].start =
+            mmap (NULL /* start anywhere */,
+                  buf.length,
+                  PROT_READ | PROT_WRITE /* required */,
+                  MAP_SHARED /* recommended */,
+                  ext->fd, buf.m.offset);
+
+        if (MAP_FAILED == buffers[n_buffers].start) {
+            osal_debug_error("mmap");
+            return OSAL_STATUS_FAILED;
+        }
+    }
+
+    return OSAL_SUCCESS;
+}
+
+
+static osalStatus get_usb_camera_info(
+    PinsCameraExt *ext)
+{
+    struct v4l2_input input;
+    int index;
+
+    if (-1 == ioctl(ext->fd, VIDIOC_G_INPUT, &index)) {
+        osal_debug_error("VIDIOC_G_INPUT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    os_memclear(&input, sizeof(input));
+    input.index = index;
+
+    if (-1 == ioctl(ext->fd, VIDIOC_ENUMINPUT, &input)) {
+        osal_debug_error("VIDIOC_ENUMINPUT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    printf ("Current input: %s\n", input.name);
+
+    return OSAL_SUCCESS;
+}
+
+
+static osalStatus get_usb_video_info(
+    PinsCameraExt *ext)
+{
+    struct v4l2_input input;
+    struct v4l2_fmtdesc formats;
+
+    os_memclear(&input, sizeof (input));
+
+    if (-1 == ioctl(ext->fd, VIDIOC_G_INPUT, &input.index)) {
+        osal_debug_error("VIDIOC_G_INPUT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    printf ("Current input %s supports:\n", input.name);
+
+    os_memclear(&formats, sizeof (formats));
+    formats.index = 0;
+    formats.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+    while (0 == ioctl(ext->fd, VIDIOC_ENUM_FMT, &formats)) {
+        osal_debug_error_str("format ", (os_char*)formats.description);
+        formats.index++;
+    }
+
+    if (errno != EINVAL || formats.index == 0) {
+        osal_debug_error("VIDIOC_ENUMFMT");
+        return OSAL_STATUS_FAILED;
+    }
+
+    return OSAL_SUCCESS;
+}
+
+
+
+
+static osalStatus setup_usb_camera(
+    PinsCameraExt *ext,
+    os_int camera_nr)
+{
+    os_char buf[32], nbuf[OSAL_NBUF_SZ];
+    osalStatus s;
+
+    os_strncpy(buf, "/dev/video", sizeof(buf));
+    osal_int_to_str(nbuf, sizeof(nbuf), camera_nr);
+    os_strncat(buf, nbuf, sizeof(buf));
+
+    ext->fd = open(buf, O_RDWR);
+    if (ext->fd < 0) {
+        osal_debug_error_str("opening camera failed: ", buf);
+        return OSAL_STATUS_FAILED;
+    }
+
+    s = setup_usb_set_input(ext);
+    if (s) {
+        close(ext->fd);
+        ext->fd = -1;
+        return s;
+    }
+
+    s = get_usb_camera_info(ext);
+    if (s) {
+        close(ext->fd);
+        ext->fd = -1;
+        return s;
+    }
+
+    s = get_usb_video_info(ext);
+    if (s) {
+        close(ext->fd);
+        ext->fd = -1;
+        return s;
+    }
+
+    return OSAL_SUCCESS;
+}
+
+
+static osalStatus start_capturing_video(
+    PinsCameraExt *ext)
+{
+    unsigned int i;
+    enum v4l2_buf_type type;
+
+
+    for (i = 0; i < n_buffers; ++i) {
+        struct v4l2_buffer buf;
+
+        os_memclear(&buf, sizeof(buf));
+
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = i;
+
+        if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &buf)) {
+            osal_debug_error("VIDIOC_QBUF");
+            return OSAL_STATUS_FAILED;
+        }
+    }
+
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+    if (-1 == ioctl (ext->fd, VIDIOC_STREAMON, &type)) {
+        osal_debug_error("VIDIOC_STREAMON");
+        return OSAL_STATUS_FAILED;
+    }
+
+    return OSAL_SUCCESS;
+}
+
+
+static osalStatus read_video_frame(
+    PinsCameraExt *ext)
+{
+    os_memclear(&buf, sizeof(buf));
+
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+
+    if (-1 == ioctl (ext->fd, VIDIOC_DQBUF, &buf)) {
+        switch (errno) {
+        case EAGAIN:
+            /* EAGAIN - continue select loop. */
+            return OSAL_NOTHING_TO_DO;
+
+        case EIO:
+            /* Could ignore EIO, see spec. */
+
+            /* fall through */
+
+        default:
+            osal_debug_error("VIDIOC_DQBUF");
+            return OSAL_STATUS_FAILED;
+        }
+    }
+
+    osal_debug_assert(buf.index < n_buffers);
+
+    printf ("%d %d: ", buf.index, buf.bytesused);
+// 	int idx;
+// 	for (idx=0; idx<160; idx++)
+// 		printf("%X",((unsigned char*)buffers[buf.index].start)[idx]);
+// 	printf("\n");
+
+
+    if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &buf)) {
+        osal_debug_error("VIDIOC_DQBUF-2");
+        return OSAL_STATUS_FAILED;
+    }
+
+    return OSAL_SUCCESS;
+}
+
+
+
 /**
 ****************************************************************************************************
 
@@ -514,81 +864,67 @@ static void usb_cam_task(
     osalEvent done)
 {
     pinsCamera *c;
-    os_int camera_nr, nro_cameras, w, h, fr;
+    PinsCameraExt *ext;
+    os_int camera_nr;
+    osalStatus s;
+    fd_set fds;
+    struct timeval tv;
+    int r;
 
     c = (pinsCamera*)prm;
     osal_event_set(done);
-
-
-    videoInput *VI = &videoInput::getInstance();
+    ext = c->ext;
 
     while (!c->stop_thread && osal_go())
     {
-        camera_nr = c->ext->prm[PINS_CAM_NR] - 1;
+        camera_nr = ext->prm[PINS_CAM_NR] - 1;
         if (camera_nr < 0) camera_nr = 0;
         c->camera_nr = camera_nr;
 
-        nro_cameras = 1;
-        if(camera_nr >= nro_cameras) {
-            osal_debug_error_int("usb_cam_task: Camera number too big", camera_nr);
-            goto tryagain;
+        /* Open and setup camera device
+         */
+        s = setup_usb_camera(ext, camera_nr);
+        if (s) goto try_again;
+
+        usb_cam_set_parameters(c, camera_nr);
+
+        s = start_capturing_video(ext);
+        if (s) {
+            goto close_it;
         }
 
-        w = c->ext->prm[PINS_CAM_IMG_WIDTH];
-        h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
-        fr = c->ext->prm[PINS_CAM_FRAMERATE];
-        if (fr <= 0) fr = 30;
-
-    fd = open("/dev/video0",O_RDWR);
-    if (!fd) {
-        perror("Error opening device");
-        exit (EXIT_FAILURE);
-    }
-    set_input();
-    get_info();
-    get_video_info();
-
-
-        /* if(!VI->setupDevice(camera_nr, w, h, fr))
-        {
-            osal_debug_error_int("usb_cam_task: Setting up camera failed", camera_nr);
-            goto tryagain;
-        } */
-
-        usb_cam_set_parameters(c, VI, camera_nr);
-
-        VI->setEmergencyStopEvent(camera_nr, NULL, usb_cam_stop_event);
         c->ext->reconfigure_camera = OS_FALSE;
         while (!c->stop_thread && osal_go())
         {
-             if(VI->isFrameNew(camera_nr))
-             {
-                 c->ext->w = VI->getWidth(camera_nr);
-                 c->ext->h = VI->getHeight(camera_nr);
-                 c->ext->bytes_per_pix = 3;
+            FD_ZERO (&fds);
+            FD_SET (ext->fd, &fds);
 
-                 if (usb_cam_allocate_buffer(c)) {
-                     VI->closeDevice(camera_nr);
-                     goto getout;
-                 }
+            /* Timeout. */
+            tv.tv_sec = 2;
+            tv.tv_usec = 0;
 
-                 /* Two last arguments are correction of RedAndBlue flipping
-                    flipRedAndBlue and vertical flipping flipImage
-                  */
-#if 1
-                 VI->getPixels(camera_nr, c->ext->buf, false, false);
-#else
-                 VI->getPixels(camera_nr, c->ext->buf, true, true);
-#endif
-                 if (usb_cam_finalize_camera_photo(c)) {
-                    os_timeslice();
-                 }
+            r = select (ext->fd + 1, &fds, NULL, NULL, &tv);
+
+            if (-1 == r) {
+                if (EINTR == errno)
+                    continue;
+
+                perror ("select");
             }
-            os_timeslice();
 
-            if(!VI->isDeviceSetup(camera_nr)) {
+            if (0 == r) {
+                osal_debug_error("select timeout");
                 break;
             }
+
+            s = read_video_frame(ext);
+            if (s) {
+                if (OSAL_IS_ERROR(s)) {
+                    break;
+                }
+                os_timeslice();
+            }
+
 
             if (c->ext->prm_changed) {
                 if (os_has_elapsed(&c->ext->prm_timer, 50))
@@ -596,21 +932,22 @@ static void usb_cam_task(
                     if (c->ext->reconfigure_camera) {
                         break;
                     }
-                    usb_cam_set_parameters(c, VI, camera_nr);
+                    usb_cam_set_parameters(c, camera_nr);
                 }
             }
         }
 
-        if (VI->isDeviceSetup(camera_nr))
-        {
-            VI->closeDevice(camera_nr);
-        }
+close_it:
+        /* Close camera device
+         */
+        close(ext->fd);
+        ext->fd = -1;
 
-tryagain:
+try_again:
         os_sleep(300);
     }
 
-getout:;
+// getout:;
 }
 
 
@@ -633,9 +970,9 @@ getout:;
 */
 static void usb_cam_set_parameters(
     pinsCamera *c,
-    videoInput *VI,
     os_int camera_nr)
 {
+#if 0
 #define PINCAM_SETPRM_MACRO(a, b, f) \
     x = c->ext->prm[b]; \
     delta = CP.a.Max - CP.a.Min; \
@@ -675,6 +1012,7 @@ static void usb_cam_set_parameters(
     if(!VI->isDeviceSetup(camera_nr))
     {
     }
+#endif
 }
 
 /* Camera interface (structure with function pointers, polymorphism)

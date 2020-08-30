@@ -14,8 +14,8 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#include <malloc.h>
 #if PINS_CAMERA == PINS_USB_CAMERA
+#include <malloc.h>
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
 
@@ -294,9 +294,9 @@ static void usb_cam_set_parameter(
 
   The usb_cam_check_image_dims() makes sure that image width is legimate and selects closest
   supported image width. Then image height is forced to match the image width. If multiple image
-  heights are supported for given image with, one matching closest to current height setting 
+  heights are supported for given image with, one matching closest to current height setting
   is selected.
- 
+
   @param   c Pointer to camera structure.
   @return  None
 
@@ -392,7 +392,7 @@ static osalStatus usb_cam_finalize_camera_photo(
         p = photo.data + photo.byte_w * (size_t)y;
         count = w;
         while (count --) {
-            u = p[0]; 
+            u = p[0];
             p[0] = p[2];
             p[2] = u;
             testsum += *(os_uint*)p;
@@ -400,7 +400,7 @@ static osalStatus usb_cam_finalize_camera_photo(
         }
     }
 
-    /* The USB camera can return same image multiple times and 
+    /* The USB camera can return same image multiple times and
        can get stuck showing one photo, workaround: detect and restart
      */
     for (i = TESTSUM_N - 1; i > 0; i--) {
@@ -421,7 +421,7 @@ static osalStatus usb_cam_finalize_camera_photo(
             os_get_timer(&c->ext->prm_timer);
             c->ext->reconfigure_camera = OS_TRUE;
             c->ext->prm_changed = OS_TRUE;
-        } 
+        }
 
         return OSAL_NOTHING_TO_DO;
     }
@@ -562,7 +562,7 @@ static void usb_cam_task(
                      goto getout;
                  }
 
-                 /* Two last arguments are correction of RedAndBlue flipping 
+                 /* Two last arguments are correction of RedAndBlue flipping
                     flipRedAndBlue and vertical flipping flipImage
                   */
 #if 1
@@ -594,7 +594,7 @@ static void usb_cam_task(
         if (VI->isDeviceSetup(camera_nr))
         {
             VI->closeDevice(camera_nr);
-        } 
+        }
 
 tryagain:
         os_sleep(100);
@@ -610,7 +610,7 @@ getout:;
   @brief Write parameters to camera driver.
   @anchor usb_cam_set_parameters
 
-  The usb_cam_set_parameters() function.... 
+  The usb_cam_set_parameters() function....
 
   See VideoProcAmpProperty Enumeration for description of property values.
   https://docs.microsoft.com/en-us/windows/win32/api/strmif/ne-strmif-videoprocampproperty
@@ -648,23 +648,23 @@ static void usb_cam_set_parameters(
     CamParametrs CP = VI->getParametrs(camera_nr);
 
     /* Brightness */
-    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2) 
+    PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
 
     /* Saruration */
-    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2) 
+    PINCAM_SETPRM_MACRO(Saturation, PINS_CAM_SATURATION, 2)
 
     /* Focus  */
-    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */  
-    CP.Focus.CurrentValue = 100; 
+    CP.Focus.Flag = 2; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL */
+    CP.Focus.CurrentValue = 100;
 
     /* White balance */
-    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */  
-    CP.WhiteBalance.CurrentValue = 1; 
+    CP.WhiteBalance.Flag = 1; /* KSPROPERTY_VIDEOPROCAMP_FLAGS_AUTO */
+    CP.WhiteBalance.CurrentValue = 1;
 
     VI->setParametrs(camera_nr, CP);
     if(!VI->isDeviceSetup(camera_nr))
     {
-    } 
+    }
 }
 
 /* Camera interface (structure with function pointers, polymorphism)

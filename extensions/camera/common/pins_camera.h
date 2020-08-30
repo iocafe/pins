@@ -39,8 +39,12 @@ struct iocBrickHdr;
   #ifdef OSAL_WINDOWS
     #define PINS_CAMERA PINS_USB_CAMERA
   #endif
-  #ifdef E_OSVER_pi
-    #define PINS_CAMERA PINS_RASPI_CAMERA
+  #ifdef OSAL_LINUX
+    #ifdef E_OSVER_pi
+      #define PINS_CAMERA PINS_RASPI_CAMERA
+    #else
+      #define PINS_CAMERA PINS_USB_CAMERA
+    #endif
   #endif
 #endif
 #ifndef PINS_CAMERA
@@ -118,7 +122,7 @@ typedef struct pinsCameraParams
 {
     /** Camera number, the first camera is camera number 0.
      */
-    /* Moved to enumerated parameters 
+    /* Moved to enumerated parameters
     os_int camera_nr; */
 
     /** Pointer to callback function and application specific content pointer to pass
