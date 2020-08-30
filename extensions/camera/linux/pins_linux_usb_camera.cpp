@@ -54,7 +54,10 @@ typedef struct PinsCameraExt
     os_memsz alloc_sz;
     os_int w;
     os_int h;
-    os_int bytes_per_pix;
+    os_int src_bytes_per_line;
+    os_int src_bytes_per_pix;
+
+    os_int target_bytes_per_pix;
 
     os_int prm[PINS_NRO_CAMERA_PARAMS];
     os_timer prm_timer;
@@ -70,6 +73,9 @@ PinsCameraExt;
  */
 static void usb_cam_stop(
     pinsCamera *c);
+
+static osalStatus usb_cam_allocate_buffer(
+    PinsCameraExt *ext);
 
 static void usb_cam_check_image_dims(
     pinsCamera *c);
@@ -165,6 +171,8 @@ static osalStatus usb_cam_open(
         c->ext->prm[i] = -1;
     }
     c->ext->fd = -1;
+
+c->ext->target_bytes_per_pix = 3;
 
     return OSAL_SUCCESS;
 }
@@ -376,12 +384,15 @@ static os_long usb_cam_get_parameter(
 
   @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
-  @return  None.
+  @return  OSAL_SUCCESS if all is fine.
 
 ****************************************************************************************************
 */
 static osalStatus usb_cam_finalize_camera_photo(
-    pinsCamera *c)
+    pinsCamera *c,
+    PinsCameraExt *ext,
+    os_uchar *ptr,
+    os_memsz bytes)
 {
     pinsPhoto photo;
     iocBrickHdr hdr;
@@ -391,15 +402,26 @@ static osalStatus usb_cam_finalize_camera_photo(
     os_memclear(&hdr, sizeof(iocBrickHdr));
     photo.hdr = &hdr;
 
+    usb_cam_allocate_buffer(c->ext);
+
     w = c->ext->w;
     h = c->ext->h;
+
+
 
     photo.iface = c->iface;
     photo.camera = c;
     photo.data = c->ext->buf;
-    photo.byte_w = w * c->ext->bytes_per_pix;
+    photo.byte_w = w * c->ext->target_bytes_per_pix;
     photo.format = OSAL_RGB24;
     photo.data_sz = photo.byte_w * (size_t)h;
+
+    if (bytes > photo.data_sz) {
+        return OSAL_STATUS_FAILED;
+    }
+
+    os_memcpy(photo.data, ptr, bytes);
+
 
 #if 0
     os_int y, h2, count, i;
@@ -407,7 +429,6 @@ static osalStatus usb_cam_finalize_camera_photo(
     os_ulong testsum = 1234;
 
     /* BGR - RGB flip (RGB24 format).
-     */
     for (y = 0; y<h; y++) {
         p = photo.data + photo.byte_w * (size_t)y;
         count = w;
@@ -419,32 +440,7 @@ static osalStatus usb_cam_finalize_camera_photo(
             p += 3;
         }
     }
-
-    /* The USB camera can return same image multiple times and
-       can get stuck showing one photo, workaround: detect and restart
      */
-    for (i = TESTSUM_N - 1; i > 0; i--) {
-        c->ext->testsum[i] = c->ext->testsum[i-1];
-    }
-    c->ext->testsum[0] = testsum;
-    if (testsum == c->ext->testsum[1])
-    {
-        for (i = 1; i < TESTSUM_N; i++) {
-            if (testsum != c->ext->testsum[i]) break;
-        }
-
-        if (i > TESTSUM_N/2) {
-            os_sleep(100);
-        }
-
-        if (i >= TESTSUM_N && !c->ext->prm_changed) {
-            os_get_timer(&c->ext->prm_timer);
-            c->ext->reconfigure_camera = OS_TRUE;
-            c->ext->prm_changed = OS_TRUE;
-        }
-
-        return OSAL_NOTHING_TO_DO;
-    }
 
     /* This can be done here or by VI->getPixels()
        First flip image, top to bottom.
@@ -483,28 +479,28 @@ static osalStatus usb_cam_finalize_camera_photo(
 
   The usb_cam_allocate_buffer() function...
 
-  @param   c Pointer to camera structure.
+  @param   ext Pointer to extension structure.
   @return  None.
 
 ****************************************************************************************************
 */
 static osalStatus usb_cam_allocate_buffer(
-    pinsCamera *c)
+    PinsCameraExt *ext)
 {
     os_int sz;
 
-    sz = c->ext->w * c->ext->h * c->ext->bytes_per_pix;
-    if (sz > c->ext->alloc_sz)
+    sz = ext->w * ext->h * ext->target_bytes_per_pix;
+    if (sz > ext->alloc_sz)
     {
-        if (c->ext->buf) {
-            os_free(c->ext->buf, c->ext->alloc_sz);
+        if (ext->buf) {
+            os_free(ext->buf, ext->alloc_sz);
         }
 
-        c->ext->buf = (os_uchar*)os_malloc(sz, &c->ext->alloc_sz);
-        if (c->ext->buf == OS_NULL) {
+        ext->buf = (os_uchar*)os_malloc(sz, &ext->alloc_sz);
+        if (ext->buf == OS_NULL) {
             return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
         }
-        os_memclear(c->ext->buf, c->ext->alloc_sz);
+        os_memclear(ext->buf, ext->alloc_sz);
     }
 
     return OSAL_SUCCESS;
@@ -581,7 +577,8 @@ osalStatus setup_usb_set_input(
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width       = w;
     fmt.fmt.pix.height      = h;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // V4L2_PIX_FMT_BRG24
+    //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR24;
     fmt.fmt.pix.field       = V4L2_FIELD_NONE; // V4L2_FIELD_INTERLACED;
 
     if (-1 == ioctl (ext->fd, VIDIOC_S_FMT, &fmt)) {
@@ -603,6 +600,14 @@ osalStatus setup_usb_set_input(
 
     printf("%d %d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
     printf("%d\n",fmt.fmt.pix.sizeimage);
+
+    ext->w = fmt.fmt.pix.width;
+    ext->h = fmt.fmt.pix.height;
+
+    ext->src_bytes_per_line = fmt.fmt.pix.bytesperline;
+    if (fmt.fmt.pix.width > 0) {
+        ext->src_bytes_per_pix = fmt.fmt.pix.bytesperline / fmt.fmt.pix.width;
+    }
 
     // Init mmap
     struct v4l2_requestbuffers req;
@@ -802,8 +807,13 @@ static osalStatus start_capturing_video(
 
 
 static osalStatus read_video_frame(
+    pinsCamera *c,
     PinsCameraExt *ext)
 {
+    os_uchar * ptr;
+    os_memsz bytes;
+    osalStatus s;
+
     os_memclear(&buf, sizeof(buf));
 
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -828,19 +838,18 @@ static osalStatus read_video_frame(
 
     osal_debug_assert(buf.index < n_buffers);
 
-    printf ("%d %d: ", buf.index, buf.bytesused);
-// 	int idx;
-// 	for (idx=0; idx<160; idx++)
-// 		printf("%X",((unsigned char*)buffers[buf.index].start)[idx]);
-// 	printf("\n");
+    // printf ("%d %d: ", buf.index, buf.bytesused);
 
+    ptr = (os_uchar*)buffers[buf.index].start;
+    bytes = buf.bytesused;
+    s = usb_cam_finalize_camera_photo(c, ext, ptr, bytes);
 
     if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &buf)) {
         osal_debug_error("VIDIOC_DQBUF-2");
         return OSAL_STATUS_FAILED;
     }
 
-    return OSAL_SUCCESS;
+    return s;
 }
 
 
@@ -917,7 +926,7 @@ static void usb_cam_task(
                 break;
             }
 
-            s = read_video_frame(ext);
+            s = read_video_frame(c, ext);
             if (s) {
                 if (OSAL_IS_ERROR(s)) {
                     break;
@@ -946,8 +955,6 @@ close_it:
 try_again:
         os_sleep(300);
     }
-
-// getout:;
 }
 
 
