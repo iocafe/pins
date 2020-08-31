@@ -6,6 +6,12 @@
   @version 1.0
   @date    29.8.2020
 
+  Wrapper to present video4linux device, like USB camera via "pins" camera API calls.
+
+  Missing features:
+  - Input selection
+  - Camera parameter settings
+
   Credits to example code by Mohamed Thalib and Søren Holm. https://github.com/sgh/v4l2
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
@@ -26,22 +32,14 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
-/*#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/mman.h>
-#include <assert.h>
-#include <sys/ioctl.h> */
 
-// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX THIS WILL NOT WORK
+/* For memory mapping.
+ */
 typedef struct usbcamBuffer {
         void *                  start;
         size_t                  length;
 }
 usbcamBuffer;
-
-
 
 /* Wrapper specific extensions to PinsCamera structure
  */
@@ -171,8 +169,7 @@ static osalStatus usb_cam_open(
         c->ext->prm[i] = -1;
     }
     c->ext->fd = -1;
-
-c->ext->target_bytes_per_pix = 3;
+    c->ext->target_bytes_per_pix = 3;
 
     return OSAL_SUCCESS;
 }
@@ -499,7 +496,7 @@ static osalStatus usb_cam_finalize_camera_photo(
 /**
 ****************************************************************************************************
 
-  @brief Make sure that buffer is large enough for image including header.
+  @brief Make sure that finald buffer for callback buffer is large enough for image including header.
   @anchor usb_cam_allocate_buffer
 
   The usb_cam_allocate_buffer() function...
@@ -665,7 +662,6 @@ osalStatus configure_usb_camera(
         return OSAL_STATUS_FAILED;
     }
 
-    // ext->buffers = (struct buffer*)calloc (req.count, sizeof (*buffers));
     ext->n_buffers = req.count;
     ext->buffers = (usbcamBuffer *)os_malloc(ext->n_buffers * sizeof(usbcamBuffer), OS_NULL);
     if (ext->buffers == OS_NULL) {
@@ -710,10 +706,10 @@ osalStatus configure_usb_camera(
 /**
 ****************************************************************************************************
 
-  @brief Configure video format and memory maps video buffer.
-  @anchor configure_usb_camera
+  @brief Release memory mapings for video buffer and close vidro stream's file desctiptor.
+  @anchor release_usb_camera_buffers_and_close_fd
 
-  The configure_usb_camera() function...
+  The release_usb_camera_buffers_and_close_fd() function...
 
   @param   ext Pointer to camera extension structure.
   @return  None.
@@ -754,10 +750,10 @@ static void release_usb_camera_buffers_and_close_fd(
 /**
 ****************************************************************************************************
 
-  @brief Configure video format, etc.
-  @anchor configure_usb_camera
+  @brief Get current video input?
+  @anchor get_usb_camera_info
 
-  The configure_usb_camera() function...
+  The get_usb_camera_info() function...
 
   @param   ext Pointer to camera extension structure.
   @return  None.
@@ -789,6 +785,19 @@ static osalStatus get_usb_camera_info(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Get supported video formats?
+  @anchor get_usb_video_info
+
+  The get_usb_video_info() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static osalStatus get_usb_video_info(
     PinsCameraExt *ext)
 {
@@ -822,6 +831,19 @@ static osalStatus get_usb_video_info(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Prepare USB camera and related stuff for capturing video
+  @anchor setup_usb_camera
+
+  The setup_usb_camera() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static osalStatus setup_usb_camera(
     PinsCameraExt *ext,
     os_int camera_nr)
@@ -858,6 +880,19 @@ static osalStatus setup_usb_camera(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Start capturing video
+  @anchor start_capturing_video
+
+  The start_capturing_video() function...
+
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static osalStatus start_capturing_video(
     PinsCameraExt *ext)
 {
@@ -890,6 +925,22 @@ static osalStatus start_capturing_video(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Read one video frame
+  @anchor read_video_frame
+
+  The read_video_frame() function reads a video frame from camera, and calls
+  usb_cam_finalize_camera_photo() to convert YUV to RGB, etc, and finally call application
+  callback function for received frame
+
+  @param   c Pointer to camera structure.
+  @param   ext Pointer to camera extension structure.
+  @return  None.
+
+****************************************************************************************************
+*/
 static osalStatus read_video_frame(
     pinsCamera *c,
     PinsCameraExt *ext)
