@@ -14,7 +14,8 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_RASPI_CAMERA
+#if PINS_CAMERA
+#ifdef E_OSVER_pi
 #include "raspicam/raspicam.h"
 
 
@@ -674,4 +675,5 @@ const pinsCameraInterface pins_raspi_camera_iface
     raspi_cam_get_parameter
 };
 
+#endif
 #endif

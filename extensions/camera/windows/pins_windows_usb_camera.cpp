@@ -14,7 +14,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_USB_CAMERA
+#if PINS_CAMERA
 #include <malloc.h>
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"

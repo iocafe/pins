@@ -20,7 +20,7 @@
 
 struct iocBrickHdr;
 
-/* Camera types supported by pins libeary
+/* Camera types supported by pins library.
  */
 #define PINS_NO_CAMERA 0
 #define PINS_TCD1304_CAMERA 1
@@ -50,18 +50,6 @@ struct iocBrickHdr;
 #ifndef PINS_CAMERA
   #define PINS_CAMERA PINS_NO_CAMERA
 #endif
-
-
-#if PINS_CAMERA == PINS_WROVER_KIT_CAMERA || \
-    PINS_CAMERA == PINS_ESP_EYE_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_PSRAM_CAMERA || \
-    PINS_CAMERA == PINS_M5STACK_WIDE_CAMERA || \
-    PINS_CAMERA == PINS_AI_THINKER_CAMERA
-  #define PINS_IS_ESP32_CAMERA 1
-#else
-  #define PINS_IS_ESP32_CAMERA 0
-#endif
-
 
 /* If we got a camera
  */
@@ -172,7 +160,6 @@ typedef enum pinsCameraParamIx
     PINS_CAM_BRIGHTNESS,
     PINS_CAM_SATURATION,
 
-    // PINS_CAM_MAX_BUF_SZ,
     PINS_CAM_INTEGRATION_US,
 
     PINS_NRO_CAMERA_PARAMS
@@ -284,24 +271,18 @@ typedef struct pinsCameraInterface
 pinsCameraInterface;
 
 
-#if PINS_CAMERA == PINS_TCD1304_CAMERA
-  extern const pinsCameraInterface pins_tcd1304_camera_iface;
-  #define PINS_CAMERA_IFACE pins_tcd1304_camera_iface
+/* Include operating system specific defines.
+ */
+#ifdef OSAL_LINUX
+  #include "extensions/camera/linux/pins_linux_camera.h"
 #endif
 
-#if PINS_IS_ESP32_CAMERA
-  extern const pinsCameraInterface pins_esp32_camera_iface;
-  #define PINS_CAMERA_IFACE pins_esp32_camera_iface
+#ifdef OSAL_WINDOWS
+  #include "extensions/camera/windows/pins_windows_camera.h"
 #endif
 
-#if PINS_CAMERA == PINS_USB_CAMERA
-  extern const pinsCameraInterface pins_usb_camera_iface;
-  #define PINS_CAMERA_IFACE pins_usb_camera_iface
-#endif
-
-#if PINS_CAMERA == PINS_RASPI_CAMERA
-  extern const pinsCameraInterface pins_raspi_camera_iface;
-  #define PINS_CAMERA_IFACE pins_raspi_camera_iface
+#ifdef OSAL_ESP32
+  #include "extensions/camera/esp32/pins_esp32_camera.h"
 #endif
 
 /* Store a photo as a "brick" within brick buffer for communication.

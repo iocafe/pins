@@ -22,7 +22,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
-#if PINS_CAMERA == PINS_USB_CAMERA
+#if PINS_CAMERA
 
 #include <malloc.h>
 #include <libv4l2.h>
