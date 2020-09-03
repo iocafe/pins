@@ -638,9 +638,8 @@ osalStatus configure_usb_camera(
         ext->src_bytes_per_pix = fmt.fmt.pix.bytesperline / fmt.fmt.pix.width;
     }
 
-    // Init mmap
+    /* Init mmap */
     struct v4l2_requestbuffers req;
-
     os_memclear(&req, sizeof(req));
 
     req.count               = 2;
@@ -924,6 +923,17 @@ static osalStatus start_capturing_video(
     return OSAL_SUCCESS;
 }
 
+static void stop_capturing_video(
+    PinsCameraExt *ext)
+{
+    enum v4l2_buf_type type;
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (-1 == ioctl (ext->fd, VIDIOC_STREAMOFF, &type)) {
+        osal_debug_error("VIDIOC_STREAMOFF");
+    }
+    os_sleep(100);
+}
+
 
 /**
 ****************************************************************************************************
@@ -1050,11 +1060,11 @@ static void usb_cam_task(
                 if (EINTR == errno)
                     continue;
 
-                perror ("select");
+                osal_debug_error("ERR select");
             }
 
             if (0 == r) {
-                osal_debug_error("select timeout");
+                osal_debug_error("ERR select timeout");
                 break;
             }
 
@@ -1078,7 +1088,10 @@ static void usb_cam_task(
             }
         }
 
+        stop_capturing_video(ext);
+
 close_it:
+
         /* Close camera device
          */
         release_usb_camera_buffers_and_close_fd(ext);
