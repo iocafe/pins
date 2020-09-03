@@ -23,11 +23,12 @@
  */
 OSAL_C_HEADER_BEGINS
 
-/* Include IOCOM support headers.
+/* Include extenstion headers.
  */
 #include "extensions/morse/common/pins_morse_code.h"
 #include "extensions/devicebus/common/pins_devicebus.h"
 #include "extensions/camera/common/pins_camera.h"
+#include "extensions/detect_motion/common/pins_detect_motion.h"
 #include "extensions/display/common/pins_display.h"
 #include "extensions/iocom/common/pins_to_iocom.h"
 
