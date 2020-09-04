@@ -16,6 +16,8 @@
 #include "pinsx.h"
 #if PINS_CAMERA
 
+/* Forward referred static functions.
+ */
 static osalStatus dm_allocate_all_buffers(
     DetectMotion *dm);
 
@@ -37,11 +39,13 @@ static void dm_blur(
     os_int w,
     os_int h);
 
-static void dm_show_debug_quarter_image(
-    DetectMotion *dm,
+static void dm_show_debug_image(
     os_uchar *q_buf,
+    os_int w,
+    os_int h,
     os_uint movement,
     const struct pinsPhoto *photo);
+
 
 /**
 ****************************************************************************************************
@@ -51,7 +55,7 @@ static void dm_show_debug_quarter_image(
 
   The initialize_motion_detection() function initializes motion detection state structure.
 
-  @param   detect_motion Motion detection state structure.
+  @param   dm Motion detection state structure.
   @return  None.
 
 ****************************************************************************************************
@@ -71,7 +75,7 @@ void initialize_motion_detection(
 
   The release_motion_detection() function frees allocated memory.
 
-  @param   detect_motion Motion detection state structure.
+  @param   dm Motion detection state structure.
   @return  None.
 
 ****************************************************************************************************
@@ -86,8 +90,26 @@ void release_motion_detection(
 }
 
 
-/* Return OSAL_NOTHING_TO_DO if frame can be skipped.
- */
+/**
+****************************************************************************************************
+
+  @brief Initialize motion detection state structure.
+  @anchor initialize_motion_detection
+
+  The initialize_motion_detection() function initializes motion detection state structure.
+
+  @param   dm Motion detection state structure.
+  @param   photo New photo to check agains current movement detection state if there is movement.
+           If movement is detected or max interval has been reached, the data of the new photo will
+           be set as current motion detection state and the function returns OSAL_SUCCESS.
+  @param   prm Parameters for motion detection.
+  @param   res Motion detection results.
+  @return  Return OSAL_NOTHING_TO_DO if frame can be skipped. OSAL_SUCCCESS indicates that
+           there is movement, or the max frame interval limit have been reached. Other return
+           values indicate error, etc, and should be treated as movement.
+
+****************************************************************************************************
+*/
 osalStatus detect_motion(
     DetectMotion *dm,
     const struct pinsPhoto *photo,
@@ -111,8 +133,10 @@ osalStatus detect_motion(
         return OSAL_NOTHING_TO_DO;
     }
 
-    dm->q_w = photo->w/4;
-    dm->q_h = photo->h/4;
+    // dm->q_w = photo->w/4;
+    // dm->q_h = photo->h/4;
+    dm->q_w = photo->w/8;
+    dm->q_h = photo->h/8;
     dm->h_w = 2 * dm->q_w;
     dm->h_h = 2 * dm->q_h;
 
@@ -122,6 +146,7 @@ osalStatus detect_motion(
     s = dm_scale_original_image(dm, photo);
     if (s) return s;
 
+
     dm_blur(dm->h_buf1, dm->h_buf2, dm->h_w, dm->h_h);
 
     dm->q_new_sum = dm_scale_down(dm, dm->h_buf2, dm->q_new);
@@ -129,7 +154,8 @@ osalStatus detect_motion(
     movement = dm_calc_movement(dm);
     res->movement = movement;
 
-    dm_show_debug_quarter_image(dm, dm->q_new, movement, photo);
+    dm_show_debug_image(dm->q_new, dm->q_w, dm->q_h, movement, photo);
+    // dm_show_debug_image(dm->h_buf1, dm->h_w, dm->h_h, movement, photo);
 
     if (movement < prm->movement_limit &&
         !os_has_elapsed_since(&dm->image_set_ti, &ti, prm->max_interval_ms))
@@ -205,8 +231,10 @@ static osalStatus dm_scale_original_image(
     const struct pinsPhoto *photo)
 {
     os_uchar *s, *s2, *d;
-    os_int y, count, count2, h_w, h_h, byte_w;
+    os_int y, count, count2, h_w, h_h, byte_w, i;
     os_uint sum;
+    const os_int hor_bytes_for_pix = 12;
+    const os_int ver_bytes_for_pix = 4;
 
     /* If source photo is something not supported, return error.
      */
@@ -222,7 +250,7 @@ static osalStatus dm_scale_original_image(
     h_h = dm->h_h;
     byte_w = photo->byte_w;
 
-    for (y = 0; y < h_h; y++)
+    /* for (y = 0; y < h_h; y++)
     {
         s = photo->data + 2 * y * byte_w;
         d = dm->h_buf1 + y * h_w;
@@ -240,6 +268,29 @@ static osalStatus dm_scale_original_image(
             }
 
             *(d++) = (os_uchar)(sum / 12);
+        }
+    } */
+
+
+    for (y = 0; y < h_h; y++)
+    {
+        s2 = photo->data + 4 * y * byte_w;
+        d = dm->h_buf1 + y * h_w;
+        count = h_w;
+        while (count--) {
+            sum = 0;
+
+            for (i = 0; i<ver_bytes_for_pix; i++)
+            {
+                s = s2 + i * byte_w;
+                count2 = 12;
+                while (count2--) {
+                    sum += *(s++);
+                }
+            }
+
+            *(d++) = (os_uchar)(sum / (hor_bytes_for_pix * ver_bytes_for_pix));
+            s2 += hor_bytes_for_pix;
         }
     }
 
@@ -357,14 +408,15 @@ static void dm_blur(
     }
 }
 
-static void dm_show_debug_quarter_image(
-    DetectMotion *dm,
+static void dm_show_debug_image(
     os_uchar *q_buf,
+    os_int w,
+    os_int h,
     os_uint movement,
     const struct pinsPhoto *photo)
 {
     os_uchar *s, *d, v, m;
-    os_int y, count, q_w, q_h, byte_w;
+    os_int y, count, byte_w;
 
     /* If source photo is something not supported, return error.
      */
@@ -375,17 +427,13 @@ static void dm_show_debug_quarter_image(
         return;
     }
 
-    q_w = dm->q_w;
-    q_h = dm->q_h;
     byte_w = photo->byte_w;
 
-//    movement *= 5;
-
-    for (y = 0; y < q_h; y++)
+    for (y = 0; y < h; y++)
     {
-        s = q_buf + y * q_w;
+        s = q_buf + y * w;
         d = photo->data + y * byte_w;
-        count = q_w;
+        count = w;
         while (count--) {
             v = *(s++);
             m = (os_uchar)(movement < 255 ? movement : 255);
