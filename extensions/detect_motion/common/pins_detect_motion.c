@@ -16,6 +16,11 @@
 #include "pinsx.h"
 #if PINS_CAMERA
 
+/* Do we want to show motion detection debug image, define 0 or 1.
+ */
+#define DM_DEBUG_IMAGE 1
+
+
 /* Forward referred static functions.
  */
 static osalStatus dm_allocate_all_buffers(
@@ -40,7 +45,7 @@ static void dm_blur(
     os_int h);
 
 static void dm_show_debug_image(
-    os_uchar *q_buf,
+    os_uchar *src,
     os_int w,
     os_int h,
     os_uint movement,
@@ -70,7 +75,7 @@ void initialize_motion_detection(
 /**
 ****************************************************************************************************
 
-  @brief Release resources allocated for motion detection.
+  @brief Release memory allocated for motion detection.
   @anchor release_motion_detection
 
   The release_motion_detection() function frees allocated memory.
@@ -93,10 +98,12 @@ void release_motion_detection(
 /**
 ****************************************************************************************************
 
-  @brief Initialize motion detection state structure.
-  @anchor initialize_motion_detection
+  @brief Detect motion in camera image.
+  @anchor detect_motion
 
-  The initialize_motion_detection() function initializes motion detection state structure.
+  The detect_motion() function compares new photo to motion detection state and if motion
+  is detected, the function returns OSAL_SUCCESS. The function updates motion detection
+  state when motion is detected or maximum frame interval elapses.
 
   @param   dm Motion detection state structure.
   @param   photo New photo to check agains current movement detection state if there is movement.
@@ -133,8 +140,6 @@ osalStatus detect_motion(
         return OSAL_NOTHING_TO_DO;
     }
 
-    // dm->q_w = photo->w/4;
-    // dm->q_h = photo->h/4;
     dm->q_w = photo->w/8;
     dm->q_h = photo->h/8;
     dm->h_w = 2 * dm->q_w;
@@ -146,7 +151,6 @@ osalStatus detect_motion(
     s = dm_scale_original_image(dm, photo);
     if (s) return s;
 
-
     dm_blur(dm->h_buf1, dm->h_buf2, dm->h_w, dm->h_h);
 
     dm->q_new_sum = dm_scale_down(dm, dm->h_buf2, dm->q_new);
@@ -154,8 +158,10 @@ osalStatus detect_motion(
     movement = dm_calc_movement(dm);
     res->movement = movement;
 
+#if DM_DEBUG_IMAGE
     dm_show_debug_image(dm->q_new, dm->q_w, dm->q_h, movement, photo);
     // dm_show_debug_image(dm->h_buf1, dm->h_w, dm->h_h, movement, photo);
+#endif
 
     if (movement < prm->movement_limit &&
         !os_has_elapsed_since(&dm->image_set_ti, &ti, prm->max_interval_ms))
@@ -163,6 +169,8 @@ osalStatus detect_motion(
         return OSAL_NOTHING_TO_DO;
     }
 
+    /* Store new photo data as motion detection state.
+     */
     os_memcpy(dm->q_prev, dm->q_new, dm->q_w * dm->q_h);
     dm->q_prev_sum = dm->q_new_sum;
     dm->image_set_ti = ti;
@@ -170,19 +178,25 @@ osalStatus detect_motion(
     return OSAL_SUCCESS;
 }
 
-void set_motion_detection_image(
-    DetectMotion *dm,
-    const struct pinsPhoto *photo)
-{
-    MotionDetectionParameters prm;
-    MotionDetectionResults res;
-    os_memclear(&prm, sizeof(prm));
-    detect_motion(dm, photo, &prm, &res);
-}
 
+/**
+****************************************************************************************************
 
-/* Make sure that all buffers are big enough to hold buf_sz bytes.
- */
+  @brief Allocate memory for motion detection image buffer.
+  @anchor dm_allocate_buffer
+
+  The dm_allocate_buffer function makes sure that all buffers are big enough to hold buf_sz bytes.
+  Buffer is never shrunk.
+
+  @param   bufptr Pointer to buffer pointer, can be modfied by this function.
+  @param   byfsz Minimum number of bytes needed.
+  @param   buf_alloc Pointer to allocated buffer size, can be modfied by this function.
+
+  @return  If successfull, the function returns OSAL_SUCCESS. Return value
+           OSAL_STATUS_MEMORY_ALLOCATION_FAILED indicates "out of memory".
+
+****************************************************************************************************
+*/
 static osalStatus dm_allocate_buffer(
     os_uchar **bufptr,
     os_memsz buf_sz,
@@ -202,6 +216,22 @@ static osalStatus dm_allocate_buffer(
     return OSAL_SUCCESS;
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Allocate all motion detection buffers.
+  @anchor dm_allocate_all_buffers
+
+  The dm_allocate_all_buffers function makes sure that all enough memory has been allocated for
+  low resolution motion detection buffers. Buffer is never shrunk.
+
+  @param   dm Motion detection state structure.
+  @return  If successfull, the function returns OSAL_SUCCESS. Return value
+           OSAL_STATUS_MEMORY_ALLOCATION_FAILED indicates "out of memory".
+
+****************************************************************************************************
+*/
 static osalStatus dm_allocate_all_buffers(
     DetectMotion *dm)
 {
@@ -226,6 +256,26 @@ static osalStatus dm_allocate_all_buffers(
     return OSAL_SUCCESS;
 }
 
+
+
+/**
+****************************************************************************************************
+
+  @brief Convert photo down to low resolution grayscale image.
+  @anchor dm_scale_original_image
+
+  The dm_scale_original_image function makes scales original image down so that 4 x 4 pixel
+  square is converted to 1 pixel in low resolution image h.
+
+  For now, only uncompressed RGB is supported.
+
+  @param   dm Motion detection state structure.
+  @param   photo Photo to convert to low resolution.
+  @return  If successfull, the function returns OSAL_SUCCESS. Return value
+           OSAL_STATUS_NOT_SUPPORTED indicates that photo format or compression is not supported.
+
+****************************************************************************************************
+*/
 static osalStatus dm_scale_original_image(
     DetectMotion *dm,
     const struct pinsPhoto *photo)
@@ -249,28 +299,6 @@ static osalStatus dm_scale_original_image(
     h_w = dm->h_w;
     h_h = dm->h_h;
     byte_w = photo->byte_w;
-
-    /* for (y = 0; y < h_h; y++)
-    {
-        s = photo->data + 2 * y * byte_w;
-        d = dm->h_buf1 + y * h_w;
-        count = h_w;
-        while (count--) {
-            sum = 0;
-            s2 = s + byte_w;
-            count2 = 6;
-            while (count2--) {
-                sum += *(s++);
-            }
-            count2 = 6;
-            while (count2--) {
-                sum += *(s2++);
-            }
-
-            *(d++) = (os_uchar)(sum / 12);
-        }
-    } */
-
 
     for (y = 0; y < h_h; y++)
     {
@@ -297,6 +325,22 @@ static osalStatus dm_scale_original_image(
     return OSAL_SUCCESS;
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Scale H image down to Q image.
+  @anchor dm_scale_down
+
+  The dm_scale_down function scales H image to quarted resolution for Q-image.
+
+  @param   dm Motion detection state structure.
+  @param   h_buf Pointer to source image.
+  @param   q_buf Target image buffer.
+  @return  Sum of pixel values in Q-image.
+
+****************************************************************************************************
+*/
 static os_ulong dm_scale_down(
     DetectMotion *dm,
     os_uchar *h_buf,
@@ -329,6 +373,21 @@ static os_ulong dm_scale_down(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Calculate how much movement there is in image.
+  @anchor dm_calc_movement
+
+  The dm_calc_movement function calculates for much movement there is in image. The Q-images
+  average gray level is normalized. Difference between normalized pixel of Q-image in new image
+  and saved Q-image is squared and summed.
+
+  @param   dm Motion detection state structure.
+  @return  Movement as number, 0 = no movement, >100 is much movement.
+
+****************************************************************************************************
+*/
 static os_int dm_calc_movement(
     DetectMotion *dm)
 {
@@ -371,6 +430,23 @@ static os_int dm_calc_movement(
 }
 
 
+/**
+****************************************************************************************************
+
+  @brief Blur image.
+  @anchor dm_blur
+
+  The dm_blur function creates blurred copy of original image in another buffer. Both source and
+  result images are grayscale images and do have the same size.
+
+  @param   src Pointer to source image data.
+  @param   dst Pointer to destination image buffer.
+  @param   w Image width in pixels.
+  @param   h Image height in pixels.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void dm_blur(
     os_uchar *src,
     os_uchar *dst,
@@ -408,8 +484,27 @@ static void dm_blur(
     }
 }
 
+#if DM_DEBUG_IMAGE
+/**
+****************************************************************************************************
+
+  @brief Blur image.
+  @anchor dm_show_debug_image
+
+  The dm_show_debug_image function draws a low resolution image on top of original photo.
+  This is used to visualize motion detection images while debugging.
+
+  @param   src Pointer to source image data.
+  @param   w Image width in pixels.
+  @param   h Image height in pixels.
+  @param   movement Movement value to draw as solid color component.
+  @param   photo Photo on top of which small low resulution debug image is drawn.
+  @return  None.
+
+****************************************************************************************************
+*/
 static void dm_show_debug_image(
-    os_uchar *q_buf,
+    os_uchar *src,
     os_int w,
     os_int h,
     os_uint movement,
@@ -431,7 +526,7 @@ static void dm_show_debug_image(
 
     for (y = 0; y < h; y++)
     {
-        s = q_buf + y * w;
+        s = src + y * w;
         d = photo->data + y * byte_w;
         count = w;
         while (count--) {
@@ -443,5 +538,6 @@ static void dm_show_debug_image(
         }
     }
 }
+#endif
 
 #endif

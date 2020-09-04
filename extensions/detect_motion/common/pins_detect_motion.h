@@ -50,33 +50,31 @@ typedef struct MotionDetectionResults
 MotionDetectionResults;
 
 
-/* DetectMotion code state structure.
- * Pin connected to the LED to blink.
-   Pin connected to the second LED to blink. OS_NULL if no second LED.
+/* Motion detection state structure.
  */
 typedef struct DetectMotion
 {
-    /* Half image (1/4 size) image witdth and height in pixlels.
+    /* H-image (1/16 size) image width and height in pixlels.
      */
     os_int h_w, h_h;
 
-    /* Quarter image (1/4 size) image witdth and height in pixlels.
+    /* Q-image (1/64 size) image witdth and height in pixlels.
      */
     os_int q_w, q_h;
 
-    /* Half size image buffers
+    /* Low resolution H-image buffers
      */
     os_uchar *h_buf1, *h_buf2;
 
-    /* Allocated size for half image buffers.
+    /* Allocated size for H-image buffers.
      */
     os_memsz h_buf1_alloc, h_buf2_alloc;
 
-    /* Quarter image  (1/16 size) buffers
+    /* Q-image (1/64 size) buffers
      */
     os_uchar *q_new, *q_prev;
 
-    /* Allocated size for quarter image buffers.
+    /* Allocated size for Q-image buffers.
      */
     os_memsz q_new_alloc, q_prev_alloc;
 
@@ -91,21 +89,23 @@ typedef struct DetectMotion
 DetectMotion;
 
 
+/* Initialize motion detection state structure.
+ */
 void initialize_motion_detection(
     DetectMotion *dm);
 
+/* Release memory allocated for motion detection.
+ */
 void release_motion_detection(
     DetectMotion *dm);
 
+/* Detect motion in camera image.
+ */
 osalStatus detect_motion(
     DetectMotion *dm,
     const struct pinsPhoto *photo,
     MotionDetectionParameters *prm,
     MotionDetectionResults *res);
-
-void set_motion_detection_image(
-    DetectMotion *dm,
-    const struct pinsPhoto *photo);
 
 #endif
 #endif
