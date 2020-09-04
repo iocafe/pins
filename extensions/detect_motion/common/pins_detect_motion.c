@@ -127,6 +127,7 @@ osalStatus detect_motion(
     dm->q_new_sum = dm_scale_down(dm, dm->h_buf2, dm->q_new);
 
     movement = dm_calc_movement(dm);
+    res->movement = movement;
 
     dm_show_debug_quarter_image(dm, dm->q_new, movement, photo);
 
@@ -281,17 +282,22 @@ static os_int dm_calc_movement(
     DetectMotion *dm)
 {
     os_uchar *n, *p;
-    os_uint new_coff, prev_coff, dn, dp;
+    os_uint new_coeff, prev_coeff, dn, dp;
     os_ulong total_sum;
     os_int count, delta;
 
     count = dm->q_w * dm->q_h;
     total_sum = dm->q_new_sum;
     if (total_sum <= 0) total_sum = 1;
-    new_coff = 256 * count / total_sum;
+    new_coeff = 16535 * count / total_sum;
     total_sum = dm->q_prev_sum;
     if (total_sum <= 0) total_sum = 1;
-    prev_coff = 256 * count / total_sum;
+    prev_coeff = 16535 * count / total_sum;
+
+    /* Do not alert in darkness all the time.
+     */
+    if (new_coeff > 256) new_coeff = 256;
+    if (prev_coeff > 256) prev_coeff = 256;
 
     n = dm->q_new;
     p = dm->q_prev;
@@ -299,8 +305,8 @@ static os_int dm_calc_movement(
 
     while (count--)
     {
-        dp = *(p++) * prev_coff;
-        dn = *(n++) * new_coff;
+        dp = *(p++) * prev_coeff;
+        dn = *(n++) * new_coeff;
 
         delta = (os_int)dp - (os_int)dn;
         delta *= delta;
@@ -309,7 +315,7 @@ static os_int dm_calc_movement(
         }
     }
 
-    total_sum /= dm->q_w * dm->q_h;
+    total_sum /= dm->q_w * dm->q_h * 64 * 64;
     return (os_int)total_sum;
 }
 
@@ -373,7 +379,7 @@ static void dm_show_debug_quarter_image(
     q_h = dm->q_h;
     byte_w = photo->byte_w;
 
-    movement *= 5;
+//    movement *= 5;
 
     for (y = 0; y < q_h; y++)
     {

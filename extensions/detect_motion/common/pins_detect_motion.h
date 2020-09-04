@@ -45,7 +45,7 @@ MotionDetectionParameters;
  */
 typedef struct MotionDetectionResults
 {
-    int x;
+    os_int movement;
 }
 MotionDetectionResults;
 
