@@ -341,9 +341,9 @@ static os_long raspi_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor raspi_cam_finalize_camera_photo
+  @anchor raspi_cam_do_photo_callback
 
-  The raspi_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The raspi_cam_do_photo_callback() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   @param   c Pointer to camera structure.
@@ -352,7 +352,7 @@ static os_long raspi_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static osalStatus raspi_cam_finalize_camera_photo(
+static osalStatus raspi_cam_do_photo_callback(
     pinsCamera *c)
 {
     pinsPhoto photo;
@@ -381,65 +381,6 @@ static osalStatus raspi_cam_finalize_camera_photo(
 
     photo.data_sz = photo.byte_w * (size_t)h;
 
-#if 0
-    os_int y, h2, count, i;
-    os_uchar *top, *bottom, u, *p;
-    os_ulong testsum = 1234;
-
-    /* BGR - RGB flip (RGB24 format).
-     */
-    for (y = 0; y<h; y++) {
-        p = photo.data + photo.byte_w * (size_t)y;
-        count = w;
-        while (count --) {
-            u = p[0];
-            p[0] = p[2];
-            p[2] = u;
-            testsum += *(os_uint*)p;
-            p += 3;
-        }
-    }
-
-    /* The USB camera can return same image multiple times and
-       can get stuck showing one photo, workaround: detect and restart
-     */
-    for (i = TESTSUM_N - 1; i > 0; i--) {
-        c->ext->testsum[i] = c->ext->testsum[i-1];
-    }
-    c->ext->testsum[0] = testsum;
-    if (testsum == c->ext->testsum[1])
-    {
-        for (i = 1; i < TESTSUM_N; i++) {
-            if (testsum != c->ext->testsum[i]) break;
-        }
-
-        if (i > TESTSUM_N/2) {
-            os_sleep(100);
-        }
-
-        if (i >= TESTSUM_N && !c->ext->prm_changed) {
-            os_get_timer(&c->ext->prm_timer);
-            c->ext->reconfigure_camera = OS_TRUE;
-            c->ext->prm_changed = OS_TRUE;
-        }
-
-        return OSAL_NOTHING_TO_DO;
-    }
-
-    /* This can be done here or by VI->getPixels()
-       First flip image, top to bottom.
-     */
-    os_uchar *tmp = (os_uchar*)alloca(photo.byte_w);
-    h2 = h/2;
-    for (y = 0; y<h2; y++) {
-        top = photo.data + photo.byte_w * (size_t)y;
-        bottom = photo.data + photo.byte_w * (size_t)(h - y - 1);
-        os_memcpy(tmp, top, photo.byte_w);
-        os_memcpy(top, bottom, photo.byte_w);
-        os_memcpy(bottom, tmp, photo.byte_w);
-    }
-#endif
-
     alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
     hdr.alloc_sz[0] = (os_uchar)alloc_sz;
     hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
@@ -451,6 +392,35 @@ static osalStatus raspi_cam_finalize_camera_photo(
 
     c->callback_func(&photo, c->callback_context);
     return OSAL_SUCCESS;
+}
+
+/**
+****************************************************************************************************
+
+  @brief Finalize photo data.
+  @anchor raspi_cam_finalize_photo
+
+  The raspi_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  This function converts YUV image to RGB, and flips it in memory as "top first".
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void raspi_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    pinsCamera *c;
+    PinsCameraExt *ext;
+
+    c = photo->camera;
+    ext = c->ext;
+
+    ext->cam->retrieve(c->ext->buf);
 }
 
 
@@ -556,11 +526,9 @@ static void raspi_cam_task(
             }
 
 
-            TCAM->retrieve(c->ext->buf);
+//          TCAM->retrieve(c->ext->buf);
 
-             if (raspi_cam_finalize_camera_photo(c)) {
-                os_timeslice();
-             }
+             raspi_cam_do_photo_callback(c);
 
             if (c->ext->prm_changed) {
                 if (os_has_elapsed(&c->ext->prm_timer, 50)) {
@@ -570,6 +538,7 @@ static void raspi_cam_task(
                     raspi_cam_set_parameters(c, camera_nr);
                 }
             }
+            os_sleep(20);
         }
 
 tryagain:
@@ -672,7 +641,9 @@ const pinsCameraInterface pins_raspi_camera_iface
     raspi_cam_start,
     raspi_cam_stop,
     raspi_cam_set_parameter,
-    raspi_cam_get_parameter
+    raspi_cam_get_parameter,
+    OS_NULL,
+    raspi_cam_finalize_photo
 };
 
 #endif

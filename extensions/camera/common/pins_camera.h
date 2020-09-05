@@ -252,9 +252,6 @@ typedef struct pinsCameraInterface
     void (*stop)(
         pinsCamera *c);
 
-    /* void (*trig)(
-        pinsCamera *c); */
-
     void (*set_parameter)(
         pinsCamera *c,
         pinsCameraParamIx ix,
@@ -267,6 +264,9 @@ typedef struct pinsCameraInterface
     void (*set_camera_jpeg_quality)(
         pinsCamera *c,
         os_uchar quality);
+
+    void (*finalize_photo)(
+        pinsPhoto *photo);
 }
 pinsCameraInterface;
 

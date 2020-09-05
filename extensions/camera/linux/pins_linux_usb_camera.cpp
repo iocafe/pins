@@ -55,8 +55,8 @@ typedef struct PinsCameraExt
     os_int h;
     os_int src_bytes_per_line;
     os_int src_bytes_per_pix;
-
     os_int target_bytes_per_pix;
+    os_uchar *callback_data_ptr;
 
     os_int prm[PINS_NRO_CAMERA_PARAMS];
     os_timer prm_timer;
@@ -378,12 +378,10 @@ static os_long usb_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor usb_cam_finalize_camera_photo
+  @anchor usb_cam_do_photo_callback
 
-  The usb_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The usb_cam_do_photo_callback() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
-
-  This function converts YUV image to RGB, and flips it in memory as "top first".
 
   @param   c Pointer to camera structure.
   @param   photo Pointer to photo structure to set up.
@@ -391,17 +389,18 @@ static os_long usb_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static osalStatus usb_cam_finalize_camera_photo(
+static osalStatus usb_cam_do_photo_callback(
     pinsCamera *c,
-    PinsCameraExt *ext,
     os_uchar *ptr,
     os_memsz bytes)
 {
-    os_uchar *d, *s, *simg, *dimg;
+    PinsCameraExt *ext;
     pinsPhoto photo;
     iocBrickHdr hdr;
-    os_int alloc_sz, w, h, y, count;
-    os_int y1, pb, pr, r, g, b, Y1, Cb, Cr;
+    os_int alloc_sz, w, h;
+
+    ext = c->ext;
+    ext->callback_data_ptr = ptr;
 
     os_memclear(&photo, sizeof(pinsPhoto));
     os_memclear(&hdr, sizeof(iocBrickHdr));
@@ -423,14 +422,59 @@ static osalStatus usb_cam_finalize_camera_photo(
         return OSAL_STATUS_FAILED;
     }
 
-    simg = ptr;
-    dimg = photo.data;
+    alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
+    hdr.alloc_sz[0] = (os_uchar)alloc_sz;
+    hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
+    hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
+    hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
+
+    photo.w = w;
+    photo.h = h;
+
+    c->callback_func(&photo, c->callback_context);
+    return OSAL_SUCCESS;
+}
+
+
+
+/**
+****************************************************************************************************
+
+  @brief Finalize photo data.
+  @anchor usb_cam_finalize_photo
+
+  The usb_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  This function converts YUV image to RGB, and flips it in memory as "top first".
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void usb_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    pinsCamera *c;
+    PinsCameraExt *ext;
+    os_uchar *d, *s, *simg, *dimg;
+    os_int w, h, y, count;
+    os_int y1, pb, pr, r, g, b, Y1, Cb, Cr;
+
+    c = photo->camera;
+    ext = c->ext;
+    simg = ext->callback_data_ptr;
+    dimg = photo->data;
+    w = ext->w;
+    h = ext->h;
 
     if (ext->target_bytes_per_pix == 3 && ext->src_bytes_per_pix == 2)
     {
         for (y = 0; y < h; y++) {
             s = simg + (h-y-1) * ext->src_bytes_per_line;
-            d = dimg + y * photo.byte_w;
+            d = dimg + y * photo->byte_w;
 
             count = w/2;
 
@@ -482,18 +526,6 @@ static osalStatus usb_cam_finalize_camera_photo(
             }
         }
     }
-
-    alloc_sz = (os_int)(photo.data_sz + sizeof(iocBrickHdr));
-    hdr.alloc_sz[0] = (os_uchar)alloc_sz;
-    hdr.alloc_sz[1] = (os_uchar)(alloc_sz >> 8);
-    hdr.alloc_sz[2] = (os_uchar)(alloc_sz >> 16);
-    hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
-
-    photo.w = w;
-    photo.h = h;
-
-    c->callback_func(&photo, c->callback_context);
-    return OSAL_SUCCESS;
 }
 
 
@@ -946,7 +978,7 @@ static void stop_capturing_video(
   @anchor read_video_frame
 
   The read_video_frame() function reads a video frame from camera, and calls
-  usb_cam_finalize_camera_photo() to convert YUV to RGB, etc, and finally call application
+  usb_cam_do_photo_callback() to convert YUV to RGB, etc, and finally call application
   callback function for received frame
 
   @param   c Pointer to camera structure.
@@ -989,7 +1021,7 @@ static osalStatus read_video_frame(
 
     ptr = (os_uchar*)ext->buffers[ext->v4l_buf.index].start;
     bytes = ext->v4l_buf.bytesused;
-    s = usb_cam_finalize_camera_photo(c, ext, ptr, bytes);
+    s = usb_cam_do_photo_callback(c, ptr, bytes);
 
     if (-1 == ioctl (ext->fd, VIDIOC_QBUF, &ext->v4l_buf)) {
         osal_debug_error("VIDIOC_DQBUF-2");
@@ -1142,7 +1174,9 @@ const pinsCameraInterface pins_usb_camera_iface
     usb_cam_start,
     usb_cam_stop,
     usb_cam_set_parameter,
-    usb_cam_get_parameter
+    usb_cam_get_parameter,
+    OS_NULL,
+    usb_cam_finalize_photo
 };
 
 #endif
