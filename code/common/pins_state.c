@@ -217,9 +217,10 @@ os_int pin_get_ext(
 
     // if (x != *(os_int*)pin->prm)
     if (x != ((PinRV*)pin->prm)->value ||
-        state_bits != ((PinRV*)pin->prm)->state_bits)
+        *state_bits != ((PinRV*)pin->prm)->state_bits)
     {
-        *(os_int*)pin->prm = x;
+        ((PinRV*)pin->prm)->value = x;
+        ((PinRV*)pin->prm)->state_bits = *state_bits;
 
         if (pin_to_iocom_func &&
             pin->signal)
@@ -324,7 +325,8 @@ void pins_read_all(
                     state_bits != ((PinRV*)pin->prm)->state_bits ||
                     (flags & PINS_RESET_IOCOM))
                 {
-                    *(os_int*)pin->prm = x;
+                    ((PinRV*)pin->prm)->value = x;
+                    ((PinRV*)pin->prm)->state_bits = state_bits;
 
                     /* If this is PINS library is connected to IOCOM library
                        and this pin is mapped to IOCOM signal, then forward

@@ -211,7 +211,7 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
 
     if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0)
     {
-        ext->state_bits[current_ch] = OSAL_STATE_UNCONNECTED;
+        ext->state_bits[current_ch] = (OSAL_STATE_UNCONNECTED|OSAL_STATE_RED);
     }
     else {
         x = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
