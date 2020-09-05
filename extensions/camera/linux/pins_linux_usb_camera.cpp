@@ -12,7 +12,11 @@
   - Input selection
   - Camera parameter settings
 
+  Dependencies
+  - sudo apt-get install libv4l-dev
+
   Credits to example code by Mohamed Thalib and Søren Holm. https://github.com/sgh/v4l2
+
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
