@@ -168,12 +168,17 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
   The pin_ll_get() function gets IO pin state from hardware
 
   @param   pin Pointer to pin structure.
-  @return  Pin state, for example 0 or 1 for digital input.
+  @param   state_bits Pointer to byte where to store state bits like OSAL_STATE_CONNECTED,
+           OSAL_STATE_ORANGE, OSAL_STATE_YELLOW... Value OSAL_STATE_UNCONNECTED indicates not
+           connected (= unknown value).
+.
+  @return  Pin value, for example 0 or 1 for digital input.
 
 ****************************************************************************************************
 */
 os_int OS_ISR_FUNC_ATTR pin_ll_get(
-    const Pin *pin)
+    const Pin *pin,
+    os_char *state_bits)
 {
     if (pin->addr >= 0) switch (pin->type)
     {
@@ -183,15 +188,17 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             if (pin->prm) {
                 if (pin_get_prm(pin, PIN_TOUCH)) {
                     /* return touchRead(pin->addr); */
-                    return 0;
+                    break;
                 }
             }
 
             /* Normal digital input
              */
+            *state_bits = OSAL_STATE_CONNECTED;
             return digitalRead(pin->addr);
 
         case PIN_ANALOG_INPUT:
+            *state_bits = OSAL_STATE_CONNECTED;
             return analogRead(pin->addr);
 
         case PIN_OUTPUT:
@@ -201,6 +208,7 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             break;
     }
 
+    *state_bits = OSAL_STATE_UNCONNECTED;
     return 0;
 }
 

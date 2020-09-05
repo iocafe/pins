@@ -97,6 +97,8 @@ void pin_ll_shutdown(
   @anchor pin_ll_set
 
   The pin_ll_set() function...
+  @param   pin Pointer to pin structure.
+  @param   x Value to set, for example 0 or 1 for digital output.
   @return  None.
 
 ****************************************************************************************************
@@ -117,19 +119,27 @@ void pin_ll_set(
   @anchor pin_ll_get
 
   The pin_ll_get() function...
-  @return  None.
+
+  @param   pin Pointer to pin structure.
+  @param   state_bits Pointer to byte where to store state bits like OSAL_STATE_CONNECTED,
+           OSAL_STATE_ORANGE, OSAL_STATE_YELLOW... Value OSAL_STATE_UNCONNECTED indicates not
+           connected (= unknown value).
+  @return  Pin value, for example 0 or 1 for digital input.
 
 ****************************************************************************************************
 */
 os_int pin_ll_get(
-    const Pin *pin)
+    const Pin *pin,
+    os_char *state_bits)
 {
     switch (pin->type)
     {
         case PIN_INPUT:
+            *state_bits = OSAL_STATE_CONNECTED;
             return (os_int)osal_rand(0, 1);
 
         default:
+            *state_bits = OSAL_STATE_CONNECTED;
             return (os_int)osal_rand(0, 65535);
     }
 }

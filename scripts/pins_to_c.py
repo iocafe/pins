@@ -84,7 +84,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     global nro_pins, pin_nr, define_list, device_list, driver_list, bus_list, bus_pin_list
 
     # Generate C parameter list for the pin
-    c_prm_list = "PIN_RV, PIN_RV"
+    c_prm_list = "PIN_RV, PIN_RV, PIN_RV"
     c_prm_list_has_interrupt = False
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
@@ -274,7 +274,7 @@ def write_device_list(device_list, driver_list, bus_list):
         hfile.write('osalStatus ' + data[0] + '_gen_req(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_proc_resp(struct PinsBusDevice *device);\n')
         hfile.write('osalStatus ' + data[0] + '_set(struct PinsBusDevice *device, os_short addr, os_int value);\n')
-        hfile.write('os_int ' + data[0] + '_get(struct PinsBusDevice *device, os_short addr);\n')
+        hfile.write('os_int ' + data[0] + '_get(struct PinsBusDevice *device, os_short addr, os_char *state_bits);\n')
 
     # for driver_name, func_decl in driver_list.items():
     #     hfile.write(func_decl)

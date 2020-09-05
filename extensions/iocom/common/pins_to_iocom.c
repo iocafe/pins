@@ -61,6 +61,7 @@ static void pin_to_iocom(
 {
     const iocSignal *s;
     os_int x;
+    os_char state_bits;
 
     s = pin->signal;
 
@@ -70,8 +71,9 @@ static void pin_to_iocom(
 
     /* Set the signal.
      */
-    x = *(os_int*)pin->prm;
-    ioc_set(s, x);
+    x = ((PinRV*)pin->prm)->value;
+    state_bits = ((PinRV*)pin->prm)->state_bits;
+    ioc_set_ext(s, x, state_bits);
 }
 
 

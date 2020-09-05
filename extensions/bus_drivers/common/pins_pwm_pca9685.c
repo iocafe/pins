@@ -120,11 +120,11 @@ static os_short pca9685_nro_chips;
 /**
 ****************************************************************************************************
 
-   @brief Initialize driver
-   @anchor pca9685_initialize_driver
+  @brief Initialize driver
+  @anchor pca9685_initialize_driver
 
-   pca9685_initialize_driver() function initializes global variables for bus device driver.
-   @return  None.
+  pca9685_initialize_driver() function initializes global variables for bus device driver.
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -138,14 +138,14 @@ void pca9685_initialize_driver()
 /**
 ****************************************************************************************************
 
-   @brief Initialize device
-   @anchor pca9685_initialize_device
+  @brief Initialize device
+  @anchor pca9685_initialize_device
 
-   The pca9685_initialize_device() function initializes a bus device structure for a specific
-   PCA9685 chip.
+  The pca9685_initialize_device() function initializes a bus device structure for a specific
+  PCA9685 chip.
 
-   @param   device Structure representing I2C device.
-   @return  None.
+  @param   device Structure representing I2C device.
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -175,14 +175,14 @@ void pca9685_initialize_device(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Initialize "pin" of bus device.
-   @anchor pca9685_initialize_pin
+  @brief Initialize "pin" of bus device.
+  @anchor pca9685_initialize_pin
 
-   The pca9685_initialize_pin() function initializes a bus device's pin. In practice this
-   function may set some data in device strucure.
+  The pca9685_initialize_pin() function initializes a bus device's pin. In practice this
+  function may set some data in device strucure.
 
-   @param   pin Structure representing bus device "pin".
-   @return  None.
+  @param   pin Structure representing bus device "pin".
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -220,18 +220,18 @@ void pca9685_initialize_pin(const struct Pin *pin)
 /**
 ****************************************************************************************************
 
-   @brief Set PWM frequency for the device.
-   @anchor pca9685_initialization_sequence
+  @brief Set PWM frequency for the device.
+  @anchor pca9685_initialization_sequence
 
-   The pca9685_initialization_sequence() function sets PWM pulse frequency for all PWM channels
-   40Hz to 1000Hz using internal 25MHz oscillator.
+  The pca9685_initialization_sequence() function sets PWM pulse frequency for all PWM channels
+  40Hz to 1000Hz using internal 25MHz oscillator.
 
-   Notice that same frequency needs to be used for all PWM outputs of the PCA9625 chip.
+  Notice that same frequency needs to be used for all PWM outputs of the PCA9625 chip.
 
-   @param   device Structure representing I2C device.
-   @return  OSAL_COMPLETE if initialization sequence has been completed successfully.
-            OSAL_SUCCESS if installation sequence step is prepared.
-            Other values indicate an installation sequence error.
+  @param   device Structure representing I2C device.
+  @return  OSAL_COMPLETE if initialization sequence has been completed successfully.
+           OSAL_SUCCESS if installation sequence step is prepared.
+           Other values indicate an installation sequence error.
 
 ****************************************************************************************************
 */
@@ -332,16 +332,16 @@ getout:
 /**
 ****************************************************************************************************
 
-   @brief Prepare request to send
-   @anchor pca9685_gen_req
+  @brief Prepare request to send
+  @anchor pca9685_gen_req
 
-   The pca9685_gen_req() function prepares the next request to send to the device into buffer
-   within the bus struture.
+  The pca9685_gen_req() function prepares the next request to send to the device into buffer
+  within the bus struture.
 
-   @param   device Structure representing I2C device.
-   @return  OSAL_COMPLETED indicates that this was last I2C transaction needed for this device
-            so that all data has been transferred to device. Value OSAL_SUCCESS to indicates
-            that there is more to write (or that checking is done when processing reply).
+  @param   device Structure representing I2C device.
+  @return  OSAL_COMPLETED indicates that this was last I2C transaction needed for this device
+           so that all data has been transferred to device. Value OSAL_SUCCESS to indicates
+           that there is more to write (or that checking is done when processing reply).
 
 ****************************************************************************************************
 */
@@ -408,20 +408,20 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Process reply from I2C device
-   @anchor pca9685_proc_resp
+  @brief Process reply from I2C device
+  @anchor pca9685_proc_resp
 
-   The pca9685_proc_resp() function processed the received reply from buffer
-   within the bus struture. It stores PWM value for the channel for the device
+  The pca9685_proc_resp() function processed the received reply from buffer
+  within the bus struture. It stores PWM value for the channel for the device
 
-   Note: Sensibility checks for replay should be added, plus some kind of error counter would
-   be appropriate to know if the design is failing.
+  Note: Sensibility checks for replay should be added, plus some kind of error counter would
+  be appropriate to know if the design is failing.
 
-   @param   device Structure representing I2C device.
-   @return  OSAL_COMPLETED indicates that this was last I2C transaction needed for this device
-            so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
-            that there is more to read. Other values indicate that I2C reply was not
-            recieved or was errornous.
+  @param   device Structure representing I2C device.
+  @return  OSAL_COMPLETED indicates that this was last I2C transaction needed for this device
+           so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
+           that there is more to read. Other values indicate that I2C reply was not
+           recieved or was errornous.
 
 ****************************************************************************************************
 */
@@ -449,16 +449,16 @@ osalStatus pca9685_proc_resp(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Set data to I2C device
-   @anchor pca9685_set
+  @brief Set data to I2C device
+  @anchor pca9685_set
 
-   The pca9685_set() function is not needed for PWM, it is read only.
+  The pca9685_set() function is not needed for PWM, it is read only.
 
-   @param   device Structure representing I2C device.
-   @param   addr PWM channel 0 ... 7.
-   @param   value Value to set, ignored.
-   @return  OSAL_STATUS if successfull. Other values indicate a hardware error, specifically
-            OSAL_STATUS_NOT_CONNECTED if I2C device is not connected.
+  @param   device Structure representing I2C device.
+  @param   addr PWM channel 0 ... 7.
+  @param   value Value to set, ignored.
+  @return  OSAL_STATUS if successfull. Other values indicate a hardware error, specifically
+           OSAL_STATUS_NOT_CONNECTED if I2C device is not connected.
 
 ****************************************************************************************************
 */
@@ -482,18 +482,21 @@ osalStatus pca9685_set(struct PinsBusDevice *device, os_short addr, os_int value
 /**
 ****************************************************************************************************
 
-   @brief Get I2C device data
-   @anchor pca9685_get
+  @brief Get I2C device data
+  @anchor pca9685_get
 
-   The pca9685_get() function reads ASC channel value received from the device.
+  The pca9685_get() function reads ASC channel value received from the device.
 
-   @param   device Structure representing I2C device.
-   @param   addr PWM channel 0 ... 7.
-   @return  value PWM value received 0 ... 4095. -1 if none read.
+  @param   device Structure representing I2C device.
+  @param   addr PWM channel 0 ... 7.
+  @param   state_bits Pointer to byte where to store state bits like OSAL_STATE_CONNECTED,
+           OSAL_STATE_ORANGE, OSAL_STATE_YELLOW... Value OSAL_STATE_UNCONNECTED indicates not
+           connected (= unknown value).
+  @return  value PWM value received 0 ... 4095. -1 if none read.
 
 ****************************************************************************************************
 */
-os_int pca9685_get(struct PinsBusDevice *device, os_short addr)
+os_int pca9685_get(struct PinsBusDevice *device, os_short addr, os_char *state_bits)
 {
     PinsPca9685Ext *ext;
     ext = (PinsPca9685Ext*)(device->ext);
@@ -502,9 +505,11 @@ os_int pca9685_get(struct PinsBusDevice *device, os_short addr)
     if (addr < 0 || addr >= PCA9685_NRO_PWM_CHANNELS ||
         ext->initialization_step != PCA9695_INIT_FINISHED)
     {
+        *state_bits = OSAL_STATE_UNCONNECTED;
         return -1;
     }
 
+    *state_bits = OSAL_STATE_CONNECTED;
     return ext->pwm_value[addr];
 }
 

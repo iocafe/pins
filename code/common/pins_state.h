@@ -53,10 +53,16 @@ void pin_set(
     const Pin *pin,
     os_int x);
 
-/* Get pin state.
+/* Get pin value.
  */
 os_int pin_get(
     const Pin *pin);
+
+/* Get pin value and state bits.
+ */
+os_int pin_get_ext(
+    const Pin *pin,
+    os_char *state_bits);
 
 /* Get pin state without reading hardware.
  */

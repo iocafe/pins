@@ -388,6 +388,7 @@ static void tcd1304_cam_task(
     pinsCamera *c;
     os_int x;
     os_short pos, processed_pos, max_pos;
+    os_char state_bits;
 
     c = (pinsCamera*)prm;
 
@@ -406,7 +407,7 @@ int dummy = 0, xsum = 0, xn = 0;
 
                 if (processed_pos < TDC1304_DATA_SZ)
                 {
-                    x = pin_ll_get(&camext.in_pin);
+                    x = pin_ll_get(&camext.in_pin, &state_bits);
                     // x = local_adc1_read_test(cam_state[c->camera_nr].in_pin.addr);
 
                     if (processed_pos == 0) {

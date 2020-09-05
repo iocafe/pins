@@ -78,7 +78,8 @@ typedef osalStatus pinsBusSet(
  */
 typedef os_int pinsBusGet(
     struct PinsBusDevice *device,
-    os_short addr);
+    os_short addr,
+    os_char *state_bits);
 
 
 typedef struct PinsSpiDeviceVariables

@@ -62,6 +62,7 @@
 typedef struct PinsMcp3208Ext
 {
     os_short adc_value[MCP3208_NRO_ADC_CHANNELS];
+    os_char state_bits[MCP3208_NRO_ADC_CHANNELS];
     os_uchar current_ch;
     os_uchar reserved;
 }
@@ -73,11 +74,11 @@ static os_short mcp3208_nro_chips;
 /**
 ****************************************************************************************************
 
-   @brief Initialize driver
-   @anchor mcp3208_initialize_driver
+  @brief Initialize driver
+  @anchor mcp3208_initialize_driver
 
-   mcp3208_initialize_driver() function initializes global variables for bus device driver.
-   @return  None.
+  mcp3208_initialize_driver() function initializes global variables for bus device driver.
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -91,14 +92,14 @@ void mcp3208_initialize_driver()
 /**
 ****************************************************************************************************
 
-   @brief Initialize device
-   @anchor mcp3208_initialize_device
+  @brief Initialize device
+  @anchor mcp3208_initialize_device
 
-   The mcp3208_initialize_device() function initializes a bus device structure for a specific
-   MCP3208 chip.
+  The mcp3208_initialize_device() function initializes a bus device structure for a specific
+  MCP3208 chip.
 
-   @param   device Structure representing SPI device.
-   @return  None.
+  @param   device Structure representing SPI device.
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -128,14 +129,14 @@ void mcp3208_initialize_device(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Initialize "pin" of bus device.
-   @anchor mcp3208_initialize_pin
+  @brief Initialize "pin" of bus device.
+  @anchor mcp3208_initialize_pin
 
-   The mcp3208_initialize_pin() function initializes a bus device's pin. In practice this
-   function may set some data in device strucure.
+  The mcp3208_initialize_pin() function initializes a bus device's pin. In practice this
+  function may set some data in device strucure.
 
-   @param   pin Structure representing bus device "pin".
-   @return  None.
+  @param   pin Structure representing bus device "pin".
+  @return  None.
 
 ****************************************************************************************************
 */
@@ -147,14 +148,14 @@ void mcp3208_initialize_pin(const struct Pin *pin)
 /**
 ****************************************************************************************************
 
-   @brief Prepare request to send
-   @anchor mcp3208_gen_req
+  @brief Prepare request to send
+  @anchor mcp3208_gen_req
 
-   The mcp3208_gen_req() function prepares the next request to send to the device into buffer
-   within the bus struture.
+  The mcp3208_gen_req() function prepares the next request to send to the device into buffer
+  within the bus struture.
 
-   @param   device Structure representing SPI device.
-   @return  Always OSAL_SUCCESS. Device change checking is done when processing reply.
+  @param   device Structure representing SPI device.
+  @return  Always OSAL_SUCCESS. Device change checking is done when processing reply.
 
 ****************************************************************************************************
 */
@@ -181,20 +182,20 @@ osalStatus mcp3208_gen_req(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Process reply from SPI device
-   @anchor mcp3208_proc_resp
+  @brief Process reply from SPI device
+  @anchor mcp3208_proc_resp
 
-   The mcp3208_proc_resp() function processed the received reply from buffer
-   within the bus struture. It stores ADC value for the channel for the device
+  The mcp3208_proc_resp() function processed the received reply from buffer
+  within the bus struture. It stores ADC value for the channel for the device
 
-   Note: Sensibility checks for replay should be added, plus some kind of error counter would
-   be appropriate to know if the design is failing.
+  Note: Sensibility checks for replay should be added, plus some kind of error counter would
+  be appropriate to know if the design is failing.
 
-   @param   device Structure representing SPI device.
-   @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
-            so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
-            that there is more to read. Other values indicate that SPI reply was not
-            recieved or was errornous.
+  @param   device Structure representing SPI device.
+  @return  OSAL_COMPLETED indicates that this was last SPI transaction needed for this device
+           so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
+           that there is more to read. Other values indicate that SPI reply was not
+           recieved or was errornous.
 
 ****************************************************************************************************
 */
@@ -202,19 +203,22 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
 {
     PinsMcp3208Ext *ext;
     os_uchar *buf, current_ch;
-    os_short *adc_value;
+    os_short x;
 
     buf = device->bus->inbuf;
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
-    adc_value = ext->adc_value;
 
     if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0)
     {
-        adc_value[current_ch] = -1;
+        ext->state_bits[current_ch] = OSAL_STATE_UNCONNECTED;
     }
     else {
-        adc_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+        x = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+
+        ext->adc_value[current_ch] = x;
+        ext->state_bits[current_ch] = (x >= 1 && x <= 4094) ? OSAL_STATE_CONNECTED
+            : (OSAL_STATE_CONNECTED|OSAL_STATE_ORANGE);
     }
 
     if (++current_ch < MCP3208_NRO_ADC_CHANNELS) {
@@ -230,16 +234,16 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
 /**
 ****************************************************************************************************
 
-   @brief Set data to SPI device
-   @anchor mcp3208_set
+  @brief Set data to SPI device
+  @anchor mcp3208_set
 
-   The mcp3208_set() function is not needed for ADC, it is read only.
+  The mcp3208_set() function is not needed for ADC, it is read only.
 
-   @param   device Structure representing SPI device.
-   @param   addr ADC channel 0 ... 7.
-   @param   value Value to set, ignored.
-   @return  OSAL_STATUS if successfull. Other values indicate a hardware error, specifically
-            OSAL_STATUS_NOT_CONNECTED if SPI device is not connected.
+  @param   device Structure representing SPI device.
+  @param   addr ADC channel 0 ... 7.
+  @param   value Value to set, ignored.
+  @return  OSAL_STATUS if successfull. Other values indicate a hardware error, specifically
+           OSAL_STATUS_NOT_CONNECTED if SPI device is not connected.
 
 ****************************************************************************************************
 */
@@ -255,24 +259,31 @@ osalStatus mcp3208_set(struct PinsBusDevice *device, os_short addr, os_int value
 /**
 ****************************************************************************************************
 
-   @brief Get SPI device data
-   @anchor mcp3208_get
+  @brief Get SPI device data
+  @anchor mcp3208_get
 
-   The mcp3208_get() function reads ASC channel value received from the device.
+  The mcp3208_get() function reads ASC channel value received from the device.
 
-   @param   device Structure representing SPI device.
-   @param   addr ADC channel 0 ... 7.
-   @return  value ADC value received 0 ... 4095. -1 if none read.
+  @param   device Structure representing SPI device.
+  @param   addr ADC channel 0 ... 7.
+  @param   state_bits Pointer to byte where to store state bits like OSAL_STATE_CONNECTED,
+           OSAL_STATE_ORANGE, OSAL_STATE_YELLOW... Value OSAL_STATE_UNCONNECTED indicates not
+           connected (= unknown value).
+  @return  value ADC value received 0 ... 4095. -1 if none read.
 
 ****************************************************************************************************
 */
-os_int mcp3208_get(struct PinsBusDevice *device, os_short addr)
+os_int mcp3208_get(struct PinsBusDevice *device, os_short addr, os_char *state_bits)
 {
     os_short *adc_value;
+    PinsMcp3208Ext *ext;
 
     if (addr < 0 || addr >= MCP3208_NRO_ADC_CHANNELS) {
         return -1;
     }
+
+    ext = (PinsMcp3208Ext*)device->ext;
+    *state_bits = ext->state_bits[addr];
 
     adc_value = ((PinsMcp3208Ext*)(device->ext))->adc_value;
     return adc_value[addr];

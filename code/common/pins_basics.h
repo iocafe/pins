@@ -49,7 +49,7 @@ pinType;
  */
 typedef enum
 {
-    PIN_RV,        /* Reserved for value */
+    PIN_RV,        /* Reserved for value or state bits */
     PIN_PULL_UP,
     PIN_PULL_DOWN,
     PIN_TOUCH,
@@ -90,9 +90,9 @@ typedef enum
 }
 pinPrm;
 
-/** Number of elements in beginning prm array reserved for value
+/** Number of elements in beginning prm array reserved for value (2 words) and state bits (1 word)
  */
-#define PINS_N_RESERVED 2
+#define PINS_N_RESERVED 3
 
 
 typedef struct
@@ -108,6 +108,13 @@ typedef struct
     os_short n_groups;
 }
 IoPinsHdr;
+
+
+typedef struct PinRV {
+    os_int value;
+    os_char state_bits;
+}
+PinRV;
 
 struct iocSignal;
 
@@ -193,7 +200,8 @@ void pin_ll_set(
 /* Get pin state.
  */
 os_int pin_ll_get(
-    const Pin *pin);
+    const Pin *pin,
+    os_char *state_bits);
 
 /* SPI and I2C initialization.
  */

@@ -178,20 +178,46 @@ void pin_set(
 os_int pin_get(
     const Pin *pin)
 {
+    os_char state_bits;
+    return pin_get_ext(pin, &state_bits);
+}
+
+
+
+/**
+****************************************************************************************************
+
+  @brief Get pin value and state bits.
+  @anchor pin_get_ext
+
+  The pin_get() function reads pin value to IO hardware, stores it for the Pin structure and,
+  if appropriate, writes the pin value as IOCOM signal.
+
+  @param   pin Pointer to pin configuration structure.
+  @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
+
+****************************************************************************************************
+*/
+os_int pin_get_ext(
+    const Pin *pin,
+    os_char *state_bits)
+{
     os_int x;
 
 #if PINS_SPI || PINS_I2C
     if (pin->bus_device) {
-        x = pin->bus_device->get_func(pin->bus_device, pin->addr);
+        x = pin->bus_device->get_func(pin->bus_device, pin->addr, state_bits);
     }
     else {
-        x = pin_ll_get(pin);
+        x = pin_ll_get(pin, state_bits);
     }
 #else
-    x = pin_ll_get(pin);
+    x = pin_ll_get(pin, state_bits);
 #endif
 
-    if (x != *(os_int*)pin->prm)
+    // if (x != *(os_int*)pin->prm)
+    if (x != ((PinRV*)pin->prm)->value ||
+        state_bits != ((PinRV*)pin->prm)->state_bits)
     {
         *(os_int*)pin->prm = x;
 
@@ -203,7 +229,6 @@ os_int pin_get(
     }
     return x;
 }
-
 
 /**
 ****************************************************************************************************
@@ -255,7 +280,7 @@ void pins_read_all(
     const Pin *pin;
     os_int x;
     os_short n_groups, n_pins, i, j;
-    os_char type;
+    os_char type, state_bits;
 
     n_groups = hdr->n_groups;
 
@@ -284,16 +309,20 @@ void pins_read_all(
             {
 #if PINS_SPI || PINS_I2C
                 if (pin->bus_device) {
-                    x = pin->bus_device->get_func(pin->bus_device, pin->addr);
+                    x = pin->bus_device->get_func(pin->bus_device, pin->addr, &state_bits);
                 }
                 else {
-                    x = pin_ll_get(pin);
+                    x = pin_ll_get(pin, &state_bits);
                 }
 #else
-                x = pin_ll_get(pin);
+                x = pin_ll_get(pin, &state_bits);
 #endif
 
-                if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
+                // if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
+
+                if (x != ((PinRV*)pin->prm)->value ||
+                    state_bits != ((PinRV*)pin->prm)->state_bits ||
+                    (flags & PINS_RESET_IOCOM))
                 {
                     *(os_int*)pin->prm = x;
 
