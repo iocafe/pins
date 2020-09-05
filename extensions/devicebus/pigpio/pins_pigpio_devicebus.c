@@ -697,6 +697,7 @@ static osalStatus pins_spi_transfer(
                 osal_debug_error_int("bbSPIXfer failed, rval=", rval);
                 device->spec.spi.error_reported = OS_TRUE;
             }
+            bus->inbuf_n = 0;
             return OSAL_COMPLETED;
         }
         else {
@@ -713,6 +714,7 @@ static osalStatus pins_spi_transfer(
                 osal_debug_error_int("bbSPIXfer failed, rval=", rval);
                 device->spec.spi.error_reported = OS_TRUE;
             }
+            bus->inbuf_n = 0;
             return OSAL_COMPLETED;
         }
         else {

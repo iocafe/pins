@@ -161,17 +161,19 @@ void mcp3208_initialize_pin(const struct Pin *pin)
 osalStatus mcp3208_gen_req(struct PinsBusDevice *device)
 {
     PinsMcp3208Ext *ext;
+    PinsBus *bus;
     os_uchar *buf, current_ch;
 
-    osal_debug_assert(device->bus != OS_NULL);
-    buf = device->bus->outbuf;
+    bus = device->bus;
+    osal_debug_assert(bus != OS_NULL);
+    buf = bus->outbuf;
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
 
     buf[0] = 0x06 | ((current_ch & 0x04) >> 2);
     buf[1] = (os_uchar)((current_ch & 0x03) << 6);
     buf[2] = 0;
-    device->bus->inbuf_n = device->bus->outbuf_n = 3;
+    bus->outbuf_n = 3;
     return OSAL_SUCCESS;
 }
 
@@ -207,7 +209,13 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
     current_ch = ext->current_ch;
     adc_value = ext->adc_value;
 
-    adc_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0)
+    {
+        adc_value[current_ch] = -1;
+    }
+    else {
+        adc_value[current_ch] = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+    }
 
     if (++current_ch < MCP3208_NRO_ADC_CHANNELS) {
         ext->current_ch = current_ch;
