@@ -577,7 +577,7 @@ static void ioc_devicebus_thread(
         {
             s = pins_bus_run_spi(bus);
             if (s == OSAL_COMPLETED) {
-                os_sleep(10); // THIS SHOULD NOT BE HERE, ON
+                os_timeslice();
             }
         }
     }
@@ -593,7 +593,7 @@ static void ioc_devicebus_thread(
         {
             s = pins_bus_run_i2c(bus);
             if (s == OSAL_COMPLETED) {
-                os_sleep(10); // THIS SHOULD NOT BE HERE, ON
+                os_timeslice();
             }
         }
     }
