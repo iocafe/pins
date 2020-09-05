@@ -340,7 +340,7 @@ void pins_init_device(
             }
 
             rval = spiOpen((unsigned)device->spec.spi.device_nr,
-                device->spec.spi.bus_frequency, 0); // device->spec.spi.flags);
+                device->spec.spi.bus_frequency, device->spec.spi.flags);
             device->spec.spi.handle = rval;
             if (rval < 0)
             {
@@ -577,7 +577,7 @@ static void ioc_devicebus_thread(
         {
             s = pins_bus_run_spi(bus);
             if (s == OSAL_COMPLETED) {
-                os_timeslice(); // THIS SHOULD NOT BE HERE, ON
+                os_sleep(10); // THIS SHOULD NOT BE HERE, ON
             }
         }
     }
@@ -593,7 +593,7 @@ static void ioc_devicebus_thread(
         {
             s = pins_bus_run_i2c(bus);
             if (s == OSAL_COMPLETED) {
-                os_timeslice();
+                os_sleep(10); // THIS SHOULD NOT BE HERE, ON
             }
         }
     }
