@@ -64,7 +64,7 @@ typedef struct PinsMcp3208Ext
     os_short adc_value[MCP3208_NRO_ADC_CHANNELS];
     os_char state_bits[MCP3208_NRO_ADC_CHANNELS];
     os_uchar current_ch;
-    os_uchar reserved;
+    os_uchar common_state_bits;
 }
 PinsMcp3208Ext;
 
@@ -106,7 +106,8 @@ void mcp3208_initialize_driver()
 void mcp3208_initialize_device(struct PinsBusDevice *device)
 {
     PinsBusDeviceParams prm;
-    os_short *adc_value, i;
+    PinsMcp3208Ext *ext;
+    os_short i;
 
     if (mcp3208_nro_chips >= PINS_MAX_MCP3208_ADC) {
         osal_debug_error("Reserved number of MCP3208 chip exceeded in JSON, increase PINS_MAX_MCP3208_ADC");
@@ -114,10 +115,11 @@ void mcp3208_initialize_device(struct PinsBusDevice *device)
     }
 
     device->ext = &mcp3208_ext[mcp3208_nro_chips++];
-    adc_value = ((PinsMcp3208Ext*)(device->ext))->adc_value;
+    ext = (PinsMcp3208Ext*)device->ext;
     for (i = 0; i < MCP3208_NRO_ADC_CHANNELS; i++) {
-        adc_value[i] = -1;
+        ext->adc_value[i] = -1;
     }
+    ext->common_state_bits = OSAL_STATE_CONNECTED;
 
     /* Call platform specific device initialization.
      */
@@ -209,22 +211,22 @@ osalStatus mcp3208_proc_resp(struct PinsBusDevice *device)
     ext = (PinsMcp3208Ext*)device->ext;
     current_ch = ext->current_ch;
 
-    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0)
-    {
-        ext->state_bits[current_ch] = (OSAL_STATE_UNCONNECTED|OSAL_STATE_RED);
-    }
-    else {
-        x = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
-
-        ext->adc_value[current_ch] = x;
-        ext->state_bits[current_ch] = (x >= 1 && x <= 4094) ? OSAL_STATE_CONNECTED
-            : (OSAL_STATE_CONNECTED|OSAL_STATE_ORANGE);
-    }
+    x = (os_short)(((os_ushort)(buf[1] & 0x0F) << 8) | (os_ushort)buf[2]);
+    ext->adc_value[current_ch] = x;
+    ext->state_bits[current_ch] = (x >= 1 && x <= 4094) ? OSAL_STATE_CONNECTED
+        : (OSAL_STATE_CONNECTED|OSAL_STATE_ORANGE);
 
     if (++current_ch < MCP3208_NRO_ADC_CHANNELS) {
         ext->current_ch = current_ch;
         return OSAL_SUCCESS;
     }
+
+    for (current_ch = 0; current_ch < MCP3208_NRO_ADC_CHANNELS; current_ch++)
+    {
+        if (ext->adc_value[current_ch]) break;
+    }
+    ext->common_state_bits = (current_ch < MCP3208_NRO_ADC_CHANNELS)
+        ? OSAL_STATE_CONNECTED : (OSAL_STATE_UNCONNECTED|OSAL_STATE_RED);
 
     ext->current_ch = 0;
     return OSAL_COMPLETED;
@@ -277,16 +279,29 @@ os_int mcp3208_get(struct PinsBusDevice *device, os_short addr, os_char *state_b
 {
     os_short *adc_value;
     PinsMcp3208Ext *ext;
+    os_int v;
 
     if (addr < 0 || addr >= MCP3208_NRO_ADC_CHANNELS) {
         return -1;
     }
 
     ext = (PinsMcp3208Ext*)device->ext;
-    *state_bits = ext->state_bits[addr];
 
     adc_value = ((PinsMcp3208Ext*)(device->ext))->adc_value;
-    return adc_value[addr];
+    v = adc_value[addr];
+
+    if (v == -1) {
+        *state_bits = OSAL_STATE_UNCONNECTED|OSAL_STATE_RED;
+    }
+    else if (ext->common_state_bits != OSAL_STATE_CONNECTED)
+    {
+        *state_bits = ext->common_state_bits;
+    }
+    else
+    {
+        *state_bits = ext->state_bits[addr];
+    }
+    return v;
 }
 
 #endif
