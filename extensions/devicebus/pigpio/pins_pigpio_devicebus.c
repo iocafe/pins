@@ -595,8 +595,9 @@ static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); 
         {
             s = pins_bus_run_i2c(bus);
             if (s == OSAL_COMPLETED) {
-                os_timeslice();
+                os_sleep(20);
             }
+            os_timeslice();
 static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
         }
     }
