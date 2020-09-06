@@ -1122,6 +1122,8 @@ static void usb_cam_task(
                     usb_cam_set_parameters(c);
                 }
             }
+
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo cam\n"); ulledoo = 0;}
         }
 
         stop_capturing_video(ext);

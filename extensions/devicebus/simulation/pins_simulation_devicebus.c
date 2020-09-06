@@ -385,6 +385,8 @@ static void ioc_devicebus_thread(
      */
     bus = (PinsBus*)prm;
 
+    osal_thread_set_priority(OSAL_THREAD_PRIORITY_NORMAL);
+
     /* Let thread which created this one proceed.
      */
     osal_event_set(done);
@@ -401,6 +403,7 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
         }
     }
 #endif
@@ -417,6 +420,7 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
         }
     }
 #endif

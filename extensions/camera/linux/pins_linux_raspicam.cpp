@@ -507,6 +507,8 @@ static void raspi_cam_task(
 
         while (!c->stop_thread && osal_go())
         {
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo cam\n"); ulledoo = 0;}
+
             TCAM->grab();
             w = TCAM->getWidth();
             h = TCAM->getHeight();

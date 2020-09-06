@@ -570,7 +570,7 @@ static void ioc_devicebus_thread(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        /* Run the the device bus, until program or SPI/I2C communication is
+        /* Run the the device bus, until program or SPI communication is
            to be terminated.
          */
         while (osal_go() && !pins_devicebus.terminate)
@@ -579,6 +579,8 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
+
         }
     }
 #endif
@@ -586,7 +588,7 @@ static void ioc_devicebus_thread(
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
-        /* Run the the device bus, until program or SPI/I2C communication is
+        /* Run the the device bus, until program or I2C communication is
            to be terminated.
          */
         while (osal_go() && !pins_devicebus.terminate)
@@ -595,6 +597,7 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
+static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
         }
     }
 #endif
