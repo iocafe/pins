@@ -365,5 +365,27 @@ void pins_read_all(
 }
 
 
+/**
+****************************************************************************************************
 
+  @brief Read group of pins
+  @anchor pins_read_group
 
+  The pins_read_group() can be called to pass read a set of pins, for example to pass analog
+  inputs to IOCOM.
+
+  @param   pin Pointer to first pin of the group.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pins_read_group(
+    const Pin *pin)
+{
+    os_char state_bits;
+
+    while (pin) {
+        pin_get_ext(pin, &state_bits);
+        pin = pin->next;
+    }
+}

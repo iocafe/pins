@@ -75,4 +75,10 @@ void pins_read_all(
     const IoPinsHdr *hdr,
     os_ushort flags);
 
+/* Read group of pins
+ */
+void pins_read_group(
+    const Pin *pin);
+
+
 #endif
