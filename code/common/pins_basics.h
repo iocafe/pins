@@ -86,13 +86,22 @@ typedef enum
     PIN_D_BANK,
     PIN_E_BANK,
     PIN_MIN,       /* Minimum value for signal */
-    PIN_MAX        /* Maximum value for signal, 0 if not set */
+    PIN_MAX,       /* Maximum value for signal, 0 if not set */
+    PIN_SMIN,      /* Minimum integer value for scaled signal */
+    PIN_SMAX,      /* Maximum integer value for scaled signal, 0 if not set */
+    PIN_DIGS       /* If pin value is scaled to float, number of decimal digits. Value is divided by 10^n */
 }
 pinPrm;
 
 /** Number of elements in beginning prm array reserved for value (2 words) and state bits (1 word)
  */
 #define PINS_N_RESERVED 3
+
+
+/** Pin flags (flags member of Pin structure). PIN_SCALING_SET flag indicates that scaling
+    for the PIN value is defined by "smin", "smax" or "digs" attributes.
+ */
+#define PIN_SCALING_SET 1
 
 
 typedef struct
@@ -128,7 +137,7 @@ typedef struct Pin
 
     /** Hardware bank number for the pin, if applies.
      */
-    os_short bank;
+    os_char bank;
 
     /** Hardware address for the pin.
      */
@@ -143,6 +152,11 @@ typedef struct Pin
         two, since each 16 bit number is parameter number amd parameter value.
      */
     os_char prm_n;
+
+    /** Number of items in parameter array. Number of set parameters is this divided by
+        two, since each 16 bit number is parameter number amd parameter value.
+     */
+    os_char flags;
 
     /** Next pin in linked list of pins belonging to same group as this one. OS_NULL
         to indicate that this pin is end of list of not in group.

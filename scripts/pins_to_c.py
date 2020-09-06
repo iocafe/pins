@@ -53,7 +53,10 @@ prm_type_list = {
     "bank-d": "PIN_D_BANK",
     "bank-e": "PIN_E_BANK",
     "min": "PIN_MIN",
-    "max": "PIN_MAX"}
+    "max": "PIN_MAX",
+    "smin": "PIN_SMIN",
+    "smax": "PIN_SMAX",
+    "digs": "PIN_DIGS"}
 
 def start_c_files():
     global cfile, hfile, cfilepath, hfilepath
@@ -86,6 +89,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     # Generate C parameter list for the pin
     c_prm_list = "PIN_RV, PIN_RV, PIN_RV"
     c_prm_list_has_interrupt = False
+    c_prm_list_has_scaling = False
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":
@@ -97,6 +101,9 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
                 c_prm_list = c_prm_list + str(int(value)//100)
             else:
                 c_prm_list = c_prm_list + str(value)
+
+            if c_attr_name == 'PIN_DIGS' or c_attr_name == 'PIN_SMAX' or c_attr_name == 'PIN_SMIN':
+                c_prm_list_has_scaling = True
 
             if c_attr_name == 'PIN_INTERRUPT_ENABLED':
                 c_prm_list_has_interrupt = True
@@ -140,6 +147,12 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += "0, "
     else:
         ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_ushort), "
+
+    # Write flags, like PIN_SCALING_SET
+    if c_prm_list_has_scaling:
+        ccontent += "PIN_SCALING_SET, "
+    else:
+        ccontent += "0, "
 
     # If IO pin belongs to group, setup linked list
     group = pin_attr.get("group", None)
