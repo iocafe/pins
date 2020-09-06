@@ -527,10 +527,7 @@ static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo cam\n"); 
                 if (raspi_cam_allocate_buffer(c)) break;
             }
 
-
-//          TCAM->retrieve(c->ext->buf);
-
-             raspi_cam_do_photo_callback(c);
+            raspi_cam_do_photo_callback(c);
 
             if (c->ext->prm_changed) {
                 if (os_has_elapsed(&c->ext->prm_timer, 50)) {
