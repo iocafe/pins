@@ -123,19 +123,22 @@ void pins_shutdown(
 ****************************************************************************************************
 
   @brief Set IO pin state.
-  @anchor pin_set
+  @anchor pin_set_ext
 
-  The pin_set() function writes pin value to IO hardware, stores it for the Pin structure and,
+  The pin_set_ext() function writes pin value to IO hardware, stores it for the Pin structure and,
   if appropriate, writes pin value as IOCOM signal.
 
   @param   pin Pointer to pin configuration structure.
+  @param   x Value to set.
+  @param   flags PIN_FORWARD_TO_IOCOM to forward change to IOCOM.
   @return  None.
 
 ****************************************************************************************************
 */
-void pin_set(
+void pin_set_ext(
     const Pin *pin,
-    os_int x)
+    os_int x,
+    os_short flags)
 {
 #if PINS_SPI || PINS_I2C
     if (pin->bus_device) {
@@ -148,16 +151,78 @@ void pin_set(
     pin_ll_set(pin, x);
 #endif
 
-    if (x != *(os_int*)pin->prm)
+    if (flags & PIN_FORWARD_TO_IOCOM)
     {
-        *(os_int*)pin->prm = x;
-
-        if (pin_to_iocom_func &&
-            pin->signal)
+        if (x != *(os_int*)pin->prm)
         {
-            pin_to_iocom_func(pin);
+            *(os_int*)pin->prm = x;
+
+            if (pin_to_iocom_func &&
+                pin->signal)
+            {
+                pin_to_iocom_func(pin);
+            }
         }
     }
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Set IO pin state.
+  @anchor pin_set_scaled
+
+  The pin_set_scaled() function writes pin value to IO hardware, stores it for the Pin structure and,
+  if appropriate, writes pin value as IOCOM signal.
+
+  Value is scaled, if scaling is set for the pin.
+
+  @param   pin Pointer to pin configuration structure.
+  @param   x Value to set.
+  @param   flags PIN_FORWARD_TO_IOCOM to forward change to IOCOM.
+  @return  None.
+
+****************************************************************************************************
+*/
+void pin_set_scaled(
+    const Pin *pin,
+    os_double x,
+    os_boolean flags)
+{
+    os_double gain;
+    os_int minx, maxx, miny, maxy, digs, dx, dy;
+
+    if (pin->flags & PIN_SCALING_SET)
+    {
+        minx = pin_get_prm(pin, PIN_MIN);
+        maxx = pin_get_prm(pin, PIN_MAX);
+        miny = pin_get_prm(pin, PIN_SMIN);
+        maxy = pin_get_prm(pin, PIN_SMAX);
+        digs = pin_get_prm(pin, PIN_DIGS);
+
+        while (digs > 0) {
+            x *= 10.0;
+            digs--;
+        }
+
+        while (digs < 0) {
+            x *= 0.1;
+            digs++;
+        }
+
+        dx = maxx - minx;
+        dy = maxy - miny;
+        if (dx == 0 || dy == 0) {
+            osal_debug_error("Pin value scaling error (set)");
+            goto justset;
+        }
+        gain = (os_double)dx / (os_double)dy;
+
+        x = gain * (x - miny) + minx;
+    }
+justset:
+    pin_set_ext(pin, os_round_int(x), flags);
 }
 
 

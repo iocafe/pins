@@ -47,7 +47,7 @@ void pins_connect_iocom_library(
 /**
 ****************************************************************************************************
 
-  @brief Write pin value as IOCOM signal.
+  @brief Write pin value as IOCOM signal (PIN -> IOCOM).
 
   The pin_to_iocom function stores pin value as IOCOM signal...
 
@@ -89,7 +89,7 @@ static void pin_to_iocom(
 /**
 ****************************************************************************************************
 
-  @brief Forward signal change to IO.
+  @brief Forward signal change to IO pin (IOCOM -> PIN).
 
   The forward_signal_change_to_io_pins function can be called by ioboard_fc_callback()
   to  function...
@@ -180,7 +180,7 @@ osal_debug_error("planning to OBSOLETE this function, replaced by more efficient
 /**
 ****************************************************************************************************
 
-  @brief Forward signal change to IO.
+  @brief Forward signal change to IO (IOCOM -> PIN).
 
   The forward_signal_change_to_io_pin function can be called by communication callback to
   forward IO pin state change to hardware IO pin.
@@ -198,26 +198,23 @@ void forward_signal_change_to_io_pin(
     os_short flags)
 {
     const Pin *pin;
+    os_double d;
     os_int x;
     os_char state_bits;
 
     osal_debug_assert(sig->flags & IOC_PIN_PTR);
 
-    x = (os_int)ioc_get_ext(sig, &state_bits, flags);
-    if (state_bits & OSAL_STATE_CONNECTED)
-    {
-        pin = (const Pin *)sig->ptr;
-
-#if PINS_SPI || PINS_I2C
-        if (pin->bus_device) {
-            pin->bus_device->set_func(pin->bus_device, pin->addr, x);
+    pin = (const Pin *)sig->ptr;
+    if (pin->flags & PIN_SCALING_SET) {
+        d = ioc_get_double_ext(sig, &state_bits, flags);
+        if (state_bits & OSAL_STATE_CONNECTED) {
+            pin_set_scaled(pin, d, PIN_NO_IOCOM_FORWARD);
         }
-        else {
-            pin_ll_set(pin, x);
+    }
+    else {
+        x = (os_int)ioc_get_ext(sig, &state_bits, flags);
+        if (state_bits & OSAL_STATE_CONNECTED) {
+            pin_set_ext(pin, x, PIN_NO_IOCOM_FORWARD);
         }
-#else
-        pin_ll_set(pin, x);
-#endif
-        *(os_int*)pin->prm = x;
     }
 }

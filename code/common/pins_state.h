@@ -47,15 +47,32 @@ void pins_shutdown(
     #define pins_shutdown(h)
 #endif
 
+/* Flags for pin_set_ext().
+ */
+#define PIN_NO_IOCOM_FORWARD 0
+#define PIN_FORWARD_TO_IOCOM 1
+
 /* Set IO pin state.
  */
-void pin_set(
+#define pin_set(pin,x) pin_set_ext((pin), (x), PIN_FORWARD_TO_IOCOM);
+
+/* Set IO pin state.
+ */
+void pin_set_ext(
     const Pin *pin,
-    os_int x);
+    os_int x,
+    os_short flags);
+
+/* Set IO pin state with scaling.
+ */
+void pin_set_scaled(
+    const Pin *pin,
+    os_double x,
+    os_boolean flags);
 
 /* Get pin value.
  */
-#define pin_get(pin) pin_get_ext(pin, OS_NULL)
+#define pin_get(pin) pin_get_ext((pin), OS_NULL)
 
 /* Get pin value and state bits.
  */
@@ -91,6 +108,5 @@ void pins_read_all(
  */
 void pins_read_group(
     const Pin *pin);
-
 
 #endif
