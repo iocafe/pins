@@ -37,7 +37,7 @@ void pin_set_prm(
     pinPrm prm,
     os_int value)
 {
-    os_ushort *p;
+    os_short *p;
     os_char count;
 
     p = pin->prm + PINS_N_RESERVED;
@@ -46,7 +46,7 @@ void pin_set_prm(
     {
         if (p[0] == prm)
         {
-            p[1] = (os_ushort)value;
+            p[1] = (os_short)value;
             break;
         }
         p += 2;
@@ -75,7 +75,7 @@ os_int pin_get_prm(
     const Pin *pin,
     pinPrm prm)
 {
-    os_ushort *p;
+    os_short *p;
     os_char count;
 
     p = pin->prm + PINS_N_RESERVED;

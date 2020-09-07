@@ -165,7 +165,7 @@ osal_debug_error("planning to OBSOLETE this function, replaced by more efficient
                 if (state_bits & OSAL_STATE_CONNECTED)
                 {
                     pin_ll_set(pin, x);
-                    *(os_int*)pin->prm = x;
+                    ((PinRV*)pin->prm)->value = x;
                 }
             }
         }

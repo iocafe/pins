@@ -124,7 +124,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             cfile.write("\n/* Parameters for " + pin_type + " */\n")
             c_prm_comment_written = True
         c_prm_array_name = prefix + "_" + pin_type + "_" + pin_name + "_prm"
-        cfile.write("static os_ushort " + c_prm_array_name + "[]")
+        cfile.write("static os_short " + c_prm_array_name + "[]")
         cfile.write("= {" + c_prm_list + "};\n")
 
     define_text = prefix + '_' + pin_type + '_' + pin_name
@@ -146,7 +146,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     if c_prm_array_name == "OS_NULL":
         ccontent += "0, "
     else:
-        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_ushort), "
+        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_short), "
 
     # Write flags, like PIN_SCALING_SET
     if c_prm_list_has_scaling:

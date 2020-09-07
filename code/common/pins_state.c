@@ -51,13 +51,10 @@ void pins_setup(
         pcount = (*group)->n_pins;
         pin = (*group)->pin;
 
-        while (pcount--) {
+        while (pcount--)
+        {
 #if PINS_SPI || PINS_I2C
-            if (pin->bus_device) {
-                // This needs to be implemented
-                // pin->bus_device->setup_pin(pin, flags);
-            }
-            else {
+            if (pin->bus_device == OS_NULL) {
                 pin_ll_setup(pin, flags);
             }
 #else
@@ -153,9 +150,9 @@ void pin_set_ext(
 
     if (flags & PIN_FORWARD_TO_IOCOM)
     {
-        if (x != *(os_int*)pin->prm)
+        if (x != ((PinRV*)pin->prm)->value)
         {
-            *(os_int*)pin->prm = x;
+            ((PinRV*)pin->prm)->value = x;
 
             if (pin_to_iocom_func &&
                 pin->signal)
@@ -263,7 +260,6 @@ os_int pin_get_ext(
     x = pin_ll_get(pin, state_bits);
 #endif
 
-    // if (x != *(os_int*)pin->prm)
     if (x != ((PinRV*)pin->prm)->value ||
         *state_bits != ((PinRV*)pin->prm)->state_bits)
     {
@@ -278,6 +274,7 @@ os_int pin_get_ext(
     }
     return x;
 }
+
 
 /**
 ****************************************************************************************************

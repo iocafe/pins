@@ -204,6 +204,8 @@ void pca9685_initialize_pin(const struct Pin *pin)
 
     value = pin_get_prm(pin, PIN_INIT);
     ext->pwm_value[addr] = (os_short)value;
+    ((PinRV*)pin->prm)->value = value;
+    ((PinRV*)pin->prm)->state_bits = OSAL_STATE_YELLOW;
 
     value = pin_get_prm(pin, PIN_FREQENCY);
     if (value) {
