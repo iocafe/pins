@@ -55,8 +55,7 @@ void pin_set(
 
 /* Get pin value.
  */
-os_int pin_get(
-    const Pin *pin);
+#define pin_get(pin) pin_get_ext(pin, OS_NULL)
 
 /* Get pin value and state bits.
  */
@@ -64,10 +63,23 @@ os_int pin_get_ext(
     const Pin *pin,
     os_char *state_bits);
 
-/* Get pin state without reading hardware.
+/* Get scaled pin value
+ */
+os_double pin_get_scaled(
+    const Pin *pin,
+    os_char *state_bits);
+
+/* Get pin value without reading hardware.
  */
 os_int pin_value(
-    const Pin *pin);
+    const Pin *pin,
+    os_char *state_bits);
+
+/* Get scaled pin value without reading hardware.
+ */
+os_double pin_value_scaled(
+    const Pin *pin,
+    os_char *state_bits);
 
 /* Read all inputs of the IO device into global Pin structurees
  */

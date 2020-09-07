@@ -60,6 +60,7 @@ static void pin_to_iocom(
     const Pin *pin)
 {
     const iocSignal *s;
+    os_double d;
     os_int x;
     os_char state_bits;
 
@@ -69,11 +70,19 @@ static void pin_to_iocom(
      */
     if (s->handle->flags & IOC_MBLK_DOWN) return;
 
-    /* Set the signal.
+    /* Set the signal. Either with or without scaling.
      */
-    x = ((PinRV*)pin->prm)->value;
-    state_bits = ((PinRV*)pin->prm)->state_bits;
-    ioc_set_ext(s, x, state_bits);
+    if (pin->flags & PIN_SCALING_SET)
+    {
+        d = pin_value_scaled(pin, &state_bits);
+        ioc_set_double_ext(s, d, state_bits);
+    }
+    else
+    {
+        x = ((PinRV*)pin->prm)->value;
+        state_bits = ((PinRV*)pin->prm)->state_bits;
+        ioc_set_ext(s, x, state_bits);
+    }
 }
 
 

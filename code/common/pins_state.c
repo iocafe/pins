@@ -164,29 +164,6 @@ void pin_set(
 /**
 ****************************************************************************************************
 
-  @brief Get pin state.
-  @anchor pin_get
-
-  The pin_get() function reads pin value to IO hardware, stores it for the Pin structure and,
-  if appropriate, writes the pin value as IOCOM signal.
-
-  @param   pin Pointer to pin configuration structure.
-  @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
-
-****************************************************************************************************
-*/
-os_int pin_get(
-    const Pin *pin)
-{
-    os_char state_bits;
-    return pin_get_ext(pin, &state_bits);
-}
-
-
-
-/**
-****************************************************************************************************
-
   @brief Get pin value and state bits.
   @anchor pin_get_ext
 
@@ -194,6 +171,7 @@ os_int pin_get(
   if appropriate, writes the pin value as IOCOM signal.
 
   @param   pin Pointer to pin configuration structure.
+  @param   state_bits Pointer to byte where to store state bits, Set OS_NULL if not needed.
   @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
 
 ****************************************************************************************************
@@ -203,6 +181,11 @@ os_int pin_get_ext(
     os_char *state_bits)
 {
     os_int x;
+    os_char tmp_state_bits;
+
+    if (state_bits == OS_NULL) {
+        state_bits = &tmp_state_bits;
+    }
 
 #if PINS_SPI || PINS_I2C
     if (pin->bus_device) {
@@ -234,6 +217,36 @@ os_int pin_get_ext(
 /**
 ****************************************************************************************************
 
+  @brief Get scaled pin value.
+  @anchor pin_get_scaled
+
+  The pin_get_scaled() function reads pin value to IO hardware, stores it for the Pin structure
+  and, if appropriate, writes the pin value as IOCOM signal.
+
+  If the pin has scaling set by "min", "max", "dmin", "dmax", "digs", value is scaled,
+
+  @param   pin Pointer to pin configuration structure.
+  @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
+
+****************************************************************************************************
+*/
+os_double pin_get_scaled(
+    const Pin *pin,
+    os_char *state_bits)
+{
+    os_int ivalue;
+
+    ivalue = pin_get_ext(pin, state_bits);
+    if ((pin->flags & PIN_SCALING_SET) == 0) {
+        return ivalue;
+    }
+    return pin_value_scaled(pin, OS_NULL);
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Get pin state stored for the Pin structure.
   @anchor pin_get
 
@@ -244,14 +257,78 @@ os_int pin_get_ext(
   and values which are already in pin structure need to be accessed.
 
   @param   pin Pointer to pin configuration structure.
+  @param   state_bits Pointer to byte where to store state bits, Set OS_NULL if not needed.
   @return  Memorized pin value.
 
 ****************************************************************************************************
 */
 os_int pin_value(
-    const Pin *pin)
+    const Pin *pin,
+    os_char *state_bits)
 {
-    return *(os_int*)pin->prm;
+    if (state_bits) {
+        *state_bits = ((PinRV*)pin->prm)->state_bits;
+    }
+
+    return ((PinRV*)pin->prm)->value;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Get scaled pin value.
+  @anchor pin_value_scaled
+
+  The pin_value_scaled() function is like pin_value, but does scale the value
+  "min", "max", "dmin", "dmax" and "digs",
+
+  If the pin has scaling set by "min" - "dmin", "dmax", "digs", value is scaled,
+
+  @param   pin Pointer to pin configuration structure.
+  @return  Pin value from IO hardware. -1 if value is not available (not read, errornous, etc.).
+
+****************************************************************************************************
+*/
+os_double pin_value_scaled(
+    const Pin *pin,
+    os_char *state_bits)
+{
+    os_double gain, dvalue;
+    os_int ivalue, minx, maxx, miny, maxy, digs, dx, dy;
+
+    ivalue = pin_value(pin, state_bits);
+    if ((pin->flags & PIN_SCALING_SET) == 0) {
+        return ivalue;
+    }
+
+    minx = pin_get_prm(pin, PIN_MIN);
+    maxx = pin_get_prm(pin, PIN_MAX);
+    miny = pin_get_prm(pin, PIN_SMIN);
+    maxy = pin_get_prm(pin, PIN_SMAX);
+    digs = pin_get_prm(pin, PIN_DIGS);
+
+    dx = maxx - minx;
+    dy = maxy - miny;
+    if (dx == 0 || dy == 0) {
+        osal_debug_error("Pin value scaling error");
+        return ivalue;
+    }
+    gain = (os_double)dy / (os_double)dx;
+
+    dvalue = gain * (ivalue - minx) + miny;
+
+    while (digs > 0) {
+        dvalue *= 0.1;
+        digs--;
+    }
+
+    while (digs < 0) {
+        dvalue *= 10.0;
+        digs++;
+    }
+
+    return dvalue;
 }
 
 
@@ -318,8 +395,6 @@ void pins_read_all(
 #else
                 x = pin_ll_get(pin, &state_bits);
 #endif
-
-                // if (x != *(os_int*)pin->prm || (flags & PINS_RESET_IOCOM))
 
                 if (x != ((PinRV*)pin->prm)->value ||
                     state_bits != ((PinRV*)pin->prm)->state_bits ||
