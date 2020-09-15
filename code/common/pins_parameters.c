@@ -37,20 +37,22 @@ void pin_set_prm(
     pinPrm prm,
     os_int value)
 {
-    os_short *p;
+    PinPrmValue *p;
     os_char count;
 
     p = pin->prm + PINS_N_RESERVED;
-    count = (pin->prm_n - PINS_N_RESERVED) / 2;
+    count = pin->prm_n - PINS_N_RESERVED;
     while (count-- > 0)
     {
-        if (p[0] == prm)
+        if (p->ix == prm)
         {
-            p[1] = (os_short)value;
+            p->value = (os_short)value;
             break;
         }
-        p += 2;
+        p++;
     }
+
+    osal_debug_error_int("Attemp to set nonexistent pin parameter ", prm);
 }
 
 
@@ -75,19 +77,22 @@ os_int pin_get_prm(
     const Pin *pin,
     pinPrm prm)
 {
-    os_short *p;
+    PinPrmValue *p;
     os_char count;
 
     p = pin->prm + PINS_N_RESERVED;
     count = (pin->prm_n - PINS_N_RESERVED) / 2;
     while (count-- > 0)
     {
-        if (p[0] == prm)
+        if (p->ix == prm)
         {
-            return p[1];
+            return p->value;
         }
-        p += 2;
+        p++;
     }
+
+    /* Default is zero, getting here is not error.
+     */
     return 0;
 }
 

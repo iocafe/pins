@@ -87,20 +87,17 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     global nro_pins, pin_nr, define_list, device_list, driver_list, bus_list, bus_pin_list
 
     # Generate C parameter list for the pin
-    c_prm_list = "PIN_RV, PIN_RV, PIN_RV"
+    c_prm_list = "{PIN_RV, PIN_RV}, {PIN_RV, PIN_RV}"
     c_prm_list_has_interrupt = False
     c_prm_list_has_scaling = False
     for attr, value in pin_attr.items():
         c_attr_name = prm_type_list.get(attr, "")
         if c_attr_name != "":
-            if c_prm_list != "":
-                c_prm_list = c_prm_list + ", "
-
-            c_prm_list = c_prm_list + c_attr_name + ", "
+            c_prm_list += ", {" + c_attr_name + ", "
             if c_attr_name == 'PIN_SPEED' or c_attr_name == 'PIN_SPEED_KBPS':
-                c_prm_list = c_prm_list + str(int(value)//100)
+                c_prm_list += str(int(value)//100) + '}'
             else:
-                c_prm_list = c_prm_list + str(value)
+                c_prm_list += str(value) + '}'
 
             if c_attr_name == 'PIN_DIGS' or c_attr_name == 'PIN_SMAX' or c_attr_name == 'PIN_SMIN':
                 c_prm_list_has_scaling = True
@@ -113,19 +110,16 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
 
     if c_prm_list_has_interrupt == False and pin_type == 'timers':
         c_prm_list_has_interrupt = True
-        if c_prm_list != "":
-            c_prm_list = c_prm_list + ", "
-        c_prm_list = c_prm_list + "PIN_INTERRUPT_ENABLED, 1"
+        c_prm_list += ", {PIN_INTERRUPT_ENABLED, 1}"
 
     # If we have C parameters, write to C file
     c_prm_array_name = "OS_NULL"
-    if c_prm_list != "":
-        if c_prm_comment_written == False:
-            cfile.write("\n/* Parameters for " + pin_type + " */\n")
-            c_prm_comment_written = True
-        c_prm_array_name = prefix + "_" + pin_type + "_" + pin_name + "_prm"
-        cfile.write("static os_short " + c_prm_array_name + "[]")
-        cfile.write("= {" + c_prm_list + "};\n")
+    if c_prm_comment_written == False:
+        cfile.write("\n/* Parameters for " + pin_type + " */\n")
+        c_prm_comment_written = True
+    c_prm_array_name = prefix + "_" + pin_type + "_" + pin_name + "_prm"
+    cfile.write("static PinPrmValue " + c_prm_array_name + "[]")
+    cfile.write("= {" + c_prm_list + "};\n")
 
     define_text = prefix + '_' + pin_type + '_' + pin_name
     define_list.append(define_text.upper() + ' "' + pin_name + '"')
@@ -146,7 +140,7 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     if c_prm_array_name == "OS_NULL":
         ccontent += "0, "
     else:
-        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(os_short), "
+        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(PinPrmValue), "
 
     # Write flags, like PIN_SCALING_SET
     if c_prm_list_has_scaling:

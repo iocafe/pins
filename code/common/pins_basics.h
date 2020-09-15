@@ -93,9 +93,9 @@ typedef enum
 }
 pinPrm;
 
-/** Number of elements in beginning prm array reserved for value (2 words) and state bits (1 word)
+/** Number of PinPrm elements (4 bytes) in beginning prm array reserved for PinRV structure (8 bytes)
  */
-#define PINS_N_RESERVED 3
+#define PINS_N_RESERVED 2
 
 
 /** Pin flags (flags member of Pin structure). PIN_SCALING_SET flag indicates that scaling
@@ -119,9 +119,23 @@ typedef struct
 IoPinsHdr;
 
 
+typedef struct PinPrmValue {
+    os_short ix;
+    os_short value;
+}
+PinPrmValue;
+
+
+/* Since Pin structure is "const" and can be only in flash memory, the PinRV structure is
+   used to store dynamic data for IO pin. The PinRV is always 8 bytes and needs to be
+   aligned to 4 byte boundary.
+ */
 typedef struct PinRV {
     os_int value;
     os_char state_bits;
+    os_char reserved1;
+    os_char reserved2;
+    os_char reserved3;
 }
 PinRV;
 
@@ -146,7 +160,7 @@ typedef struct Pin
     /** Pointer to parameter array, two first os_shorts are reserved for storing value
         as os_int.
      */
-    os_short *prm;
+    PinPrmValue *prm;
 
     /** Number of items in parameter array. Number of set parameters is this divided by
         two, since each 16 bit number is parameter number amd parameter value.

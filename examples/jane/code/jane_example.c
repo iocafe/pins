@@ -30,6 +30,11 @@ os_timer t;
 os_boolean state;
 os_int dip3, dip4, touch, dimmer, dimmer_dir, potentiometer;
 
+/* If needed for the operating system, EOSAL_C_MAIN macro generates the actual C main() function.
+ */
+EOSAL_C_MAIN
+
+
 /**
 ****************************************************************************************************
 
