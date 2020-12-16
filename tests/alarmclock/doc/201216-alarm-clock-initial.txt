@@ -1,0 +1,31 @@
+
+Pekka Lehtikoski <pekka.lehtikoski@gmail.com>
+10:22 AM (18 minutes ago)
+to Sofie
+
+Alarm clock functionality
+- Display Time and date
+- Sound alarm
+- Give a wise life when needed
+
+We do not need communication for this 
+- IOCOM library is not needed
+- We can do this easiest in Python
+
+Parts 
+- Raspberry PI 0 WiFi
+- S17725S TFT display
+- Small speaker
+- Wifi is used only to get date and time at boot (raspberry doesn't keep clock without power)
+- One button to receive life advice
+
+Software 
+- Python base
+- Python driver for S17725S display
+- Raspberry time sync over wifi to be configured in Raspberry's Linux
+- espeak or fanfare application for text to speech
+- Program functionality: Display time. If a button is pressed, give advice 
+
+References
+https://www.raspberrypi.org/products/raspberry-pi-zero-w/
+https://github.com/bchanudet/python-st7735s/tree/master/st7735s

@@ -1,0 +1,14 @@
+Download and install the official Wiring Pi library.
+Enable support for the hardware SPI interface using raspi-config.
+Connect the display to the Raspberry Pi GPIO interface. You can display the GPIO list with the gpio readall command.
+VCC to pin number 1 (3,3V).
+GND to pin number 6 (0V).
+CS to pin number 24 (CE0) or 26 (CE1).
+RESET to any IO pin (3).
+A0 to any IO pin (5).
+SDA to pin number 19 (MOSI).
+SCK to pin number 23 (SCLK).
+LED to pin number 17 (3,3V).
+Download the source code to the ST7735S driver from repository.
+Run the example programs.
+Read the description of the functions in the st7735s.h file for more details.
