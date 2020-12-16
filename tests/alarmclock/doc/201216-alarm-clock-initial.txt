@@ -26,6 +26,10 @@ Software
 - espeak or fanfare application for text to speech
 - Program functionality: Display time. If a button is pressed, give advice 
 
+Possible extensions
+- Web radio
+- Work as bluetooth speaker
+
 References
 https://www.raspberrypi.org/products/raspberry-pi-zero-w/
 https://github.com/bchanudet/python-st7735s/tree/master/st7735s
