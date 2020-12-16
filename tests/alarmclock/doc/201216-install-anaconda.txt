@@ -1,0 +1,10 @@
+Prerequisites
+
+apt-get install libgl1-mesa-glx libegl1-mesa libxrandr2 libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6
+
+Install
+
+wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
+sudo /bin/bash Miniconda3-latest-Linux-armv7l.sh # -> change default directory to /home/pi/miniconda3
+sudo nano /home/pi/.bashrc # -> add: export PATH="/home/pi/miniconda3/bin:$PATH"
+sudo reboot -h now
