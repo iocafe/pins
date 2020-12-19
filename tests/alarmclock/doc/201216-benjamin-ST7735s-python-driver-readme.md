@@ -33,3 +33,4 @@ $ cd python-st7735s
 $ python3 setup.py install -e . # install with a symlink, so you're one git fetch from the last version
 $ python3 setup.py install .    # install globally without references to this folder.
 ``` 
+
