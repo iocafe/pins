@@ -11,6 +11,8 @@ import RPi.GPIO as GPIO
 import threading
 from pygame import mixer
 import math
+import st7735s as controller
+from PIL import Image
 
 GPIO.setmode(GPIO.BOARD) 
 
@@ -118,8 +120,9 @@ class Speaker(object):
     def __init__(self,channels):
         ''' Sets up the Speaker pi channel '''
         # Raspberry Pi GPIO stuff
-        self.channelNum = channels["LEFT"]
-        GPIO.setup(self.channelNum, GPIO.OUT, initial=GPIO.LOW)
+        #self.leftChannel = channels["LEFT"] # Pins will be configured in 
+                                            # operating system for auto-detection, not here
+        #GPIO.setup(self.leftChannel, GPIO.OUT, initial=GPIO.LOW)
 
         # Sound play-back setup
         mixer.init()
@@ -156,7 +159,7 @@ class Speaker(object):
             # (prevent startSound to be called multiple times in the same second)
             mixer.music.load(soundclip)
             mixer.music.play()
-            #GPIO.output(self.channelNum, GPIO.HIGH)
+            #GPIO.output(self.leftChannel, GPIO.HIGH)
 
 class Display(object):
     ''' 
@@ -182,8 +185,9 @@ class Display(object):
         Initiates the display with a 00:00 number format, TODO
         '''
         # Pins
-        self.channelNum = channels['LED'] # TODO: Comment out, LED is for testing only
-        GPIO.setup(self.channelNum, GPIO.OUT, initial=GPIO.LOW)
+        self.screen = controller.ST7735S()
+        self.nightLight = channels['LED'] # TODO: Comment out, LED is for testing only
+        GPIO.setup(self.nightLight, GPIO.OUT, initial=GPIO.LOW)
 
         # Start rendering the display
         self.startRendering()
@@ -198,9 +202,9 @@ class Display(object):
         '''
         self.editModeInd = 0
         self.tempAlarmTime = self.alarmTime
-        GPIO.output(self.channelNum, GPIO.HIGH) # FOR TESTING ONLY, TODO: comment out
-        time.sleep(2) 
-        GPIO.output(self.channelNum, GPIO.LOW) 
+        GPIO.output(self.nightLight, GPIO.HIGH) # FOR TESTING ONLY, TODO: comment out
+        time.sleep(2)
+        GPIO.output(self.nightLight, GPIO.LOW) 
 
     def incrementDigit(self,callback_channel):
         ''' Increments a digit during the editing mode '''
@@ -315,10 +319,13 @@ class Display(object):
         dbitmaplist = [self.createDigitBitmap(d,digitsize) for d in adjAlarmTime]
 
         # TODO: Somehow actually combine the dbitmaplist items in a 
-        # nice and correctly sized format with margin 
+        # nice and correctly sized format with margin -> Convert to image
+        # ex. img = Image.open("assets/1.jpg")
+        # img = Image.  # create image from RAM in bitmap instead
         
         # TODO: Apply to the display screen.
         dummyBitMap = []
+        #self.screen.draw(img)
 
 
 # OTHER ABSTRACTION CLASSES
@@ -440,14 +447,44 @@ class AlarmClock(object):
         self.lastCheckedTime = currSystemTime
         return isTime
 
+def pekkatest():
+    # GPIO.setup(16, GPIO.OUT, initial=GPIO.LOW)
+    #GPIO.output(16, GPIO.HIGH)
+
+    screen = controller.ST7735S()
+
+    img = Image.open("st7735s/tests/assets/1.jpg")
+    img2 = Image.open("st7735s/tests/assets/2.jpg")
+
+    iterations = range(0, 255, 10)
+
+    for i in reversed(iterations):
+        screen.fill([i, i, 0])
+
+    start = time.perf_counter() # Python 3
+
+    for i in range(10):
+	    screen.draw(img)
+	    screen.draw(img2)
+
+    timeTaken = time.perf_counter() - start
+    fps = 20/timeTaken
+
+    print("Time taken: {0:f}s".format(timeTaken))
+    print("Average FPS: {0:f}".format(fps))
+
+    screen.close()        
+
 if __name__ == '__main__':
+    pekkatest()
+
     # Initiate and run
-    speaker     = Speaker({'LEFT':16})
-    display     = Display({'LED':37})
-    inspButton  = InspirationalButton(speaker,10)
-    setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
-    onOffButton     = OnOffSwitch(35)
-    alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
-    alarmClock.main()
+    #speaker     = Speaker({'LEFT':18,'RIGHT':13})
+    #display     = Display({'LED':37})
+    #inspButton  = InspirationalButton(speaker,10)
+    #setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
+    #onOffButton     = OnOffSwitch(35)
+    #alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
+    #alarmClock.main()
 
     #display.updateAlarmTime([0,2,0,6]) # TESTING

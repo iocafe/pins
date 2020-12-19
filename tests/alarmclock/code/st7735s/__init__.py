@@ -45,24 +45,30 @@ class ST7735S(object):
     def __init__(self):
         self.displayWidth   = 132
         self.displayHeight  = 162
-        self.screenWidth    = 128
-        self.screenHeight   = 128
+        self.screenWidth    = 160#132#
+        self.screenHeight   = 128#128#162#
 
         self.PinDC          = 22
         self.PinLight       = 16
-        self.PinReset       = 13
+        self.PinReset       = 36
 
-        self.bitsPerPixel   = 18
+        self.bitsPerPixel   = 18 # "chip... accepts Serial Peripheral Interface (SPI), 8-bit/9-bit/16-bit/18-bit parallel interface" (datasheet)
 
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.PinDC, GPIO.OUT)
-        GPIO.setup(self.PinLight, GPIO.OUT)
-        GPIO.setup(self.PinReset, GPIO.OUT)
-
+        # GPIO.setwarnings(False)
+        GPIO.setup(self.PinDC, GPIO.OUT) # is working A0 pin22 (DC)
+        GPIO.setup(self.PinLight, GPIO.OUT) # is working LED pin16
+        GPIO.setup(self.PinReset, GPIO.OUT) # ? RESET pin36
+        # fixed pin numbers: 
+        # CS  pin24 (SPI Chip select), 
+        # SDA pin19 (SPI MOSI), 
+        # SCK pin23 (SPI CLOCK), 
+        #self.spi.close()
+        #GPIO.cleanup()
+        
         self.spi = spidev.SpiDev()
-        self.spi.open(0, 0)
-        self.spi.max_speed_hz = 24000000
+        self.spi.open(0, 0) # bus, device
+        self.spi.max_speed_hz = 8000000#24000000#
         self.spi.mode = 0x00
 
         self.hardReset()
@@ -164,7 +170,11 @@ class ST7735S(object):
         GPIO.output(self.PinDC, 1)
 
         # 13 x 3783 = 49179 (9pxls more than 128x128x3)
-        for y in range(13):
+        # MOD: makes sure you're sending it enough times for all pixels to be covered
+        import math
+        pixelCount = self.screenHeight * self.screenWidth * 3
+        sendCount = int(math.ceil(pixelCount / (1261 * 3))) # MOD: used to be hardcoded to 13
+        for y in range(sendCount):
             self.spi.writebytes(spiData)
 
     def draw(self, image):
