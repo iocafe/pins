@@ -6,7 +6,13 @@ Description: An expandable life-manager device, starting
              selector. :)
 '''
 import time
+import datetime
+import RPi.GPIO as GPIO
+import threading
+from pygame import mixer
+import math
 
+GPIO.setmode(GPIO.BOARD) 
 
 # HARDWARE COMPONENTS AND ABSTRACTION
 class ButtonController(object):
@@ -24,7 +30,14 @@ class InspirationalButton(ButtonController):
     Button that shuffles through inspirational 
     messages and outputs them to the speaker
     '''
-    pass
+    def __init__(self,speaker,channel):
+        self.speaker = speaker
+
+        # Start editing mode button
+        midChnl = channel
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING) 
+        GPIO.add_event_callback(midChnl, self.speaker.playInspirationMsg) 
 
 class SetAlarmButton(ButtonController):
     '''
@@ -33,19 +46,30 @@ class SetAlarmButton(ButtonController):
     feeds it instructions based on the given editing mode rules 
     below.
     
-    Rules:
+    Editing Mode Rules:
         - First press, changes into blinky edit mode.
         - First number blinks, short presses increment # upwards
         - Long press causes next digit to be selected (blinking)
         - When all digits were iterated over, exits out of the
           editting mode
     '''
-    def __init__(self,display):
+    def __init__(self,display,channels):
+        # Initialize display
         self.display = display
+
+        # SET UP GPIO PINs for the given button
+        #
+        # Start editing mode button
+        midChnl = channels['set'] # SET button
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING) 
+        GPIO.add_event_callback(midChnl, self.display.startEditingMode) 
+        #if GPIO.input(10):
+        #GPIO.wait_for_edge(10, GPIO.RISING)
 
     def startEditing(self,):
         ''' 
-        Start editing the displayTime using above rules. 
+        Start editing the alarmTime using above rules. 
         
         CONTEXT: Called on-event when the physical SetAlarmButton is first pressed.
         '''
@@ -53,73 +77,215 @@ class SetAlarmButton(ButtonController):
 
     def getAlarmTime(self,):
         # Gets the stored alarm time displayed
-        return self.display.getDisplayTime()
+        return self.display.getAlarmTime()
     
-
-class OnOffButton(ButtonController):
+class OnOffSwitch(ButtonController):
     '''
-    Button that is able to turn the alarm on and off.
+    TOGGLE SWITCH that is able to turn the alarm on and off.
     Does not need to interface with any other hardware,
     only the base program internals.
     '''
-    isOn = True
-
-    def switchOnOff(self,):
-        ''' 
-        Switches the value of isOn when the button is pressed.
-        TODO: Requires knowledge of button mechanics or some
-        event handling. I'll leave that to you, Pekka. -SKL
-        '''
-        pass
+    isOn = True # TODO: Delete when GpIO is actually connected
+    def __init__(self,channel):
+        ''' TODO: Set channel # '''
+        self.chnnl = channel
+        GPIO.setup(self.chnnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        #GPIO.input(chnnl)
 
     def checkIsOn(self,):
-        return self.isOn
+        #print('GPIO input')
+        #print(GPIO.input(self.chnnl))
+        return self.isOn #TODO: GPIO.input(self.chnnl)
 
 class Speaker(object):
     ''' 
     A wrapper for the speaker hardware to allow basic controls 
-    in Python.
+    in Python. Includes controls for grabbing the audioclip to play.
+
+    Future dreams:
+    - connect speaker via bluetooth insteadof GPIO?
+    - connect speaker to webradio for a radio or music option
     '''
+    inspirational_msgs = [
+        # List of inspirational messages, as audio files to pull from
+        './audiofiles/wake up warrior kail.mp3',#dummy.mp3' # TODO: Does not exist yet
+    ] 
+    morning_msgs       = [
+        # List of wake-up messages played at the alarm times (also audio files)
+        '/coderoot/pins/tests/alarmclock/code/audiofiles/wake up warrior kail.mp3',
+    ] 
+
+    def __init__(self,channels):
+        ''' Sets up the Speaker pi channel '''
+        # Raspberry Pi GPIO stuff
+        self.channelNum = channels["LEFT"]
+        GPIO.setup(self.channelNum, GPIO.OUT, initial=GPIO.LOW)
+
+        # Sound play-back setup
+        mixer.init()
+
+    def messageShuffle(self, messageList):
+        ''' 
+        Selects a message from the messageList 
+        at random and outputs it 
+        '''
+        import random
+        ind = random.randint(0,len(messageList)-1)
+        return messageList[ind]
+
+    def playMorningAlarm(self,):
+        ''' Plays a random morning alarm from the morning audio set '''
+        audiofile = self.messageShuffle(self.morning_msgs)
+        self.startSound(audiofile)
+
+    def playInspirationMsg(self,callback_channel):
+        ''' Plays inspirational message from the inspirational audio set '''
+        audiofile = self.messageShuffle(self.inspirational_msgs)
+        self.startSound(audiofile)
+
     def startSound(self,soundclip):
         ''' 
         Starts playing the soundclip (given as an audio file path) 
-        TODO: Requires understanding of hardware mechanics.
+        TODO: Requires understanding of hardware mechanics. -> add
+              to GPIO board somehow rather than just playing it to Linux.
+              (We need our GPIO-connected speaker to somehow be 
+               recognized as a sound output device by the Pi?)
         '''
-        pass
+        if not mixer.music.get_busy():
+            # Won't restart from beginning if it's already playing
+            # (prevent startSound to be called multiple times in the same second)
+            mixer.music.load(soundclip)
+            mixer.music.play()
+            #GPIO.output(self.channelNum, GPIO.HIGH)
 
 class Display(object):
     ''' 
     A wrapper for the display hardware to allow basic controls
     in Python. Includes basic time-displaying functionalities. 
+
+    Future dreams:
+    - sleep progress bar (sleep tracking! If you are awake to see this, that's a probleM!)
+    - display real time instead of alarm time? or next to? (one can be smaller than the other)
+    - be able to make 2D array keyboard controllable by set alarm button, in order to config the
+      wifi
     '''
-    displayTime = [0,0,0,0] # The stored display/alarm time, in a readable 
+    currentTime = [0,0,0,0] # TODO, get current time and render it here
+    alarmTime = [0,0,0,0] # The stored display/alarm time, in a readable 
                             # format (should contain 4 int digits, in 24-hour time)
-    editMode = False # Blinky time-editting mode, TODO: Only one digit should be blinking at a time
+    tempAlarmTime = [0,0,0,0] # Temporary storage for the alarmTime while editing 
+                                # (allows resetting)
+    editModeInd = None # Blinky time-editting mode, index matches the digit that should 
+                       # be blinking (unless None)
 
-    def __init__(self,):
+    def __init__(self,channels):
         ''' 
-        Initiates the display with a 00:00 number format 
+        Initiates the display with a 00:00 number format, TODO
         '''
-        self.renderAlarmTime(self.displayTime)
+        # Pins
+        self.channelNum = channels['LED'] # TODO: Comment out, LED is for testing only
+        GPIO.setup(self.channelNum, GPIO.OUT, initial=GPIO.LOW)
 
-    def getDisplayTime(self,):
-        return self.displayTime
+        # Start rendering the display
+        self.startRendering()
 
-    def updateDisplayTime(self,newDisplayTime):
+    # EDITING MODE FUNCS (serve as callbacks to setAlarm button inputs)
+    def startEditingMode(self,callback_channel):
+        '''
+        Start the editing mode by blinking the first digit on and off. 
+
+        TODO: Currently just blinks the entire LED output once for testing. 
+        This should be connected to the display.
+        '''
+        self.editModeInd = 0
+        self.tempAlarmTime = self.alarmTime
+        GPIO.output(self.channelNum, GPIO.HIGH) # FOR TESTING ONLY, TODO: comment out
+        time.sleep(2) 
+        GPIO.output(self.channelNum, GPIO.LOW) 
+
+    def incrementDigit(self,callback_channel):
+        ''' Increments a digit during the editing mode '''
+        self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] + 1) % 10 
+
+    def decrementDigit(self,callback_channel):
+        ''' Decrements a digit during the editing mode '''
+        self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] - 1) % 10 
+
+    def selectLeftDigit(self,callback_channel):
+        ''' Edits the digit to the left now instead '''
+        self.editModeInd -= 1
+
+    def selectRightDigit(self,callback_channel):
+        ''' Edits digit to the right now instead '''
+        self.editModeInd += 1
+
+    def stopEditingMode(self,callback_channel):
+        ''' Stops the editing mode '''
+        self.editModeInd = None
+
+    def resetEdits(self,callback_channel):
+        ''' Resets the alarmTime to the value it was before any edits happened '''
+        self.alarmTime = self.tempAlarmTime 
+
+
+    # GENERAL RENDERING AND FUNCS
+    def startRendering(self,):
+        ''' 
+        TODO: Starts rendering the display in a separate THREAD, using a 
+        given refresh rate. 
+        
+        Creates a blinky effect on the position self.editModeInd when 
+        editing mode is enabled. 
+        '''
+        th = threading.Thread(target=self.renderingThread)
+        th.start()
+
+    def renderingThread(self,):
+        ''' Start screen rendering application. '''
+        blinkDelay = 1 # 1 second blink delay
+        isOdd = False
+        while True:
+            
+            if self.editModeInd is not None:
+                # Editing mode is enabled, render alarm time and
+                # make the current digit being edited digit blink by
+                # adding it on every second loop
+                alarmTime = self.alarmTime # TODO: See if this gets modified succesfully from inside the thread?
+                if isOdd:
+                    alarmTime[self.editModeInd] = None
+                    isOdd = False
+                else:
+                    isOdd = True
+                time.sleep(blinkDelay)
+                self.renderAlarmTime(alarmTime)
+            else:
+                # Normal mode, display current time instead
+                self.renderAlarmTime(self.currentTime)
+
+    def getAlarmTime(self,):
+        return self.alarmTime
+
+    def updateCurrentTime(self,newCurrTime):
+        '''
+        Updates the current time with newCurrTime
+        '''
+        self.currentTime = newCurrTime
+
+    def updateAlarmTime(self,newAlarmTime):
         ''' 
         Updates the real display time (the alarm time that 
         is stored) according to the given input 
         '''
-        self.displayTime = newDisplayTime
+        self.alarmTime = newAlarmTime
 
     def createDigitBitmap(self,digit,size):
         ''' 
         Creates a digit bitmap for the given digit or character.
         (Note: the only additional character you'd really need for
-        this is the colon, ":")
+        this is the colon, ":") 
 
         Inputs:
-            digit (int): the digit to render
+            digit (int): the digit to render. if None, then the
+                         created bitmap should be all dark/blank
             size (list): takes format [x,y] where x is the number
                          of pixels horizontally that the rendered
                          digit can take up and y is the number of
@@ -149,7 +315,10 @@ class Display(object):
         dbitmaplist = [self.createDigitBitmap(d,digitsize) for d in adjAlarmTime]
 
         # TODO: Somehow actually combine the dbitmaplist items in a 
-        # nice and correctly sized format and apply to the display screen.
+        # nice and correctly sized format with margin 
+        
+        # TODO: Apply to the display screen.
+        dummyBitMap = []
 
 
 # OTHER ABSTRACTION CLASSES
@@ -173,13 +342,6 @@ class AlarmClock(object):
     '''
 
     # Globals
-    inspirational_msgs = [
-        # List of inspirational messages, as audio files to pull from
-        'audiofiles/dummy.mp4' # TODO: Does not exist yet
-    ] 
-    morning_msgs       = [
-        # List of wake-up messages played at the alarm times (also audio files)
-    ] 
     lastCheckedTime    = [] # Last checked time object (list of four ints)
 
     def __init__(self,speaker,display,inspbutton,setalarmbutton,onoffbutton):
@@ -201,20 +363,8 @@ class AlarmClock(object):
     def main(self,):
         ''' Starts all the major alarm clock processes. '''
 
-        # TODO: Make the below called in a thread so main process doesn't halt. 
-        #       (This is necessary for allowing the inspiration button 
-        #        functionality, etc. to work)
+        # Check time for alarm sounding
         self.startTimeChecking()
-
-        # Add event handlers for other buttons, such as the inspirational 
-        # message button below and the set alarm button (which should then call some 
-        # main button event processing (ex. setalarmbutton.startEditing()) when the event occurs)
-        # TODO: Add inspirational message functionality 
-        # (just uses messageShuffle then speaker.startSound(audiofile) as shown below)
-        #audiofile = self.messageShuffle(self.inspirational_msgs)
-        #self.speaker.startSound(audiofile)
-
-        
 
     def startTimeChecking(self,):
         '''
@@ -222,35 +372,39 @@ class AlarmClock(object):
         determined to be true, starts the alarm sound by pulling a random 
         audio file from the morning_msgs.
         '''
+        th = threading.Thread(target=self.timeCheckingWorker)
+        th.start()
+
+    def timeCheckingWorker(self,):
+        '''
+        Starts a time checking polling thread. Upon the system time being 
+        determined to be true, starts the alarm sound by pulling a random 
+        audio file from the morning_msgs.
+        '''
         while True:
             # Polling loop
-            if self.onoffbutton.checkIsOn():
+            isTime = self.checkTime()
+            if isTime:
                 # Loop only does anything when we want the alarm to do something
-                isTime = self.checkTime()
-
-                if isTime:
+            
+                if self.onoffbutton.checkIsOn():
                     # Actually starts the audio 
-                    audiofile = self.messageShuffle(self.morning_msgs)
-                    self.speaker.startSound(audiofile)
+                    self.speaker.playMorningAlarm()
 
             # Waits thirty seconds before polling again
-            time.sleep(30)
-
-    def messageShuffle(self, messageList):
-        ''' 
-        Selects a message from the messageList 
-        at random and outputs it 
-        '''
-        import random
-        ind = random.randint(0,len(messageList)-1)
-        return messageList[ind]
+            time.sleep(5)
 
     def getCurrSystemTime(self,):
         ''' 
         Gets the current system time, expressed as a list of four 
         integers (hours:minuts). TODO - wifi connection?
         '''
-        return [0,0,0,0]
+        currTime = datetime.datetime.now()
+        currHr = currTime.hour
+        currMin = currTime.minute
+        time = [math.floor(currHr/10),currHr % 10,math.floor(currMin/10),currMin % 10]
+        #print(time)
+        return time
 
     def checkTime(self,):
         '''
@@ -276,6 +430,7 @@ class AlarmClock(object):
 
         # Gets the current time and the alarm clock time
         currSystemTime = self.getCurrSystemTime()
+        self.display.updateCurrentTime(currSystemTime) # update the display with the current time
         alarmTime = self.setalarmbutton.getAlarmTime()
 
         # Compares them and outputs message
@@ -287,10 +442,12 @@ class AlarmClock(object):
 
 if __name__ == '__main__':
     # Initiate and run
-    speaker     = Speaker()
-    display     = Display()
-    inspButton  = InspirationalButton()
-    setAlarmButton  = SetAlarmButton(display)
-    onOffButton     = OnOffButton()
+    speaker     = Speaker({'LEFT':16})
+    display     = Display({'LED':8})
+    inspButton  = InspirationalButton(speaker,10)
+    setAlarmButton  = SetAlarmButton(display,{'set':12,'mid':10})
+    onOffButton     = OnOffSwitch(18)
     alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
     alarmClock.main()
+
+    #display.updateAlarmTime([0,2,0,6]) # TESTING
