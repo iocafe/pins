@@ -49,7 +49,7 @@ class ST7735S(object):
         self.screenHeight   = 128
 
         self.PinDC          = 22
-        self.PinLight       = 18
+        self.PinLight       = 16
         self.PinReset       = 13
 
         self.bitsPerPixel   = 18

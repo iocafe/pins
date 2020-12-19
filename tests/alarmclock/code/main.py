@@ -443,10 +443,10 @@ class AlarmClock(object):
 if __name__ == '__main__':
     # Initiate and run
     speaker     = Speaker({'LEFT':16})
-    display     = Display({'LED':8})
+    display     = Display({'LED':37})
     inspButton  = InspirationalButton(speaker,10)
-    setAlarmButton  = SetAlarmButton(display,{'set':12,'mid':10})
-    onOffButton     = OnOffSwitch(18)
+    setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
+    onOffButton     = OnOffSwitch(35)
     alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
     alarmClock.main()
 
