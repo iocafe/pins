@@ -34,12 +34,12 @@ Pi pin  Name	        Description
 # Switches/buttons and LIGHT
 
 Pi pin  Name	        Description
-10      INSP_BUTTON     Inspirational life advice button
+32      INSP_BUTTON     Inspirational life advice button
 7       LEFT_BUTTON     Configuration buttons
 15      RIGHT_BUTTON
 29      UP_BUTTON
 31      DOWN_BUTTON
-32      MID_BUTTON      Same as set button?  *** CHANGED, WAS 10 
+10      MID_BUTTON      Same as set button?  *** CHANGED, WAS 10 
 35      ON_OFF_BUTTON   Turn alarm on/off *** CHANGED, WAS 18 
 37      NIGHT_LIGHT     Night light  *** CHANGED, WAS 8 
 

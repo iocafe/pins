@@ -11,10 +11,14 @@ import RPi.GPIO as GPIO
 import threading
 from pygame import mixer
 import math
+import copy
+import os
 
 #import st7735s as controller
-import Python_ST7735.ST7735 as TFT
-import Adafruit_GPIO.SPI as SPI
+#import Python_ST7735.ST7735 as TFT
+#import Adafruit_GPIO.SPI as SPI
+#from st7735_tft.st7735_tft import ST7735_TFT
+from st7735_python.library.ST7735 import ST7735 as ST7735_TFT
 
 from PIL import Image
 
@@ -49,37 +53,44 @@ class SetAlarmButton(ButtonController):
     '''
     Button that sets the alarm time on the display and
     internal program. Interfaces with the display and directly
-    feeds it instructions based on the given editing mode rules 
-    below.
-    
-    Editing Mode Rules:
-        - First press, changes into blinky edit mode.
-        - First number blinks, short presses increment # upwards
-        - Long press causes next digit to be selected (blinking)
-        - When all digits were iterated over, exits out of the
-          editting mode
+    feeds it instructions based on the editing button feedback.
     '''
     def __init__(self,display,channels):
         # Initialize display
+        #channels format: {'MID':10,'UP':29,'DOWN':31,'LEFT':7,'RIGHT':15}
         self.display = display
 
         # SET UP GPIO PINs for the given button
         #
         # Start editing mode button
-        midChnl = channels['set'] # SET button
+        midChnl = channels['MID'] # SET button
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
         GPIO.add_event_detect(midChnl, GPIO.RISING) 
         GPIO.add_event_callback(midChnl, self.display.startEditingMode) 
+
+        # Start editing mode button
+        midChnl = channels['UP'] 
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING)
+        GPIO.add_event_callback(midChnl, self.display.incrementDigit) 
+
+        midChnl = channels['DOWN'] 
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING) 
+        GPIO.add_event_callback(midChnl, self.display.decrementDigit) 
+
+        midChnl = channels['LEFT'] 
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING) 
+        GPIO.add_event_callback(midChnl, self.display.selectLeftDigit) 
+
+        midChnl = channels['RIGHT'] 
+        GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        GPIO.add_event_detect(midChnl, GPIO.RISING) 
+        GPIO.add_event_callback(midChnl, self.display.selectRightDigit) 
+        
         #if GPIO.input(10):
         #GPIO.wait_for_edge(10, GPIO.RISING)
-
-    def startEditing(self,):
-        ''' 
-        Start editing the alarmTime using above rules. 
-        
-        CONTEXT: Called on-event when the physical SetAlarmButton is first pressed.
-        '''
-        pass
 
     def getAlarmTime(self,):
         # Gets the stored alarm time displayed
@@ -91,17 +102,21 @@ class OnOffSwitch(ButtonController):
     Does not need to interface with any other hardware,
     only the base program internals.
     '''
-    isOn = True # TODO: Delete when GpIO is actually connected
+    #isOn = True # TODO: Delete when GpIO is actually connected
     def __init__(self,channel):
-        ''' TODO: Set channel # '''
+        ''' Sets the hardware switch based on the on/off '''
         self.chnnl = channel
-        GPIO.setup(self.chnnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        #GPIO.input(chnnl)
+        GPIO.setup(self.chnnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     def checkIsOn(self,):
+        ''' 
+        If hardware switch is ON (connects wires), then we should 
+        return False (reversed logic so that when the switch is
+        entirely disconnected, it by default returns True) 
+        '''
         #print('GPIO input')
         #print(GPIO.input(self.chnnl))
-        return self.isOn #TODO: GPIO.input(self.chnnl)
+        return not GPIO.input(self.chnnl)
 
 class Speaker(object):
     ''' 
@@ -112,13 +127,14 @@ class Speaker(object):
     - connect speaker via bluetooth insteadof GPIO?
     - connect speaker to webradio for a radio or music option
     '''
+    audiopath = '/'.join(__file__.split('/')[:-1]) + '/audiofiles'
     inspirational_msgs = [
         # List of inspirational messages, as audio files to pull from
-        './audiofiles/wake up warrior kail.mp3',#dummy.mp3' # TODO: Does not exist yet
+        './audiofiles/inspiration/'+filename for filename in os.listdir(audiopath+'/inspiration')
     ] 
     morning_msgs       = [
         # List of wake-up messages played at the alarm times (also audio files)
-        '/coderoot/pins/tests/alarmclock/code/audiofiles/wake up warrior kail.mp3',
+        './audiofiles/morning/'+filename for filename in os.listdir(audiopath+'/morning')
     ] 
 
     def __init__(self,channels):
@@ -170,45 +186,57 @@ class Display(object):
     A wrapper for the display hardware to allow basic controls
     in Python. Includes basic time-displaying functionalities. 
 
-    Future dreams:
+    Future dreams (TODO):
     - sleep progress bar (sleep tracking! If you are awake to see this, that's a probleM!)
     - display real time instead of alarm time? or next to? (one can be smaller than the other)
     - be able to make 2D array keyboard controllable by set alarm button, in order to config the
       wifi
     '''
-    currentTime = [0,0,0,0] # TODO, get current time and render it here
-    alarmTime = [0,0,0,0] # The stored display/alarm time, in a readable 
+    # Stored Time Globals
+    currentTime   = [0,0,0,0] # The current time to display
+    alarmTime     = [1,0,0,0] # The stored display/alarm time, in a readable 
                             # format (should contain 4 int digits, in 24-hour time)
     tempAlarmTime = [0,0,0,0] # Temporary storage for the alarmTime while editing 
-                                # (allows resetting)
-    editModeInd = None # Blinky time-editting mode, index matches the digit that should 
-                       # be blinking (unless None)
+                              # (allows resetting)
+    
+    # Display globals
     digitToImg = { # Number to PIL Image file
         1:None,2:None,3:None,4:None,5:None,6:None,7:None,8:None,9:None,0:None,'clear':None,'colon':None
         }
     screenWidth  = 160
     screenHeight = 128
 
+    # Editing Interface/Button Globals
+    editModeInd = -1 # Blinky time-editting mode, index matches the digit that should 
+                     # be blinking (unless -1, in which case editing mode is off)
+    buttonDelay = 0.3 # The amount of time before another button press is allowed, to prevent multiple presses
+    buttonTime = 0.0  # A time tracker for the button
+
     def __init__(self,channels):
         ''' 
-        Initiates the display with a 00:00 number format, TODO
+        Initiates the display hardware and begins rendering 
+        on the display (in a separate thread).
         '''
         # Pins
-        
-        self.screen = TFT.ST7735(
-            channels['DC'],
-            rst=channels['RST'],
-            spi=SPI.SpiDev(
-                0,
-                0,
-                max_speed_hz=8000000),
-            width = self.screenWidth,
-            height= self.screenHeight
-        ) #controller.ST7735S()
-        self.screen.begin()
-        self.screen.clear()
-        self.nightLight = channels['LED'] # TODO: Comment out, LED is for testing only
-        GPIO.setup(self.nightLight, GPIO.OUT, initial=GPIO.LOW)
+        #BCMconversions = {22:25,36:16,16:23}
+        self.screen = ST7735_TFT(
+            port = 0,
+            cs   = 0,
+            dc   = channels['DC'],
+            backlight = channels['BACKLIGHT'],
+            rst  = channels['RST'],
+            spi_speed_hz = 24000000,#,#
+            width = self.screenHeight,#128, #160, 
+            height= self.screenWidth,#160, #128  
+            offset_left=0, 
+            offset_top=0,
+            rotation=0
+        )
+        #self.nightLight = channels['NIGHTLIGHT'] # TODO: Comment out, LED is for testing only
+        #GPIO.setup(self.nightLight, GPIO.OUT, initial=GPIO.LOW)
+        #GPIO.output(self.nightLight, GPIO.HIGH) # FOR TESTING ONLY
+        #time.sleep(2)
+        #GPIO.output(self.nightLight, GPIO.LOW) 
 
         # Set all the digits appropriately given the files
         for num in self.digitToImg.keys():
@@ -222,49 +250,66 @@ class Display(object):
     def startEditingMode(self,callback_channel):
         '''
         Start the editing mode by blinking the first digit on and off. 
-
-        TODO: Currently just blinks the entire LED output once for testing. 
-        This should be connected to the display.
+        Can also stop the editing mode instead if it stops.
         '''
-        self.editModeInd = 0
-        self.tempAlarmTime = self.alarmTime
-        GPIO.output(self.nightLight, GPIO.HIGH) # FOR TESTING ONLY, TODO: comment out
-        time.sleep(2)
-        GPIO.output(self.nightLight, GPIO.LOW) 
+        if self.buttonTime >= self.buttonDelay:
+            if self.editModeInd == -1:
+                # Editing mode was off, intialize it
+                self.editModeInd = 0
+                self.tempAlarmTime = self.alarmTime
+            else:
+                # Editing mode was on, turn it off
+                self.editModeInd = -1
+        self.buttonTime = time.time()
 
     def incrementDigit(self,callback_channel):
         ''' Increments a digit during the editing mode '''
-        self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] + 1) % 10 
+        if self.buttonTime >= self.buttonDelay:
+            modNum = 3 if self.editModeInd==0 else \
+                    10 if (self.editModeInd == 1 or self.editModeInd == 3) else 6
+            if self.editModeInd != -1:
+                self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] + 1) % modNum
+        self.buttonTime = time.time()
 
     def decrementDigit(self,callback_channel):
         ''' Decrements a digit during the editing mode '''
-        self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] - 1) % 10 
+        if self.buttonTime >= self.buttonDelay:
+            modNum = 3 if self.editModeInd==0 else \
+                    10 if (self.editModeInd == 1 or self.editModeInd == 3) else 6
+            if self.editModeInd != -1:
+                self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] - 1) % modNum
+        self.buttonTime = time.time()
 
     def selectLeftDigit(self,callback_channel):
         ''' Edits the digit to the left now instead '''
-        self.editModeInd -= 1
+        if self.buttonTime >= self.buttonDelay:
+            if self.editModeInd != -1:
+                self.editModeInd = (self.editModeInd - 1) % len(self.alarmTime)
+        self.buttonTime = time.time()
 
     def selectRightDigit(self,callback_channel):
         ''' Edits digit to the right now instead '''
-        self.editModeInd += 1
-
-    def stopEditingMode(self,callback_channel):
-        ''' Stops the editing mode '''
-        self.editModeInd = None
+        if self.buttonTime >= self.buttonDelay:
+            if self.editModeInd != -1:
+                self.editModeInd = (self.editModeInd + 1) % len(self.alarmTime)
+        self.buttonTime = time.time()
 
     def resetEdits(self,callback_channel):
         ''' Resets the alarmTime to the value it was before any edits happened '''
-        self.alarmTime = self.tempAlarmTime 
+        if self.buttonTime >= self.buttonDelay:
+            self.alarmTime = self.tempAlarmTime
+        self.buttonTime = time.time()
 
+    def isEditing(self,):
+        ''' Returns true if editing mode is on '''
+        return self.editModeInd != -1
 
     # GENERAL RENDERING AND FUNCS
     def startRendering(self,):
         ''' 
-        TODO: Starts rendering the display in a separate THREAD, using a 
-        given refresh rate. 
-        
-        Creates a blinky effect on the position self.editModeInd when 
-        editing mode is enabled. 
+        Starts rendering the display in a separate THREAD, using a 
+        given refresh rate. Also creates a blinky effect on the 
+        position self.editModeInd when editing mode is enabled. 
         '''
         th = threading.Thread(target=self.renderingThread)
         th.start()
@@ -275,11 +320,11 @@ class Display(object):
         isOdd = False
         while True:
             
-            if self.editModeInd is not None:
+            if self.editModeInd != -1:
                 # Editing mode is enabled, render alarm time and
                 # make the current digit being edited digit blink by
                 # adding it on every second loop
-                alarmTime = self.alarmTime # TODO: See if this gets modified succesfully from inside the thread?
+                alarmTime = copy.deepcopy(self.alarmTime)
                 if isOdd:
                     alarmTime[self.editModeInd] = 'clear'
                     isOdd = False
@@ -338,10 +383,10 @@ class Display(object):
 
         # Combines the imgList items in a 
         # nice and correctly sized format with margin
-        size = (self.screenWidth-1,self.screenHeight)
-        timeImg = Image.new('RGB',size)
-        vDist = (size[1] - imgList[0].height) / 2
-        hStart = (size[0] - sum([img.width for img in imgList])) / 2
+        size = (self.screenWidth,self.screenHeight)
+        timeImg = Image.new('RGB',size,color='#FFFFFF')
+        vDist = int((size[1] - imgList[0].height) / 2)
+        hStart = int((size[0] - sum([img.width for img in imgList])) / 2)
         timeImg.paste(imgList[0], (hStart, vDist)) 
         hDist = imgList[0].width + hStart
         for ind in range(1,len(imgList)):
@@ -350,6 +395,8 @@ class Display(object):
             hDist += imgList[ind].width 
 
         # Apply to the display screen.
+        timeImg = timeImg.transpose(Image.ROTATE_90) # rotate due to weird display weirdness
+        #timeImg.save('currTime.jpg') # for TESTING only
         self.screen.display(timeImg)#draw(timeImg)
 
 
@@ -372,7 +419,6 @@ class AlarmClock(object):
     Class that coordinates and manages all 
     the hardware and life-manager features. 
     '''
-
     # Globals
     lastCheckedTime    = [] # Last checked time object (list of four ints)
 
@@ -416,7 +462,8 @@ class AlarmClock(object):
         while True:
             # Polling loop
             isTime = self.checkTime()
-            if isTime:
+            isNotEditing = not self.display.isEditing()
+            if isTime and isNotEditing:
                 # Loop only does anything when we want the alarm to do something
             
                 if self.onoffbutton.checkIsOn():
@@ -429,7 +476,7 @@ class AlarmClock(object):
     def getCurrSystemTime(self,):
         ''' 
         Gets the current system time, expressed as a list of four 
-        integers (hours:minuts). TODO - wifi connection?
+        integers (hours:minuts).
         '''
         currTime = datetime.datetime.now()
         currHr = currTime.hour
@@ -458,6 +505,8 @@ class AlarmClock(object):
             for ind in range(len(time)):
                 if time[ind] < valueToCompareTo[ind]:
                     return True
+                if time[ind] > valueToCompareTo[ind]:
+                    return False
             return False
 
         # Gets the current time and the alarm clock time
@@ -475,12 +524,12 @@ class AlarmClock(object):
 if __name__ == '__main__':
     # Initiate and run
     speaker     = Speaker({'LEFT':18,'RIGHT':13})
-    display     = Display({'LED':37,'DC':22,'RST':36,'LIGHT':16})
-    inspButton  = InspirationalButton(speaker,10)
-    setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
+    display     = Display({'NIGHTLIGHT':37,'DC':22,'RST':36,'BACKLIGHT':16})
+    inspButton  = InspirationalButton(speaker,32) # TODO: 32 is MID, replace with insp later
+    setAlarmButton  = SetAlarmButton(display,{'SET':32,'MID':10,'UP':29,'DOWN':31,'LEFT':7,'RIGHT':15})
     onOffButton     = OnOffSwitch(35)
     alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
     alarmClock.main()
 
     #display.updateAlarmTime([0,2,0,6]) # TESTING
-    #display.screen.close() # TODO: Put this in a better spot
+    #display.screen.close() # TODO: Figure out the code and put this in a better spot
