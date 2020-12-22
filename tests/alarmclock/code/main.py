@@ -11,7 +11,11 @@ import RPi.GPIO as GPIO
 import threading
 from pygame import mixer
 import math
-import st7735s as controller
+
+#import st7735s as controller
+import Python_ST7735.ST7735 as TFT
+import Adafruit_GPIO.SPI as SPI
+
 from PIL import Image
 
 GPIO.setmode(GPIO.BOARD) 
@@ -179,15 +183,37 @@ class Display(object):
                                 # (allows resetting)
     editModeInd = None # Blinky time-editting mode, index matches the digit that should 
                        # be blinking (unless None)
+    digitToImg = { # Number to PIL Image file
+        1:None,2:None,3:None,4:None,5:None,6:None,7:None,8:None,9:None,0:None,'clear':None,'colon':None
+        }
+    screenWidth  = 160
+    screenHeight = 128
 
     def __init__(self,channels):
         ''' 
         Initiates the display with a 00:00 number format, TODO
         '''
         # Pins
-        self.screen = controller.ST7735S()
+        
+        self.screen = TFT.ST7735(
+            channels['DC'],
+            rst=channels['RST'],
+            spi=SPI.SpiDev(
+                0,
+                0,
+                max_speed_hz=8000000),
+            width = self.screenWidth,
+            height= self.screenHeight
+        ) #controller.ST7735S()
+        self.screen.begin()
+        self.screen.clear()
         self.nightLight = channels['LED'] # TODO: Comment out, LED is for testing only
         GPIO.setup(self.nightLight, GPIO.OUT, initial=GPIO.LOW)
+
+        # Set all the digits appropriately given the files
+        for num in self.digitToImg.keys():
+            filepath = './digit_sheet/'+str(num)+'.png'
+            self.digitToImg[num] = Image.open(filepath)
 
         # Start rendering the display
         self.startRendering()
@@ -245,7 +271,7 @@ class Display(object):
 
     def renderingThread(self,):
         ''' Start screen rendering application. '''
-        blinkDelay = 1 # 1 second blink delay
+        blinkDelay = .5 # .5 second blink delay
         isOdd = False
         while True:
             
@@ -255,7 +281,7 @@ class Display(object):
                 # adding it on every second loop
                 alarmTime = self.alarmTime # TODO: See if this gets modified succesfully from inside the thread?
                 if isOdd:
-                    alarmTime[self.editModeInd] = None
+                    alarmTime[self.editModeInd] = 'clear'
                     isOdd = False
                 else:
                     isOdd = True
@@ -264,6 +290,7 @@ class Display(object):
             else:
                 # Normal mode, display current time instead
                 self.renderAlarmTime(self.currentTime)
+                time.sleep(0.1)
 
     def getAlarmTime(self,):
         return self.alarmTime
@@ -281,27 +308,21 @@ class Display(object):
         '''
         self.alarmTime = newAlarmTime
 
-    def createDigitBitmap(self,digit,size):
+    def createDigitBitmap(self,digit):
         ''' 
-        Creates a digit bitmap for the given digit or character.
+        Creates a digit bitmap for the given digit or character,
+        using the self.digitToImg dictionary
         (Note: the only additional character you'd really need for
         this is the colon, ":") 
 
         Inputs:
             digit (int): the digit to render. if None, then the
                          created bitmap should be all dark/blank
-            size (list): takes format [x,y] where x is the number
-                         of pixels horizontally that the rendered
-                         digit can take up and y is the number of
-                         vertical pixels 
 
         Outputs:
-            dbitmap (list) : a 3D RGB array that can be applied to 
-
-        TODO: Requires understanding of how digits should be rendered.
+            dbitmap (list) : a PIL image object
         '''
-        dbitmap = []
-        return dbitmap
+        return self.digitToImg[digit]
 
     def renderAlarmTime(self,alarmTime):
         '''
@@ -311,21 +332,25 @@ class Display(object):
         
         NOTE: if editMode==True, this should become blinky somehow
         '''
-        # Convert the alarm time into a set of appropriate dbitmaps
-        digitsize = [200,800] # TODO: hardcoded value, you'd want to be able
-                              #       to dynamically read this based on the 
-                              #       actual display size
-        adjAlarmTime = alarmTime[:2] + [":"] + alarmTime[2:] # Adjusted alarm time to include the colon
-        dbitmaplist = [self.createDigitBitmap(d,digitsize) for d in adjAlarmTime]
+        # Convert the alarm time into a set of appropriate PIL image files
+        adjAlarmTime = alarmTime[:2] + ["colon"] + alarmTime[2:] # Adjusted alarm time to include the colon
+        imgList = [self.createDigitBitmap(d) for d in adjAlarmTime]
 
-        # TODO: Somehow actually combine the dbitmaplist items in a 
-        # nice and correctly sized format with margin -> Convert to image
-        # ex. img = Image.open("assets/1.jpg")
-        # img = Image.  # create image from RAM in bitmap instead
-        
-        # TODO: Apply to the display screen.
-        dummyBitMap = []
-        #self.screen.draw(img)
+        # Combines the imgList items in a 
+        # nice and correctly sized format with margin
+        size = (self.screenWidth-1,self.screenHeight)
+        timeImg = Image.new('RGB',size)
+        vDist = (size[1] - imgList[0].height) / 2
+        hStart = (size[0] - sum([img.width for img in imgList])) / 2
+        timeImg.paste(imgList[0], (hStart, vDist)) 
+        hDist = imgList[0].width + hStart
+        for ind in range(1,len(imgList)):
+            # Concatenates the images horizontally
+            timeImg.paste(imgList[ind], (hDist, vDist))
+            hDist += imgList[ind].width 
+
+        # Apply to the display screen.
+        self.screen.display(timeImg)#draw(timeImg)
 
 
 # OTHER ABSTRACTION CLASSES
@@ -445,46 +470,17 @@ class AlarmClock(object):
                   (checkIfTimeIsLessThan(alarmTime,currSystemTime)
                   and checkIfTimeIsLessThan(self.lastCheckedTime,alarmTime))
         self.lastCheckedTime = currSystemTime
-        return isTime
-
-def pekkatest():
-    # GPIO.setup(16, GPIO.OUT, initial=GPIO.LOW)
-    #GPIO.output(16, GPIO.HIGH)
-
-    screen = controller.ST7735S()
-
-    img = Image.open("st7735s/tests/assets/1.jpg")
-    img2 = Image.open("st7735s/tests/assets/2.jpg")
-
-    iterations = range(0, 255, 10)
-
-    for i in reversed(iterations):
-        screen.fill([i, i, 0])
-
-    start = time.perf_counter() # Python 3
-
-    for i in range(10):
-	    screen.draw(img)
-	    screen.draw(img2)
-
-    timeTaken = time.perf_counter() - start
-    fps = 20/timeTaken
-
-    print("Time taken: {0:f}s".format(timeTaken))
-    print("Average FPS: {0:f}".format(fps))
-
-    screen.close()        
+        return isTime       
 
 if __name__ == '__main__':
-    pekkatest()
-
     # Initiate and run
-    #speaker     = Speaker({'LEFT':18,'RIGHT':13})
-    #display     = Display({'LED':37})
-    #inspButton  = InspirationalButton(speaker,10)
-    #setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
-    #onOffButton     = OnOffSwitch(35)
-    #alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
-    #alarmClock.main()
+    speaker     = Speaker({'LEFT':18,'RIGHT':13})
+    display     = Display({'LED':37,'DC':22,'RST':36,'LIGHT':16})
+    inspButton  = InspirationalButton(speaker,10)
+    setAlarmButton  = SetAlarmButton(display,{'set':15,'mid':32})
+    onOffButton     = OnOffSwitch(35)
+    alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
+    alarmClock.main()
 
     #display.updateAlarmTime([0,2,0,6]) # TESTING
+    #display.screen.close() # TODO: Put this in a better spot

@@ -10,7 +10,7 @@ img2 = Image.open("assets/2.jpg")
 #start = time.perf_counter() # Python 3
 start = time.time()          # Python 2
 
-for i in range(10):
+for i in range(20):
 	screen.draw(img)
 	screen.draw(img2)
 
