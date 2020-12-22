@@ -22,6 +22,7 @@ TFT pin	    Pi pin  Name	Description
 # Audio 
 Simple way to configure the Pi GPIO pins for PWM audio Add the line below to your /boot/config.txt will reconfigure the pins at boot without any external software or services:
 
+dtoverlay=audremap,pins_18_19
 dtoverlay=pwm-2chan,pin=18,func=2,pin2=13,func2=4
 
 CHECK ARE THESE REALLY BOARD PIN NUMBERS OR GPIO NUMBERS ????
