@@ -127,14 +127,15 @@ class Speaker(object):
     - connect speaker via bluetooth insteadof GPIO?
     - connect speaker to webradio for a radio or music option
     '''
-    audiopath = '/'.join(__file__.split('/')[:-1]) + '/audiofiles'
+    basepath = '/'.join(__file__.split('/')[:-1]) if len(__file__)>0 else "/coderoot/pins/tests/alarmclock/code" # TODO: Hardcoded path
+    audiopath = basepath + '/audiofiles'
     inspirational_msgs = [
         # List of inspirational messages, as audio files to pull from
-        './audiofiles/inspiration/'+filename for filename in os.listdir(audiopath+'/inspiration')
+        audiopath+'/inspiration/'+filename for filename in os.listdir(audiopath+'/inspiration')
     ] 
     morning_msgs       = [
         # List of wake-up messages played at the alarm times (also audio files)
-        './audiofiles/morning/'+filename for filename in os.listdir(audiopath+'/morning')
+        audiopath+'/morning/'+filename for filename in os.listdir(audiopath+'/morning')
     ] 
 
     def __init__(self,channels):
