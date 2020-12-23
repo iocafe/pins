@@ -1,0 +1,24 @@
+0.0.4
+-----
+
+* Depend upon spidev==3.4.0 for stability fixes
+* Switch from manual data chunking to spidev.xfer3()
+
+
+0.0.3
+-----
+
+* Fixed backlight pin
+* Added `set_backlight`
+* Added constants BG_SPI_CS_FRONT and BG_SPI_CS_BACK
+* Added module __version__
+
+0.0.2
+-----
+
+* Support for multiple display sizes/orientations
+
+0.0.1
+-----
+
+* Initial Release

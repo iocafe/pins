@@ -1,0 +1,4 @@
+[run]
+source = ST7735
+omit =
+    .tox/*

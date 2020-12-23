@@ -18,7 +18,7 @@ import os
 #import Python_ST7735.ST7735 as TFT
 #import Adafruit_GPIO.SPI as SPI
 #from st7735_tft.st7735_tft import ST7735_TFT
-from st7735_python.library.ST7735 import ST7735 as ST7735_TFT
+from st7735.library.ST7735 import ST7735 as ST7735_TFT
 
 from PIL import Image
 
