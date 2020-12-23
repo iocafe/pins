@@ -65,30 +65,30 @@ class SetAlarmButton(ButtonController):
         # Start editing mode button
         midChnl = channels['MID'] # SET button
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        GPIO.add_event_detect(midChnl, GPIO.RISING) 
-        GPIO.add_event_callback(midChnl, self.display.startEditingMode) 
+        GPIO.add_event_detect(midChnl, GPIO.BOTH) 
+        GPIO.add_event_callback(midChnl, self.display.startEditingMode)
 
-        # Start editing mode button
+        # Direction buttons
         midChnl = channels['UP'] 
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        GPIO.add_event_detect(midChnl, GPIO.RISING)
-        GPIO.add_event_callback(midChnl, self.display.incrementDigit) 
+        GPIO.add_event_detect(midChnl, GPIO.BOTH)
+        GPIO.add_event_callback(midChnl, self.display.incrementDigit)
 
         midChnl = channels['DOWN'] 
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        GPIO.add_event_detect(midChnl, GPIO.RISING) 
-        GPIO.add_event_callback(midChnl, self.display.decrementDigit) 
+        GPIO.add_event_detect(midChnl, GPIO.BOTH) 
+        GPIO.add_event_callback(midChnl, self.display.decrementDigit)
 
         midChnl = channels['LEFT'] 
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        GPIO.add_event_detect(midChnl, GPIO.RISING) 
-        GPIO.add_event_callback(midChnl, self.display.selectLeftDigit) 
+        GPIO.add_event_detect(midChnl, GPIO.BOTH) 
+        GPIO.add_event_callback(midChnl, self.display.selectLeftDigit)
 
         midChnl = channels['RIGHT'] 
         GPIO.setup(midChnl, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-        GPIO.add_event_detect(midChnl, GPIO.RISING) 
-        GPIO.add_event_callback(midChnl, self.display.selectRightDigit) 
-        
+        GPIO.add_event_detect(midChnl, GPIO.BOTH) 
+        GPIO.add_event_callback(midChnl, self.display.selectRightDigit)
+
         #if GPIO.input(10):
         #GPIO.wait_for_edge(10, GPIO.RISING)
 
@@ -247,58 +247,71 @@ class Display(object):
         self.startRendering()
 
     # EDITING MODE FUNCS (serve as callbacks to setAlarm button inputs)
+    def buttonWrapper(buttonFunc):
+        ''' 
+        Decorater func to deal with button timings and 
+        prevent unintended double-clicking 
+        '''
+        def wrapper(self,callback_channel):
+            if GPIO.input(callback_channel):
+                # Is rising
+                if self.buttonTime >= self.buttonDelay:
+                    # Button is only called if past the falling-edge delay
+                    # (prevents double-clicking)
+                    buttonFunc(self,callback_channel)
+                self.buttonTime = 0.
+            else:
+                # Is falling, starts the button timer
+                self.buttonTime = time.time()
+        return wrapper
+
+    @buttonWrapper
     def startEditingMode(self,callback_channel):
         '''
         Start the editing mode by blinking the first digit on and off. 
         Can also stop the editing mode instead if it stops.
         '''
-        if self.buttonTime >= self.buttonDelay:
-            if self.editModeInd == -1:
-                # Editing mode was off, intialize it
-                self.editModeInd = 0
-                self.tempAlarmTime = self.alarmTime
-            else:
-                # Editing mode was on, turn it off
-                self.editModeInd = -1
-        self.buttonTime = time.time()
+        if self.editModeInd == -1:
+            # Editing mode was off, intialize it
+            self.editModeInd = 0
+            self.tempAlarmTime = self.alarmTime
+        else:
+            # Editing mode was on, turn it off
+            self.editModeInd = -1
 
+    @buttonWrapper
     def incrementDigit(self,callback_channel):
         ''' Increments a digit during the editing mode '''
-        if self.buttonTime >= self.buttonDelay:
+        if self.editModeInd != -1:
             modNum = 3 if self.editModeInd==0 else \
                     10 if (self.editModeInd == 1 or self.editModeInd == 3) else 6
-            if self.editModeInd != -1:
-                self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] + 1) % modNum
-        self.buttonTime = time.time()
+            self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] + 1) % modNum
 
+    @buttonWrapper
     def decrementDigit(self,callback_channel):
         ''' Decrements a digit during the editing mode '''
-        if self.buttonTime >= self.buttonDelay:
+        if self.editModeInd != -1:
             modNum = 3 if self.editModeInd==0 else \
                     10 if (self.editModeInd == 1 or self.editModeInd == 3) else 6
-            if self.editModeInd != -1:
-                self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] - 1) % modNum
-        self.buttonTime = time.time()
+            self.alarmTime[self.editModeInd] = (self.alarmTime[self.editModeInd] - 1) % modNum
 
+    @buttonWrapper
     def selectLeftDigit(self,callback_channel):
         ''' Edits the digit to the left now instead '''
-        if self.buttonTime >= self.buttonDelay:
-            if self.editModeInd != -1:
-                self.editModeInd = (self.editModeInd - 1) % len(self.alarmTime)
-        self.buttonTime = time.time()
+        if self.editModeInd != -1:
+            self.editModeInd = (self.editModeInd - 1) % len(self.alarmTime)
 
+
+    @buttonWrapper
     def selectRightDigit(self,callback_channel):
         ''' Edits digit to the right now instead '''
-        if self.buttonTime >= self.buttonDelay:
-            if self.editModeInd != -1:
-                self.editModeInd = (self.editModeInd + 1) % len(self.alarmTime)
-        self.buttonTime = time.time()
+        if self.editModeInd != -1:
+            self.editModeInd = (self.editModeInd + 1) % len(self.alarmTime)
 
+    @buttonWrapper
     def resetEdits(self,callback_channel):
         ''' Resets the alarmTime to the value it was before any edits happened '''
-        if self.buttonTime >= self.buttonDelay:
-            self.alarmTime = self.tempAlarmTime
-        self.buttonTime = time.time()
+        self.alarmTime = self.tempAlarmTime
 
     def isEditing(self,):
         ''' Returns true if editing mode is on '''
@@ -525,8 +538,8 @@ if __name__ == '__main__':
     # Initiate and run
     speaker     = Speaker({'LEFT':18,'RIGHT':13})
     display     = Display({'NIGHTLIGHT':37,'DC':22,'RST':36,'BACKLIGHT':16})
-    inspButton  = InspirationalButton(speaker,32) # TODO: 32 is MID, replace with insp later
-    setAlarmButton  = SetAlarmButton(display,{'SET':32,'MID':10,'UP':29,'DOWN':31,'LEFT':7,'RIGHT':15})
+    inspButton  = InspirationalButton(speaker,32)
+    setAlarmButton  = SetAlarmButton(display,{'MID':10,'UP':29,'DOWN':31,'LEFT':7,'RIGHT':15})
     onOffButton     = OnOffSwitch(35)
     alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
     alarmClock.main()
