@@ -1,5 +1,5 @@
 Wiring alarm clock
-pekka 18.12.2020
+pekka 23.12.2020
 
 remember to enable SPI from "sudo raspi-config"
 
@@ -28,8 +28,8 @@ dtoverlay=pwm-2chan,pin=18,func=2,pin2=13,func2=4
 CHECK ARE THESE REALLY BOARD PIN NUMBERS OR GPIO NUMBERS ????
 
 Pi pin  Name	        Description
-18      AUDIO_LEFT      PWM out for left audio channel (If 18 is gpio, board is 12)
-13      AUDIO_RIGHT     PWM out for right audio channel (If 13 is gpio, board is 33)
+12      AUDIO_LEFT      PWM out for left audio channel (gpio 18)
+33      AUDIO_RIGHT     PWM out for right audio channel (gpio 13)
 
 
 # Switches/buttons and LIGHT
