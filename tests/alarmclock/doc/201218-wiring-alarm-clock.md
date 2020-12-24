@@ -39,7 +39,7 @@ new try
 # Switches/buttons and LIGHT
 
 Pi pin  Name	        Description
-32      INSP_BUTTON     Inspirational life advice button
+12      INSP_BUTTON     Inspirational life advice button
 7       LEFT_BUTTON     Configuration buttons
 15      RIGHT_BUTTON
 29      UP_BUTTON
