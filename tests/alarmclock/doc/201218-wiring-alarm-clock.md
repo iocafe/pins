@@ -31,6 +31,10 @@ Pi pin  Name	        Description
 12      AUDIO_LEFT      PWM out for left audio channel (gpio 18)
 33      AUDIO_RIGHT     PWM out for right audio channel (gpio 13)
 
+new try
+32      AUDIO_LEFT      PWM out for left audio channel (gpio 12)
+33      AUDIO_RIGHT     PWM out for right audio channel (gpio 13)
+
 
 # Switches/buttons and LIGHT
 
