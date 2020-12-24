@@ -129,13 +129,14 @@ class Speaker(object):
     '''
     basepath = "/coderoot/pins/tests/alarmclock/code"# '/'.join(__file__.split('/')[:-1])  # TODO: Hardcoded path
     audiopath = basepath + '/audiofiles'
+    print(audiopath)
     inspirational_msgs = [
         # List of inspirational messages, as audio files to pull from
-        audiopath+'/inspiration/'+filename for filename in os.listdir(audiopath+'/inspiration')
+        './audiofiles/inspiration/'+filename for filename in os.listdir(audiopath+'/inspiration')
     ] 
     morning_msgs       = [
         # List of wake-up messages played at the alarm times (also audio files)
-        audiopath+'/morning/'+filename for filename in os.listdir(audiopath+'/morning')
+        './audiofiles/morning/'+filename for filename in os.listdir(audiopath+'/morning')
     ] 
 
     def __init__(self,channels):
@@ -146,7 +147,7 @@ class Speaker(object):
         #GPIO.setup(self.leftChannel, GPIO.OUT, initial=GPIO.LOW)
 
         # Sound play-back setup
-        mixer.init()
+        mixer.init(buffer=2048) # NOTE: Small buffer size allocated to prevent memory/underrun issues with the pi 0
 
     def messageShuffle(self, messageList):
         ''' 
@@ -344,12 +345,12 @@ class Display(object):
                     isOdd = False
                 else:
                     isOdd = True
-                time.sleep(blinkDelay)
                 self.renderAlarmTime(alarmTime)
+                time.sleep(blinkDelay)
             else:
                 # Normal mode, display current time instead
                 self.renderAlarmTime(self.currentTime)
-                time.sleep(0.1)
+                time.sleep(1)
 
     def getAlarmTime(self,):
         return self.alarmTime
@@ -484,7 +485,7 @@ class AlarmClock(object):
                     # Actually starts the audio 
                     self.speaker.playMorningAlarm()
 
-            # Waits thirty seconds before polling again
+            # Waits five seconds before polling again
             time.sleep(5)
 
     def getCurrSystemTime(self,):
@@ -537,9 +538,9 @@ class AlarmClock(object):
 
 if __name__ == '__main__':
     # Initiate and run
-    speaker     = Speaker({'LEFT':18,'RIGHT':13})
+    speaker     = Speaker({'LEFT':32,'RIGHT':33})
     display     = Display({'NIGHTLIGHT':37,'DC':22,'RST':36,'BACKLIGHT':16})
-    inspButton  = InspirationalButton(speaker,32)
+    inspButton  = InspirationalButton(speaker,12)
     setAlarmButton  = SetAlarmButton(display,{'MID':10,'UP':29,'DOWN':31,'LEFT':7,'RIGHT':15})
     onOffButton     = OnOffSwitch(35)
     alarmClock = AlarmClock(speaker,display,inspButton,setAlarmButton,onOffButton)
