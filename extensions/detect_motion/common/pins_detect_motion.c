@@ -140,6 +140,12 @@ osalStatus detect_motion(
         return OSAL_NOTHING_TO_DO;
     }
 
+    /* We do not check motion on compressed images.
+     */
+    if (photo->compression & IOC_JPEG) {
+        goto getout;
+    }
+
     dm->q_w = photo->w/8;
     dm->q_h = photo->h/8;
     dm->h_w = 2 * dm->q_w;
@@ -173,8 +179,9 @@ osalStatus detect_motion(
      */
     os_memcpy(dm->q_prev, dm->q_new, dm->q_w * dm->q_h);
     dm->q_prev_sum = dm->q_new_sum;
-    dm->image_set_ti = ti;
 
+getout:
+    dm->image_set_ti = ti;
     return OSAL_SUCCESS;
 }
 

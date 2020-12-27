@@ -484,7 +484,6 @@ static void esp32_cam_finalize_camera_photo(
     }
     hdr.compression = (os_uchar)photo.compression;
 
-
     photo.byte_w = w * OSAL_BITMAP_BYTES_PER_PIX(photo.format);
     photo.w = w;
     photo.h = h;
