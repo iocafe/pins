@@ -649,7 +649,7 @@ static void tcd1304_setup_camera_io_pins(
     camext.sh_pin.type = PIN_PWM;
     camext.sh_pin.bank = pin_get_prm(c->camera_pin, PIN_B_BANK); /* PWM channel */
     camext.sh_pin.addr = pin_get_prm(c->camera_pin, PIN_B);
-    camext.sh_pin.prm = camext.sh_pin_prm;
+    camext.sh_pin.prm = (PinPrmValue*)camext.sh_pin_prm;
     camext.sh_pin.prm_n = (os_char)camext.sh_prm_count;
     pin_ll_setup(&camext.sh_pin, PINS_DEFAULT);
 
@@ -668,7 +668,7 @@ static void tcd1304_setup_camera_io_pins(
     camext.igc_pin.type = PIN_PWM;
     camext.igc_pin.bank = pin_get_prm(c->camera_pin, PIN_C_BANK); /* PWM channel */
     camext.igc_pin.addr = pin_get_prm(c->camera_pin, PIN_C);
-    camext.igc_pin.prm = camext.igc_pin_prm;
+    camext.igc_pin.prm = (PinPrmValue*)camext.igc_pin_prm;
     camext.igc_pin.prm_n = (os_char)camext.igc_prm_count;
     pin_ll_setup(&camext.igc_pin, PINS_DEFAULT);
 
@@ -682,7 +682,7 @@ static void tcd1304_setup_camera_io_pins(
      */
     camext.igc_loopback_pin.type = PIN_INPUT;
     camext.igc_loopback_pin.addr = pin_get_prm(c->camera_pin, PIN_D);
-    camext.igc_loopback_pin.prm = camext.igc_loopback_pin_prm;
+    camext.igc_loopback_pin.prm = (PinPrmValue*)camext.igc_loopback_pin_prm;
     camext.igc_loopback_pin.prm_n = (os_char)camext.igc_loopback_prm_count;
 #if PINS_SIMULATED_INTERRUPTS
     camext.igc_loopback_pin.int_conf = &camext.loopback_int_conf;
