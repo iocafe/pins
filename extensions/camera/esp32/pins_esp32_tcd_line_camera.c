@@ -369,6 +369,28 @@ static void tcd1304_finalize_camera_photo(
 /**
 ****************************************************************************************************
 
+  @brief Finalize photo data.
+  @anchor tcd1304_cam_finalize_photo
+
+  The tcd1304_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void tcd1304_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    OSAL_UNUSED(photo);
+}
+
+
+/**
+****************************************************************************************************
+
   @brief Thread to process camera data.
   @anchor tcd1304_cam_task
 
@@ -700,6 +722,7 @@ const pinsCameraInterface pins_tcd1304_camera_iface
     tcd1304_cam_set_parameter,
     tcd1304_cam_get_parameter,
     OS_NULL
+    tcd1304_cam_finalize_photo
 };
 
 #endif

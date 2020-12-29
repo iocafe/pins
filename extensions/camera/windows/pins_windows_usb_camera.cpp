@@ -349,9 +349,9 @@ static os_long usb_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor usb_cam_finalize_camera_photo
+  @anchor usb_cam_photo_complete
 
-  The usb_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The usb_cam_photo_complete() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   @param   c Pointer to camera structure.
@@ -360,7 +360,7 @@ static os_long usb_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static osalStatus usb_cam_finalize_camera_photo(
+static osalStatus usb_cam_photo_complete(
     pinsCamera *c)
 {
     pinsPhoto photo;
@@ -452,6 +452,29 @@ static osalStatus usb_cam_finalize_camera_photo(
     c->callback_func(&photo, c->callback_context);
     return OSAL_SUCCESS;
 }
+
+
+/**
+****************************************************************************************************
+
+  @brief Finalize photo data.
+  @anchor usb_cam_finalize_photo
+
+  The usb_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void usb_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    OSAL_UNUSED(photo);
+}
+
 
 static void usb_cam_stop_event(int deviceID, void *userData)
 {
@@ -570,7 +593,7 @@ static void usb_cam_task(
 #else
                  VI->getPixels(camera_nr, c->ext->buf, true, true);
 #endif
-                 if (usb_cam_finalize_camera_photo(c)) {
+                 if (usb_cam_photo_complete(c)) {
                     os_timeslice();
                  }
             }
@@ -678,7 +701,9 @@ const pinsCameraInterface pins_usb_camera_iface
     usb_cam_start,
     usb_cam_stop,
     usb_cam_set_parameter,
-    usb_cam_get_parameter
+    usb_cam_get_parameter,
+    OS_NULL,
+    usb_cam_finalize_photo
 };
 
 #endif

@@ -424,9 +424,9 @@ static void esp32_cam_set_jpeg_quality(
 ****************************************************************************************************
 
   @brief Set up "pinsPhoto" structure.
-  @anchor esp32_cam_finalize_camera_photo
+  @anchor esp32_cam_photo_complete
 
-  The esp32_cam_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The esp32_cam_photo_complete() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   Known ESP32 camera pixel formats: PIXFORMAT_RGB565, PIXFORMAT_YUV422, PIXFORMAT_GRAYSCALE,
@@ -438,7 +438,7 @@ static void esp32_cam_set_jpeg_quality(
 
 ****************************************************************************************************
 */
-static void esp32_cam_finalize_camera_photo(
+static void esp32_cam_photo_complete(
     pinsCamera *c,
     camera_fb_t *fb)
 {
@@ -495,6 +495,28 @@ static void esp32_cam_finalize_camera_photo(
     hdr.alloc_sz[3] = (os_uchar)(alloc_sz >> 24);
 
     c->callback_func(&photo, c->callback_context);
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Finalize photo data.
+  @anchor esp32_cam_finalize_photo
+
+  The esp32_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void esp32_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    OSAL_UNUSED(photo);
 }
 
 
@@ -609,7 +631,7 @@ osal_debug_error_int("HERE QUALITY ", q)                ;
                 initialized = OS_FALSE;
             }
             else {
-                esp32_cam_finalize_camera_photo(c, fb);
+                esp32_cam_photo_complete(c, fb);
                 esp_camera_fb_return(fb);
             }
 
@@ -758,7 +780,8 @@ const pinsCameraInterface pins_esp32_camera_iface
     esp32_cam_stop,
     esp32_cam_set_parameter,
     esp32_cam_get_parameter,
-    esp32_cam_set_jpeg_quality
+    esp32_cam_set_jpeg_quality,
+    esp32_cam_finalize_photo
 };
 
 #endif

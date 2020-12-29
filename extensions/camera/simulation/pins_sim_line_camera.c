@@ -338,9 +338,9 @@ static os_long tcd1304_cam_get_parameter(
 ****************************************************************************************************
 
   @brief Set up pinsPhoto structure.
-  @anchor tcd1304_finalize_camera_photo
+  @anchor tcd1304_set_photo_parameters
 
-  The tcd1304_finalize_camera_photo() sets up pinsPhoto structure "photo" to contain the grabbed
+  The tcd1304_set_photo_parameters() sets up pinsPhoto structure "photo" to contain the grabbed
   image. Camera API passed photos to application callback with pointer to this photo structure.
 
   @param   c Pointer to camera structure.
@@ -349,7 +349,7 @@ static os_long tcd1304_cam_get_parameter(
 
 ****************************************************************************************************
 */
-static void tcd1304_finalize_camera_photo(
+static void tcd1304_set_photo_parameters(
     pinsCamera *c,
     pinsPhoto *photo)
 {
@@ -373,6 +373,28 @@ static void tcd1304_finalize_camera_photo(
     photo->w = TDC1304_DATA_SZ;
     photo->h = 1;
     photo->format = hdr->format;
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Finalize photo data.
+  @anchor tcd1304_cam_finalize_photo
+
+  The tcd1304_cam_finalize_photo() is called from the application callback function of photo
+  is really needed. This is not done in advance, because callbacks for often reject images,
+  so we do not want to waste processor time on this.
+
+  @param   photo Pointer to photo structure.
+  @return  None.
+
+****************************************************************************************************
+*/
+static void tcd1304_cam_finalize_photo(
+    pinsPhoto *photo)
+{
+    OSAL_UNUSED(photo);
 }
 
 
@@ -440,7 +462,7 @@ int dummy = 0, xsum = 0, xn = 0;
 
                 if (pos > TDC1304_DATA_SZ + 30) // + 30 SLACK
                 {
-                    tcd1304_finalize_camera_photo(c, &photo);
+                    tcd1304_set_photo_parameters(c, &photo);
                     c->callback_func(&photo, c->callback_context);
 
                     camext.frame_ready = OS_TRUE;
@@ -709,7 +731,8 @@ const pinsCameraInterface pins_tcd1304_camera_iface
     tcd1304_cam_stop,
     tcd1304_cam_set_parameter,
     tcd1304_cam_get_parameter,
-    OS_NULL
+    OS_NULL,
+    tcd1304_cam_finalize_photo
 };
 
 #endif

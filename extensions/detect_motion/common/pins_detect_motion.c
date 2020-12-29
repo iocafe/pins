@@ -136,13 +136,19 @@ osalStatus detect_motion(
     if (ti == 0) {
         os_get_timer(&ti);
     }
-    if (!os_has_elapsed_since(&dm->image_set_ti, &ti, prm->min_interval_ms)) {
+    if (!os_has_elapsed_since(&dm->image_set_ti, &ti, prm->min_interval_ms) &&
+        !dm->motion_trigger)
+    {
         return OSAL_NOTHING_TO_DO;
     }
 
     /* We do not check motion on compressed images.
      */
     if (photo->compression & IOC_JPEG) {
+        if (dm->motion_trigger) {
+            dm->motion_trigger = OS_FALSE;
+            return OSAL_SUCCESS;
+        }
         goto getout;
     }
 
@@ -170,7 +176,8 @@ osalStatus detect_motion(
 #endif
 
     if (movement < prm->movement_limit &&
-        !os_has_elapsed_since(&dm->image_set_ti, &ti, prm->max_interval_ms))
+        !os_has_elapsed_since(&dm->image_set_ti, &ti, prm->max_interval_ms) &&
+        !dm->motion_trigger)
     {
         return OSAL_NOTHING_TO_DO;
     }
@@ -179,10 +186,20 @@ osalStatus detect_motion(
      */
     os_memcpy(dm->q_prev, dm->q_new, dm->q_w * dm->q_h);
     dm->q_prev_sum = dm->q_new_sum;
+    dm->motion_trigger = OS_FALSE;
 
 getout:
     dm->image_set_ti = ti;
     return OSAL_SUCCESS;
+}
+
+
+/* Trigger motion: detect_motion returns motion immediately.
+ */
+void trigger_motion_detect(
+    DetectMotion *dm)
+{
+    dm->motion_trigger = OS_TRUE;
 }
 
 

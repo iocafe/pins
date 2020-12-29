@@ -287,7 +287,7 @@ pinsCameraInterface;
 
 /* Store a photo as a "brick" within brick buffer for communication.
  */
-void pins_store_photo_as_brick(
+osalStatus pins_store_photo_as_brick(
     const pinsPhoto *photo,
     iocBrickBuffer *b,
     os_uchar compression);

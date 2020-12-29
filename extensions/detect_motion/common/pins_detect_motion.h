@@ -85,6 +85,11 @@ typedef struct DetectMotion
     /* Timer reading when last image was set
      */
     os_timer image_set_ti;
+
+    /** Motion detecttion triggered, for example image did not fit into buffer
+       so we need to keep in retrying soon until it does.
+     */
+    os_boolean motion_trigger;
 }
 DetectMotion;
 
@@ -106,6 +111,11 @@ osalStatus detect_motion(
     const struct pinsPhoto *photo,
     MotionDetectionParameters *prm,
     MotionDetectionResults *res);
+
+/* Trigger motion: detect_motion returns motion immediately.
+ */
+void trigger_motion_detect(
+    DetectMotion *dm);
 
 #endif
 #endif
