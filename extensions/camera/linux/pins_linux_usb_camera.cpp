@@ -288,7 +288,7 @@ static void usb_cam_set_parameter(
     pinsCameraParamIx ix,
     os_long x)
 {
-    osal_debug_assert(c);
+    osal_debug_assert(c != OS_NULL);
     if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS || x < 0) return;
     if ((os_int)c->ext->prm[ix] == x) return;
     c->ext->prm[ix] = (os_int)x;
@@ -368,7 +368,7 @@ static os_long usb_cam_get_parameter(
     pinsCamera *c,
     pinsCameraParamIx ix)
 {
-    osal_debug_assert(c);
+    osal_debug_assert(c != OS_NULL);
     if (ix < 0 || ix >= PINS_NRO_CAMERA_PARAMS) return -1;
     return c->ext->prm[ix];
 }
@@ -1157,6 +1157,7 @@ close_it:
 static void usb_cam_set_parameters(
     pinsCamera *c)
 {
+    OSAL_UNUSED(c);
 #if 0
     c->camera_nr
     c->ext->prm[PINS_CAM_BRIGHTNESS]
