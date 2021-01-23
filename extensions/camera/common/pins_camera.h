@@ -19,6 +19,7 @@
 #include "pinsx.h"
 
 struct iocBrickHdr;
+struct iocBrickBuffer;
 
 /* Camera types supported by pins library.
  */
@@ -36,6 +37,7 @@ struct iocBrickHdr;
  * Raspicam on Raspberry PI and to "no camera" on other platforms.
  */
 #ifndef PINS_CAMERA
+#if IOC_STREAMER_SUPPORT
   #ifdef OSAL_WINDOWS
     #define PINS_CAMERA PINS_USB_CAMERA
   #endif
@@ -46,6 +48,7 @@ struct iocBrickHdr;
       #define PINS_CAMERA PINS_USB_CAMERA
     #endif
   #endif
+#endif
 #endif
 #ifndef PINS_CAMERA
   #define PINS_CAMERA PINS_NO_CAMERA
@@ -289,7 +292,7 @@ pinsCameraInterface;
  */
 osalStatus pins_store_photo_as_brick(
     const pinsPhoto *photo,
-    iocBrickBuffer *b,
+    struct iocBrickBuffer *b,
     os_uchar compression);
 
 /* Release camera information chain.

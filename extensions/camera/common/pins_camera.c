@@ -35,7 +35,7 @@
 */
 osalStatus pins_store_photo_as_brick(
     const pinsPhoto *photo,
-    iocBrickBuffer *b,
+    struct iocBrickBuffer *b,
     os_uchar compression)
 {
     os_char quality;
