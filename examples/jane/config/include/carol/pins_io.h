@@ -48,10 +48,10 @@ typedef struct
 pins_t;
 
 /* JANE IO configuration top header structure */
-extern OS_FLASH_MEM_H IoPinsHdr pins_hdr;
+extern OS_CONST_H IoPinsHdr pins_hdr;
 
 /* Global JANE IO configuration structure */
-extern OS_FLASH_MEM_H pins_t pins;
+extern OS_CONST_H pins_t pins;
 
 /* Name defines for pins and application pin groups (use ifdef to check if HW has pin) */
 #define PINS_INPUTS_GAZERBEAM "gazerbeam"

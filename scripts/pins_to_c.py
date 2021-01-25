@@ -297,8 +297,8 @@ def write_linked_list_heads():
             cfile.write("\n/* Application's pin groups (linked list heads) */\n")
             hfile.write("\n/* Application's pin groups (linked list heads) */\n")
             isfirst = False
-        cfile.write("OS_FLASH_MEM Pin *" + varname + " = &" + value + ";\n")
-        hfile.write("extern OS_FLASH_MEM_H Pin *" + varname + ";\n")
+        cfile.write("OS_CONST Pin *" + varname + " = &" + value + ";\n")
+        hfile.write("extern OS_CONST_H Pin *" + varname + ";\n")
 
 def process_pin(pin_type, pin_attr):
     global device_name, ccontent
@@ -431,7 +431,7 @@ def process_io_device(io):
     group_nr = 1;
 
     ccontent = "\n/* " + device_name.upper() + " IO configuration structure */\n"
-    ccontent += 'OS_FLASH_MEM ' + prefix + '_t ' + prefix + ' =\n{'
+    ccontent += 'OS_CONST ' + prefix + '_t ' + prefix + ' =\n{'
 
     known_groups = {}
 
@@ -443,7 +443,7 @@ def process_io_device(io):
 
     list_name = prefix + "_group_list"
     cfile.write('/* List of pin type groups */\n')
-    cfile.write('static OS_FLASH_MEM PinGroupHdr * OS_FLASH_MEM ' + list_name + '[] =\n{\n  ')
+    cfile.write('static OS_CONST PinGroupHdr * OS_CONST ' + list_name + '[] =\n{\n  ')
     isfirst = True
     for p in pin_group_list:
         if not isfirst:
@@ -453,15 +453,15 @@ def process_io_device(io):
     cfile.write('\n};\n\n')
 
     cfile.write('/* ' + device_name.upper() + ' IO configuration top header structure */\n')
-    cfile.write('OS_FLASH_MEM IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
+    cfile.write('OS_CONST IoPinsHdr pins_hdr = {' + list_name + ', sizeof(' + list_name + ')/' + 'sizeof(PinGroupHdr*)};\n')
 
     hfile.write('}\n' + prefix + '_t;\n\n')
 
     hfile.write("/* " + device_name.upper() + " IO configuration top header structure */\n")
-    hfile.write('extern OS_FLASH_MEM_H IoPinsHdr ' + prefix + '_' + 'hdr;\n\n')
+    hfile.write('extern OS_CONST_H IoPinsHdr ' + prefix + '_' + 'hdr;\n\n')
 
     hfile.write("/* Global " + device_name.upper() + " IO configuration structure */\n")
-    hfile.write('extern OS_FLASH_MEM_H ' + prefix + '_t ' + prefix + ';\n')
+    hfile.write('extern OS_CONST_H ' + prefix + '_t ' + prefix + ';\n')
 
     write_linked_list_heads()
 

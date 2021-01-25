@@ -22,7 +22,7 @@ static os_ushort pins_pwm_dimmer_led_prm[]= {PIN_RV, PIN_RV, PIN_FREQENCY, 5000,
 static os_ushort pins_uart_uart2_prm[]= {PIN_RV, PIN_RV, PIN_RX, 16, PIN_TX, 17, PIN_SPEED, 96};
 
 /* JANE IO configuration structure */
-OS_FLASH_MEM pins_t pins =
+OS_CONST pins_t pins =
 {
   {{4, &pins.inputs.gazerbeam}, /* inputs */
     {PIN_INPUT, 0, 39, pins_inputs_gazerbeam_prm, sizeof(pins_inputs_gazerbeam_prm)/sizeof(os_ushort), OS_NULL, OS_NULL PINS_INTCONF_PTR(pin_gazerbeam_intconf)}, /* gazerbeam */
@@ -50,7 +50,7 @@ OS_FLASH_MEM pins_t pins =
 };
 
 /* List of pin type groups */
-static OS_FLASH_MEM PinGroupHdr * OS_FLASH_MEM pins_group_list[] =
+static OS_CONST PinGroupHdr * OS_CONST pins_group_list[] =
 {
   &pins.inputs.hdr,
   &pins.outputs.hdr,
@@ -60,4 +60,4 @@ static OS_FLASH_MEM PinGroupHdr * OS_FLASH_MEM pins_group_list[] =
 };
 
 /* JANE IO configuration top header structure */
-OS_FLASH_MEM IoPinsHdr pins_hdr = {pins_group_list, sizeof(pins_group_list)/sizeof(PinGroupHdr*)};
+OS_CONST IoPinsHdr pins_hdr = {pins_group_list, sizeof(pins_group_list)/sizeof(PinGroupHdr*)};

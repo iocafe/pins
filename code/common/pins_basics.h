@@ -118,9 +118,18 @@ typedef struct
 }
 IoPinsHdr;
 
+#if OSAL_MINIMALISTIC
+    typedef os_char pin_addr;
+    typedef os_char pin_ix;
+#else
+    typedef os_short pin_addr;
+    typedef os_short pin_ix;
+#endif
+
+
 
 typedef struct PinPrmValue {
-    os_short ix;
+    pin_ix ix;
     os_short value;
 }
 PinPrmValue;
@@ -134,12 +143,15 @@ typedef struct PinRV {
     os_int value;
     os_char state_bits;
     os_char reserved1;
+#if OSAL_MINIMALISTIC == 0
     os_char reserved2;
     os_char reserved3;
+#endif
 }
 PinRV;
 
 struct iocSignal;
+
 
 /** Structure to set up static information about one IO pin or other IO item.
  */
@@ -155,7 +167,7 @@ typedef struct Pin
 
     /** Hardware address for the pin.
      */
-    os_short addr;
+    pin_addr addr;
 
     /** Pointer to parameter array, two first os_shorts are reserved for storing value
         as os_int.

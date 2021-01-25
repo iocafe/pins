@@ -51,7 +51,7 @@
 #define CAM_PIN_HREF    HREF_GPIO_NUM
 #define CAM_PIN_PCLK    PCLK_GPIO_NUM
 
-static OS_FLASH_MEM camera_config_t camera_config = {
+static OS_CONST camera_config_t camera_config = {
     .pin_pwdn  = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
     .pin_xclk = CAM_PIN_XCLK,
