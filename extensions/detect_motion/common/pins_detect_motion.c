@@ -423,10 +423,10 @@ static os_int dm_calc_movement(
     count = dm->q_w * dm->q_h;
     total_sum = dm->q_new_sum;
     if (total_sum <= 0) total_sum = 1;
-    new_coeff = 16535 * count / total_sum;
+    new_coeff = (os_uint)(16535 * count / total_sum);
     total_sum = dm->q_prev_sum;
     if (total_sum <= 0) total_sum = 1;
-    prev_coeff = 16535 * count / total_sum;
+    prev_coeff = (os_uint)(16535 * count / total_sum);
 
     /* Do not alert in darkness all the time.
      */

@@ -26,6 +26,7 @@
     <ClInclude Include="..\..\code\common\pins_timer.h" />
     <ClInclude Include="..\..\code\simulation\pins_hw_defs.h" />
     <ClInclude Include="..\..\extensions\camera\common\pins_camera.h" />
+    <ClInclude Include="..\..\extensions\detect_motion\common\pins_detect_motion.h" />
     <ClInclude Include="..\..\extensions\display\common\pins_display.h" />
     <ClInclude Include="..\..\extensions\iocom\common\pins_to_iocom.h" />
     <ClInclude Include="..\..\extensions\morse\common\pins_morse_code.h" />
@@ -41,6 +42,7 @@
     <ClCompile Include="..\..\extensions\camera\common\pins_camera.c" />
     <ClCompile Include="..\..\extensions\camera\simulation\pins_sim_line_camera.c" />
     <ClCompile Include="..\..\extensions\camera\windows\pins_windows_usb_camera.cpp" />
+    <ClCompile Include="..\..\extensions\detect_motion\common\pins_detect_motion.c" />
     <ClCompile Include="..\..\extensions\display\common\pins_display.c" />
     <ClCompile Include="..\..\extensions\iocom\common\pins_default_iocom_callback.c" />
     <ClCompile Include="..\..\extensions\iocom\common\pins_to_iocom.c" />
