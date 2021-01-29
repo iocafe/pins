@@ -502,18 +502,17 @@ void pins_stop_multithread_devicebus(
 
    @param   device Pointer to SPI/I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
+            OSAL_PENDING = move to next device. 
 
 ****************************************************************************************************
 */
 static osalStatus pins_spi_transfer(
     PinsBusDevice *device)
 {
-    osalStatus s;
-
     device->gen_req_func(device);
     /* spi transfer here */
-    s = device->proc_resp_func(device);
-    return s;
+    device->proc_resp_func(device);
+    return OSAL_PENDING;
 }
 
 
@@ -545,7 +544,7 @@ static osalStatus pins_bus_run_spi(
 
     /* Move on to the next device ?
      */
-    if (s == OSAL_COMPLETED) {
+    if (s != OSAL_SUCCESS) {
         /* Change chip select, if we have more than 1 device.
          */
 
@@ -578,65 +577,16 @@ static osalStatus pins_bus_run_spi(
 
    @param   device Pointer to I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
+            OSAL_PENDING = move to next device. 
 
 ****************************************************************************************************
 */
 static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
-    PinsBus *bus;
-    osalStatus s;
-    /* os_short n, i;
-    os_uchar *buf;
-    int rval = -1; */
-
-    bus = device->bus;
-    s = device->gen_req_func(device);
-
-    switch (bus->spec.i2c.bus_operation)
-    {
-        case PINS_I2C_WRITE_BYTE_DATA:
-            /* n = bus->outbuf_n;
-            buf = bus->outbuf;
-            for (i = 0; i < n; i+=2) {
-                rval = i2cWriteByteData((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
-                if (rval) break;
-            }
-
-            if (rval) {
-                if (!device->spec.i2c.error_reported) {
-                    osal_debug_error_int("i2c write failed on bus ", bus->spec.i2c.bus_nr);
-                    device->spec.i2c.error_reported = OS_TRUE;
-                }
-                return OSAL_COMPLETED;
-            } */
-            break;
-
-        case PINS_I2C_READ_BYTE_DATA:
-            /* n = bus->outbuf_n;
-            buf = bus->outbuf;
-            inbuf = bus->inbuf;
-
-            for (i = 0; i < n; i++) {
-                rval = i2cReadByteData((unsigned)device->spec.i2c.handle, buf[i]);
-                if (rval < 0) break;
-                inbuf[i] = (os_uchar)rval;
-            }
-            buf->inbuf_n = i;
-
-            if (rval < 0) {
-                if (!device->spec.i2c.error_reported) {
-                    osal_debug_error_int("i2cReadByteData failed on bus ", bus->spec.i2c.bus_nr);
-                    device->spec.i2c.error_reported = OS_TRUE;
-                }
-                return OSAL_COMPLETED;
-            } */
-
-            s = device->proc_resp_func(device);
-            break;
-    }
-
-    return s;
+    device->gen_req_func(device);
+    device->proc_resp_func(device);
+    return OSAL_PENDING;
 }
 
 
@@ -668,7 +618,7 @@ static osalStatus pins_bus_run_i2c(
 
     /* Move on to the next device ?
      */
-    if (s == OSAL_COMPLETED) {
+    if (s != OSAL_SUCCESS) {
         current_device = current_device->next_device;
         if (current_device == OS_NULL) {
             current_device = bus->first_bus_device;
