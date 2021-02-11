@@ -700,7 +700,7 @@ osalStatus configure_usb_camera(
     ext->buffers = (usbcamBuffer *)os_malloc(ext->n_buffers * sizeof(usbcamBuffer), OS_NULL);
     if (ext->buffers == OS_NULL) {
         osal_debug_error("Out of memory");
-        return OSAL_STATUS_FAILED;
+        return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
     }
     os_memclear(ext->buffers, ext->n_buffers * sizeof(usbcamBuffer));
 
