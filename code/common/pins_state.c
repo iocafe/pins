@@ -150,9 +150,10 @@ void pin_set_ext(
 
     if (flags & PIN_FORWARD_TO_IOCOM)
     {
-        if (x != ((PinRV*)pin->prm)->value)
+        if (x != ((PinRV*)pin->prm)->value || ((PinRV*)pin->prm)->state_bits != OSAL_STATE_CONNECTED)
         {
             ((PinRV*)pin->prm)->value = x;
+            ((PinRV*)pin->prm)->state_bits = OSAL_STATE_CONNECTED;
 
             if (pin_to_iocom_func &&
                 pin->signal)
