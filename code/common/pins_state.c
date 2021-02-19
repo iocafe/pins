@@ -140,6 +140,10 @@ void pin_set_ext(
 #if PINS_SPI || PINS_I2C
     if (pin->bus_device) {
         pin->bus_device->set_func(pin->bus_device, pin->addr, x);
+
+osal_trace_int("~HERE Setting BUS DEVICE pin addr ", pin->addr);
+osal_trace_int("HERE to value ", x);
+
     }
     else {
         pin_ll_set(pin, x);
