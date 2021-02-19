@@ -611,6 +611,7 @@ static void raspi_cam_set_parameters(
 
     // TCAM->setHorizontalFlip ((bool)(t->rotate180));
     TCAM->setVerticalFlip(true);
+    TCAM->setHorizontalFlip(true);
 
     /* Set exposure control.
      *     PINCAM_SETPRM_MACRO(Brightness, PINS_CAM_BRIGHTNESS, 2)
