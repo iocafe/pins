@@ -141,8 +141,8 @@ void pin_set_ext(
     if (pin->bus_device) {
         pin->bus_device->set_func(pin->bus_device, pin->addr, x);
 
-osal_trace_int("~HERE Setting BUS DEVICE pin addr ", pin->addr);
-osal_trace_int("HERE to value ", x);
+/* osal_trace_int("~HERE Setting BUS DEVICE pin addr ", pin->addr);
+osal_trace_int("HERE to value ", x); */
 
     }
     else {
