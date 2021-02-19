@@ -80,7 +80,7 @@ os_int pin_get_prm(
     os_char count;
 
     p = pin->prm + PINS_N_RESERVED;
-    count = (pin->prm_n - PINS_N_RESERVED) / 2;
+    count = pin->prm_n - PINS_N_RESERVED;
     while (count-- > 0)
     {
         if (p->ix == prm) {
