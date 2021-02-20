@@ -132,6 +132,24 @@ typedef struct pinsCameraParams
 }
 pinsCameraParams;
 
+/** Camera resolution and color depth information.
+ */
+typedef struct pinsCameraResolution
+{
+    /** Image size, w = width in pixels, h = height in pixels.
+     */
+    os_ushort w, h;
+
+    /** Image format and compression. OSAL_GRAYSCALE8, OSAL_GRAYSCALE16 or
+         OSAL_RGB24.
+     */
+    os_uchar format;
+}
+pinsCameraResolution;
+
+/** Maximum number of resolutions that can be returned for a camera
+ */
+#define PINS_CAMERA_MAX_RESOLUTIONS 16
 
 /** Camera information structure.
  */
@@ -139,7 +157,15 @@ typedef struct pinsCameraInfo
 {
     /** Camera number, the first camera is camera number 0.
      */
-    os_int camera_nr;
+    os_short camera_nr;
+
+    /** Number of resolutions in array below.
+     */
+    os_short nro_resolutions;
+
+    /** Array of useful camera resolutions.
+     */
+    pinsCameraResolution resolution[PINS_CAMERA_MAX_RESOLUTIONS];
 
     /** Pointer to information about next camera.
      */
