@@ -28,7 +28,6 @@
 #include "pinsx.h"
 #if PINS_CAMERA
 
-#include <malloc.h>
 #include <libv4l2.h>
 #include <linux/videodev2.h>
 #include <fcntl.h>
