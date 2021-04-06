@@ -349,9 +349,7 @@ void pins_run_devicebus(
     }
 }
 
-
 #if OSAL_MULTITHREAD_SUPPORT
-
 /**
 ****************************************************************************************************
 
@@ -502,7 +500,7 @@ void pins_stop_multithread_devicebus(
 
    @param   device Pointer to SPI/I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
-            OSAL_PENDING = move to next device. 
+            OSAL_PENDING = move to next device.
 
 ****************************************************************************************************
 */
@@ -577,7 +575,7 @@ static osalStatus pins_bus_run_spi(
 
    @param   device Pointer to I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
-            OSAL_PENDING = move to next device. 
+            OSAL_PENDING = move to next device.
 
 ****************************************************************************************************
 */
