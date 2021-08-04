@@ -34,7 +34,7 @@ extern pin_to_iocom_t *pin_to_iocom_func;
 
 /* Setup IO hardware for a device.
  */
-void pins_setup(
+osalStatus pins_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags);
 

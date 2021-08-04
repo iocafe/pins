@@ -25,21 +25,24 @@
   @brief Initialize hardware IO library.
   @anchor pins_ll_initialize_lib
 
-  @return  None.
+  @return  If IO library is successfully initialized, the function returns OSAL_SUCCESS.
+           Other return values indicate an error.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize_lib(
+osalStatus pins_ll_initialize_lib(
     void)
 {
     int s;
 
     s = gpioInitialise();
     if (s < 0) {
-        osal_debug_error("gpioInitialise() failed");
+        osal_debug_error("gpioInitialise() failed. PIGPIO may need root priviliges.");
+        return OSAL_STATUS_FAILED;
     }
     else {
         osal_trace_int("pigpio version ", s);
+        return OSAL_SUCCESS;
     }
 }
 

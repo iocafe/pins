@@ -28,11 +28,12 @@
   @brief Initialize hardware IO library.
   @anchor pins_ll_initialize_lib
 
-  @return  None.
+  @return  If IO library is successfully initialized, the function returns OSAL_SUCCESS.
+           Other return values indicate an error.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize_lib(
+osalStatus pins_ll_initialize_lib(
     void)
 {
     periph_module_enable(PERIPH_LEDC_MODULE);
@@ -47,6 +48,8 @@ void pins_ll_initialize_lib(
     #if PINS_IS_ESP32_CAMERA==0
         gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
     #else */
+
+    return OSAL_SUCCESS;
 }
 
 

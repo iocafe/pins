@@ -210,7 +210,7 @@ Pin;
 
 /* Initialize IO hardware library.
  */
-void pins_ll_initialize_lib(
+osalStatus pins_ll_initialize_lib(
     void);
 
 /* Clean up resources allocated by IO hardware library.

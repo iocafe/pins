@@ -29,19 +29,23 @@ pin_to_iocom_t *pin_to_iocom_func = OS_NULL;
   The pins_setup() function...
   @param   pins_hdr Top level pins IO configuration structure.
   @param   flags Reserved for future, set 0 for now.
-  @return  None.
+
+  @return  If pins library is successfully set up, the function returns OSAL_SUCCESS.
+           Other return values indicate an error.
 
 ****************************************************************************************************
 */
-void pins_setup(
+osalStatus pins_setup(
     const IoPinsHdr *pins_hdr,
     os_int flags)
 {
     const PinGroupHdr * const *group;
     const Pin *pin;
     os_short gcount, pcount;
+    osalStatus s;
 
-    pins_ll_initialize_lib();
+    s = pins_ll_initialize_lib();
+    if (s) return s;
 
     gcount = pins_hdr->n_groups;
     group = pins_hdr->group;
@@ -71,6 +75,8 @@ void pins_setup(
     /* SPI and I2C initialization. */
     pins_initialize_bus_devices();
 #endif
+
+    return OSAL_SUCCESS;
 }
 
 

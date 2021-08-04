@@ -23,13 +23,15 @@
   @brief Initialize hardware IO library.
   @anchor pins_ll_initialize_lib
 
-  @return  None.
+  @return  If IO library is successfully initialized, the function returns OSAL_SUCCESS.
+           Other return values indicate an error.
 
 ****************************************************************************************************
 */
-void pins_ll_initialize_lib(
+osalStatus pins_ll_initialize_lib(
     void)
 {
+    return OSAL_SUCCESS;
 }
 
 

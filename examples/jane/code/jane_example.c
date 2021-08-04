@@ -53,7 +53,9 @@ osalStatus osal_main(
     os_int argc,
     os_char *argv[])
 {
-    pins_setup(&pins_hdr, PINS_DEFAULT);
+    if (pins_setup(&pins_hdr, PINS_DEFAULT)) {
+        return OSAL_STATUS_FAILED;
+    }
 
     os_get_timer(&t);
     state = OS_FALSE;
