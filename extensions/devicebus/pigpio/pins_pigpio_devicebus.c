@@ -296,8 +296,11 @@ void pins_init_device(
             rval = bbSPIOpen((unsigned)device->spec.spi.cs, (unsigned)bus->spec.spi.miso,
                 (unsigned)bus->spec.spi.mosi, (unsigned)bus->spec.spi.sclk,
                 device->spec.spi.bus_frequency, device->spec.spi.flags);
-            if (rval)
-            {
+            if (!rval) {
+                device->spec.spi.handle = 1;
+            }
+            else {
+                device->spec.spi.handle = -1;
                 osal_debug_error_int("bbSPIOpen failed, rval=", rval);
             }
         }
@@ -409,7 +412,7 @@ void pins_init_device(
             (unsigned)device->spec.i2c.device_nr, (unsigned)device->spec.i2c.flags);
         device->spec.i2c.handle = rval;
         if (rval < 0) {
-            osal_debug_error_int("bbSPIOpen failed, rval=", rval);
+            osal_debug_error_int("i2cOpen failed, rval=", rval);
         }
     }
 #endif
@@ -442,28 +445,28 @@ void pins_close_device(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        if (bus->spec.spi.bus_nr >= 10)
-        {
-#if OSAL_DEBUG
-            rval = bbSPIClose((unsigned)device->spec.spi.cs);
-            if (rval)
+        if (device->spec.spi.handle >= 0) { /* Was successfully opened? */
+            if (bus->spec.spi.bus_nr >= 10)
             {
-                osal_debug_error_int("bbSPIOpen failed, rval=", rval);
-            }
-#else
-            bbSPIClose((unsigned)device->spec.spi.cs);
-#endif
-        }
-        else {
 #if OSAL_DEBUG
-            rval = spiClose((unsigned)device->spec.spi.handle);
-            if (rval)
-            {
-                osal_debug_error_int("spiClose failed, rval=", rval);
-            }
+                rval = bbSPIClose((unsigned)device->spec.spi.cs);
+                if (rval) {
+                    osal_debug_error_int("bbSPIClose failed, rval=", rval);
+                }
 #else
-            spiClose((unsigned)device->spec.spi.handle);
+                bbSPIClose((unsigned)device->spec.spi.cs);
 #endif
+            }
+            else {
+#if OSAL_DEBUG
+                rval = spiClose((unsigned)device->spec.spi.handle);
+                if (rval) {
+                    osal_debug_error_int("spiClose failed, rval=", rval);
+                }
+#else
+                spiClose((unsigned)device->spec.spi.handle);
+#endif
+            }
         }
     }
 #endif
@@ -471,15 +474,17 @@ void pins_close_device(
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
+        if (device->spec.i2c.handle >= 0) {
 #if OSAL_DEBUG
-        rval = i2cClose((unsigned)device->spec.i2c.handle);
-        if (rval)
-        {
-            osal_debug_error_int("spiClose failed, rval=", rval);
-        }
+            rval = i2cClose((unsigned)device->spec.i2c.handle);
+            if (rval)
+            {
+                osal_debug_error_int("spiClose failed, rval=", rval);
+            }
 #else
-        i2ciClose((unsigned)device->spec.i2c.handle);
+            i2ciClose((unsigned)device->spec.i2c.handle);
 #endif
+        }
     }
 #endif
 }
@@ -688,6 +693,17 @@ static osalStatus pins_spi_transfer(
     osalStatus s;
 
     bus = device->bus;
+
+    /* If SPI device has not been succesfully opened, print error and return OSAL_COMPLETED.
+     */
+    if (device->spec.spi.handle < 0) {
+        if (!device->spec.spi.error_reported) {
+            osal_debug_error_int("SPI device is not open", bus->spec.i2c.bus_nr);
+            device->spec.spi.error_reported = OS_TRUE;
+        }
+        return OSAL_COMPLETED;
+    }
+
     device->gen_req_func(device);
 
     if (bus->spec.spi.bus_nr >= 10)
@@ -801,6 +817,17 @@ static osalStatus pins_i2c_transfer(
     int rval = -1;
 
     bus = device->bus;
+
+    /* If I2C device has not been succesfully opened, print error and return OSAL_COMPLETED.
+     */
+    if (device->spec.i2c.handle < 0) {
+        if (!device->spec.i2c.error_reported) {
+            osal_debug_error_int("i2c device is not open", bus->spec.i2c.bus_nr);
+            device->spec.i2c.error_reported = OS_TRUE;
+        }
+        return OSAL_COMPLETED;
+    }
+
     s = device->gen_req_func(device);
 
     switch (bus->spec.i2c.bus_operation)

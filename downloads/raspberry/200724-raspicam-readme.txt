@@ -20,7 +20,6 @@ Reload the list of system-wide library paths:
     
     sudo ldconfig
 
-
 *** Using QT debugger
 It may be necessary to add following to run environment (Projects). 
 
