@@ -9,3 +9,8 @@ cd tmp
 make
 sudo make install
 
+*** root priviliges required
+The pigpio C library and the pigpio C library requires root privileges. 
+
+Pigpio daemon could be used to circumvent this, by running daemon as root and 
+using it from application through pipe as normal user. I have not done this.
