@@ -698,7 +698,7 @@ static osalStatus pins_spi_transfer(
      */
     if (device->spec.spi.handle < 0) {
         if (!device->spec.spi.error_reported) {
-            osal_debug_error_int("SPI device is not open", bus->spec.i2c.bus_nr);
+            osal_debug_error_int("SPI device is not open, bus=", bus->spec.i2c.bus_nr);
             device->spec.spi.error_reported = OS_TRUE;
         }
         return OSAL_COMPLETED;
@@ -822,7 +822,7 @@ static osalStatus pins_i2c_transfer(
      */
     if (device->spec.i2c.handle < 0) {
         if (!device->spec.i2c.error_reported) {
-            osal_debug_error_int("i2c device is not open", bus->spec.i2c.bus_nr);
+            osal_debug_error_int("i2c device is not open, bus=", bus->spec.i2c.bus_nr);
             device->spec.i2c.error_reported = OS_TRUE;
         }
         return OSAL_COMPLETED;
