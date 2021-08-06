@@ -44,7 +44,7 @@ typedef struct PinsCameraExt
      */
     os_boolean camera_error_reported;
     os_boolean camera_open_failed;
-    os_int64s open_fail_timer;
+    os_int64 open_fail_timer;
 }
 PinsCameraExt;
 
