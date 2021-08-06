@@ -491,6 +491,15 @@ static void raspi_cam_task(
         if (camera_nr < 0) camera_nr = 0;
         c->camera_nr = camera_nr;
 
+        /* If we are in failed state, try again every 5 seconds
+         */
+        if (c->ext->camera_open_failed) {
+            if (!os_has_elapsed(&c->ext->open_fail_timer, 5000)) {
+                os_sleep(100);
+                continue;
+            }
+        }
+
         w = c->ext->prm[PINS_CAM_IMG_WIDTH];
         h = c->ext->prm[PINS_CAM_IMG_HEIGHT];
         fr = c->ext->prm[PINS_CAM_FRAMERATE];
@@ -500,14 +509,21 @@ static void raspi_cam_task(
         raspi_cam_set_parameters(c, camera_nr);
         if (!TCAM->open())
         {
-            osal_debug_error("Opening raspi cam failed");
+            if (c->ext->camera_error_reported) {
+                osal_debug_error("Unable to open raspi camera");
+                c->ext->camera_error_reported = OS_TRUE;
+            }
+            c->ext->camera_open_failed = OS_TRUE;
+            os_get_timer(&c->ext->open_fail_timer);
             goto tryagain;
         }
         c->ext->reconfigure_camera = OS_FALSE;
+        c->ext->camera_open_failed = OS_TRUE;
+        c->ext->camera_error_reported = OS_TRUE;
 
         while (!c->stop_thread && osal_go())
         {
-static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo cam\n"); ulledoo = 0;}
+// static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo cam\n"); ulledoo = 0;}
 
             TCAM->grab();
             w = TCAM->getWidth();

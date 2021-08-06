@@ -234,11 +234,11 @@ typedef struct pinsCamera
      */
     const struct Pin *camera_pin;
 
-    /* Camera timer pin. OS_NULL if not used by the wrapper.
+    /** Camera timer pin. OS_NULL if not used by the wrapper.
      */
     const struct Pin *timer_pin;
 
-    /* Camera wrapper specific extended camera data. OS_NULL if not used by the wrapper.
+    /** Camera wrapper specific extended camera data. OS_NULL if not used by the wrapper.
      */
     struct PinsCameraExt *ext;
 }

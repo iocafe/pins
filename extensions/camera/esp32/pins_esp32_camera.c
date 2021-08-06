@@ -96,6 +96,12 @@ typedef struct PinsCameraExt
     volatile os_boolean enable_interrupts;
     volatile os_boolean camera_paused;
 
+    /* To avoid repeated camera open error messages.
+     */
+    os_boolean camera_error_reported;
+    os_boolean camera_open_failed;
+    os_int64s open_fail_timer;
+
     /* JPEG compression quality 1 - 100. and previous value for change checking.
      */
     volatile os_uchar jpeg_quality;
