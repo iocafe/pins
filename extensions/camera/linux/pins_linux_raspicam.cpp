@@ -39,6 +39,12 @@ typedef struct PinsCameraExt
     volatile os_boolean reconfigure_camera;
 
     os_ulong testsum[TESTSUM_N];
+
+    /* To avoid repeated camera open error messages.
+     */
+    os_boolean camera_error_reported;
+    os_boolean camera_open_failed;
+    os_int64s open_fail_timer;
 }
 PinsCameraExt;
 
