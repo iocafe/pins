@@ -584,7 +584,7 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
-static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
+// static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
 
         }
     }
@@ -602,7 +602,7 @@ static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); 
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
-static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
+// static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
         }
     }
 #endif
