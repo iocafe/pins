@@ -283,7 +283,7 @@ os_int mcp3208_get(struct PinsBusDevice *device, os_short addr, os_char *state_b
 
     ext = (PinsMcp3208Ext*)device->ext;
 
-    if (addr < 0 || addr >= MCP3208_NRO_ADC_CHANNELS || ext == OS_NULL) {
+    if (addr < 0 || addr >= MCP3208_NRO_ADC_CHANNELS) {
         *state_bits = OSAL_STATE_UNCONNECTED|OSAL_STATE_RED;
         return -1;
     }

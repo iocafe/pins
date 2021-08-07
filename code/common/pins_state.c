@@ -45,7 +45,6 @@ osalStatus pins_setup(
     osalStatus s;
 
     s = pins_ll_initialize_lib();
-    if (s) return s;
 
     gcount = pins_hdr->n_groups;
     group = pins_hdr->group;
@@ -76,7 +75,7 @@ osalStatus pins_setup(
     pins_initialize_bus_devices();
 #endif
 
-    return OSAL_SUCCESS;
+    return s;
 }
 
 
