@@ -33,7 +33,13 @@
 osalStatus pins_ll_initialize_lib(
     void)
 {
-    int s;
+    int s, cfg;
+
+    /* Do not use PIGPIO signal handle, eosal app has it's own.
+     */
+    cfg = gpioCfgGetInternals();
+    cfg |= PI_CFG_NOSIGHANDLER;  // (1<<10)
+    gpioCfgSetInternals(cfg);
 
     s = gpioInitialise();
     if (s < 0) {
