@@ -769,6 +769,12 @@ static osalStatus pins_bus_run_spi(
     osalStatus s, final_s = OSAL_SUCCESS;
 
     current_device = bus->current_device;
+    if (current_device == OS_NULL) {
+        current_device = bus->first_bus_device;
+        if (current_device == OS_NULL) {
+            return OSAL_COMPLETED;
+        }
+    }
 
     s = pins_spi_transfer(current_device);
 
@@ -899,6 +905,12 @@ static osalStatus pins_bus_run_i2c(
     osalStatus s, final_s = OSAL_SUCCESS;
 
     current_device = bus->current_device;
+    if (current_device == OS_NULL) {
+        current_device = bus->first_bus_device;
+        if (current_device == OS_NULL) {
+            return OSAL_COMPLETED;
+        }
+    }
 
     s = pins_i2c_transfer(current_device);
 
