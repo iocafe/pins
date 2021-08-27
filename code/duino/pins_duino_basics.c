@@ -76,7 +76,7 @@ void pin_ll_setup(
     os_int
         is_touch_sensor;
 
-    if (pin->addr >=  0) switch (pin->type)
+    if (pin->addr >= 0) switch (pin->type)
     {
         case PIN_INPUT:
             is_touch_sensor = pin_get_prm(pin, PIN_TOUCH);
@@ -210,7 +210,7 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             break;
     }
 
-    *state_bits = OSAL_STATE_UNCONNECTED;
+    *state_bits = OSAL_STATE_NO_READ_SUPPORT;
     return 0;
 }
 

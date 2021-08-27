@@ -63,7 +63,8 @@ osalStatus pins_setup(
 #else
             pin_ll_setup(pin, flags);
 #endif
-
+            ((PinRV*)pin->prm)->value = pin_get_prm(pin, PIN_INIT);
+            ((PinRV*)pin->prm)->state_bits = OSAL_STATE_NO_READ_SUPPORT;
             pin++;
         }
 
@@ -164,11 +165,11 @@ osal_trace_int("HERE to value ", x); */
             ((PinRV*)pin->prm)->value = x;
             ((PinRV*)pin->prm)->state_bits = OSAL_STATE_CONNECTED;
 
-            if (pin_to_iocom_func &&
-                pin->signal)
-            {
-                pin_to_iocom_func(pin);
-            }
+                if (pin_to_iocom_func &&
+                    pin->signal)
+                {
+                    pin_to_iocom_func(pin);
+                }
         }
     }
 }
@@ -269,6 +270,10 @@ os_int pin_get_ext(
 #else
     x = pin_ll_get(pin, state_bits);
 #endif
+    if (*state_bits & OSAL_STATE_NO_READ_SUPPORT) {
+        *state_bits = ((PinRV*)pin->prm)->state_bits;
+        return ((PinRV*)pin->prm)->value;
+    }
 
     if (x != ((PinRV*)pin->prm)->value ||
         *state_bits != ((PinRV*)pin->prm)->state_bits)
@@ -276,11 +281,14 @@ os_int pin_get_ext(
         ((PinRV*)pin->prm)->value = x;
         ((PinRV*)pin->prm)->state_bits = *state_bits;
 
-        if (pin_to_iocom_func &&
-            pin->signal)
-        {
-            pin_to_iocom_func(pin);
-        }
+//        if (flags & PIN_FORWARD_TO_IOCOM)  should this be here like in set()?s
+//        {
+            if (pin_to_iocom_func &&
+                pin->signal)
+            {
+                pin_to_iocom_func(pin);
+            }
+        // }
     }
     return x;
 }
@@ -383,7 +391,7 @@ os_double pin_value_scaled(
     dx = maxx - minx;
     dy = maxy - miny;
     if (dx == 0 || dy == 0) {
-        osal_debug_error("Pin value scaling error");
+        osal_debug_error_int("Pin scaling error, pin addr=", pin->addr);
         return ivalue;
     }
     gain = (os_double)dy / (os_double)dx;

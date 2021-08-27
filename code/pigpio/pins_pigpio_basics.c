@@ -199,7 +199,7 @@ os_int pin_ll_get(
             r = gpioRead(pin->addr);
             if (r < 0) {
                 osal_debug_error_int("gpioRead(x) failed, x=", pin->addr);
-                *state_bits = OSAL_STATE_UNCONNECTED;
+                *state_bits = OSAL_STATE_RED;
                 return 0;
             }
             *state_bits = OSAL_STATE_CONNECTED;
@@ -213,7 +213,7 @@ os_int pin_ll_get(
             break;
     }
 
-    *state_bits = OSAL_STATE_UNCONNECTED;
+    *state_bits = OSAL_STATE_NO_READ_SUPPORT;
     return 0;
 }
 

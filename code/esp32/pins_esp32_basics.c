@@ -228,7 +228,7 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             break;
     }
 
-    *state_bits = OSAL_STATE_UNCONNECTED;
+    *state_bits = OSAL_STATE_NO_READ_SUPPORT;
     return 0;
 }
 
