@@ -87,6 +87,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef PINS_PIGPIO
 #if PINS_SPI || PINS_I2C
 #include <pigpio.h>
 
@@ -932,5 +933,6 @@ static osalStatus pins_bus_run_i2c(
 /* PINS_I2C */
 #endif
 
+#endif
 #endif
 

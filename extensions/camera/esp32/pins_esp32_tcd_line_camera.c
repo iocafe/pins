@@ -15,6 +15,7 @@
 */
 #define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
+#ifdef OSAL_ESP32
 #if PINS_CAMERA == PINS_TCD1304_CAMERA
 
 #define TDC1304_TIMING_CLOCK_HZ 200000.0
@@ -725,4 +726,5 @@ const pinsCameraInterface pins_tcd1304_camera_iface
     tcd1304_cam_finalize_photo
 };
 
+#endif
 #endif

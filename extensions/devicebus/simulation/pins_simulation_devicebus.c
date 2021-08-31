@@ -14,7 +14,7 @@
     get reply and process it."
   - Interrupt based variation. Each SPI bus is run as state machine. State information contains
     which SPI device in this bus has the turn. And are we waiting for speed setting to take
-    affect, waiting for reply, etc. Interrupt is timed, we never wait in interrup handler,
+    affect, waiting for reply, etc. Interrupt is timed, we never wait in interrupt handler,
     just return is thing waited for is not yet ready.
   - We can also run SPI without waiting from the single threaded main loop.
 
@@ -26,6 +26,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef PINS_SIMULATE_HW
 #if PINS_SPI || PINS_I2C
 
 
@@ -632,4 +633,5 @@ static osalStatus pins_bus_run_i2c(
 /* PINS_I2C */
 #endif
 
+#endif
 #endif

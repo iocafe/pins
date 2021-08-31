@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef OSAL_ESP32
 #if PINS_DISPLAY == PINS_TFT_ESPI
 #include "Arduino.h"
 
@@ -251,4 +252,5 @@ void run_display_hw(
     }
 }
 
+#endif
 #endif

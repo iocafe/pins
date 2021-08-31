@@ -14,7 +14,9 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef OSAL_WINDOWS
 #if PINS_CAMERA
+
 #include <malloc.h> // IS THIS NEEDED ?
 
 #include "extensions\camera\windows\ep_usbcamera\videoInput.h"
@@ -706,4 +708,5 @@ const pinsCameraInterface pins_usb_camera_iface
     usb_cam_finalize_photo
 };
 
+#endif
 #endif

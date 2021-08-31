@@ -21,6 +21,7 @@
 */
 #define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
+#ifdef OSAL_ESP32
 #if PINS_IS_ESP32_CAMERA
 
 #ifdef ESP_PLATFORM
@@ -784,4 +785,5 @@ const pinsCameraInterface pins_esp32_camera_iface
     esp32_cam_finalize_photo
 };
 
+#endif
 #endif
