@@ -1,0 +1,31 @@
+{
+  "name": "pins",
+  "version": "1.0.0",
+  "keywords": "IO, GPIO, hardware abstraction, pins",
+  "description": "hardware IO abstraction",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/iocafe/pins.git"
+  },
+  "frameworks": "arduino",
+  "platforms": [
+    "teensy", 
+    "stm32",
+    "esp32"
+  ],
+  
+  "build": {
+    "srcFilter": [
+      "+<code/*>",
+      "+<extensions/*>"
+    ],
+    "libLDFMode" : "chain"
+  },
+  
+  "dependencies": [
+    {
+      "name": "iocom"
+    }  
+  ]
+}

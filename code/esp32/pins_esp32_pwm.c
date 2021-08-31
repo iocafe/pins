@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef OSAL_ESP32
 #include "driver/ledc.h"
 
 /**
@@ -86,3 +87,4 @@ void pin_pwm_setup(
     ledc_channel_config(&channel_config);
 }
 
+#endif

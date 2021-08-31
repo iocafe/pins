@@ -34,3 +34,4 @@ void pin_gpio_attach_interrupt(
  */
 void pin_gpio_detach_interrupt(
     const struct Pin *pin);
+

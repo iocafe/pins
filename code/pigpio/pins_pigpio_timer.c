@@ -14,6 +14,8 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef PINS_PIGPIO
+
 #include <pigpio.h>
 
 /* Forward referred static functions.
@@ -168,3 +170,5 @@ static void pin_timer_control_interrupt(
     const struct Pin *pin)
 {
 }
+
+#endif

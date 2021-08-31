@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef PINS_PIGPIO
 #include <pigpio.h>
 
 
@@ -159,3 +160,5 @@ void pin_gpio_detach_interrupt(
     // gpio_intr_disable(addr);
     // gpio_isr_handler_remove(addr);
 }
+
+#endif

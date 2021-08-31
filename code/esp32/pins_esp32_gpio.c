@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef OSAL_ESP32
 
 #include "driver/gpio.h"
 
@@ -284,3 +285,5 @@ static void pin_gpio_control_interrupt(
     adc_value = SENS.sar_meas_start1.meas1_data_sar;
     return adc_value;
 } */
+
+#endif

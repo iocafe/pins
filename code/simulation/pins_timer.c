@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef PINS_SIMULATE_HW
 
 void pin_timer_attach_interrupt(
     const struct Pin *pin,
@@ -81,4 +82,5 @@ void pin_timer_simulate_interrupt(
         pin->int_conf->hit_timer = ti;
     }
 }
+#endif
 #endif

@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef OSAL_ARDUINO
 
 
 /**
@@ -115,3 +116,5 @@ void pin_gpio_detach_interrupt(
 {
     detachInterrupt(pin->addr);
 }
+
+#endif

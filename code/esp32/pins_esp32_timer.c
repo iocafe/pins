@@ -14,6 +14,8 @@
 ****************************************************************************************************
 */
 #include "pins.h"
+#ifdef OSAL_ESP32
+
 #include "driver/timer.h"
 
 /* Forward referred static functions.
@@ -239,3 +241,5 @@ static void pin_timer_control_interrupt(
         }
     }
 }
+
+#endif

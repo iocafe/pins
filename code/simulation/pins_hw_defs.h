@@ -18,6 +18,10 @@
 #define PINS_HW_DEFS_H_
 #include "pins.h"
 
+/* Use simulation code, this can be checked by #ifdef PINS_SIMULATE_HW
+ */
+#define PINS_SIMULATE_HW 1
+
 typedef void pin_interrupt_handler(void);
 
 #ifdef PINS_OS_INT_HANDLER_HDRS

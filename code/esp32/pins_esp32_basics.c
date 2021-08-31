@@ -15,6 +15,8 @@
 */
 #define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
+#ifdef OSAL_ESP32
+
 #include "code/esp32/pins_esp32_gpio.h"
 #include "code/esp32/pins_esp32_pwm.h"
 
@@ -232,5 +234,4 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
     return 0;
 }
 
-
-
+#endif

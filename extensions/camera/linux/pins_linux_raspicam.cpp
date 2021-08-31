@@ -14,6 +14,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef OSAL_LINUX
 #if PINS_CAMERA
 #ifdef E_OSVER_pi
 #include "raspicam/raspicam.h"
@@ -668,5 +669,6 @@ const pinsCameraInterface pins_raspi_camera_iface
     raspi_cam_finalize_photo
 };
 
+#endif
 #endif
 #endif

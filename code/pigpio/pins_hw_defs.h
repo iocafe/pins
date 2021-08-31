@@ -18,6 +18,10 @@
 #define PINS_HW_DEFS_H_
 #include "pins.h"
 
+/* Use PIGPIO code, this can be checked by #ifdef PINS_PIGPIO
+ */
+#define PINS_PIGPIO 1
+
 /* Interrupt handler (actually callback for raspberry) function type.
  */
 typedef void pin_interrupt_handler(void *arg);

@@ -16,6 +16,7 @@
 
 #if 0
 #include "pins.h"
+#ifdef OSAL_ARDUINO
 
 /* Forward referred static functions.
  */
@@ -208,4 +209,5 @@ static void pin_timer_control_interrupt(
         }
     }
 }
+#endif
 #endif

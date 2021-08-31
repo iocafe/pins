@@ -15,6 +15,7 @@
 */
 #define PINS_OS_INT_HANDLER_HDRS 1
 #include "pinsx.h"
+#ifdef PINS_PIGPIO
 #include "code/pigpio/pins_pigpio_gpio.h"
 #include "code/pigpio/pins_pigpio_pwm.h"
 #include <pigpio.h>
@@ -217,5 +218,5 @@ os_int pin_ll_get(
     return 0;
 }
 
-
+#endif
 

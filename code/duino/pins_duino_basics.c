@@ -15,9 +15,10 @@
 */
 // #include <Arduino.h>
 #include "pins.h"
+#ifdef OSAL_ARDUINO
+
 #include "code/duino/pins_duino_gpio.h"
 #include "code/duino/pins_duino_pwm.h"
-
 
 /**
 ****************************************************************************************************
@@ -214,5 +215,4 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
     return 0;
 }
 
-
-
+#endif

@@ -26,6 +26,7 @@
 ****************************************************************************************************
 */
 #include "pinsx.h"
+#ifdef OSAL_LINUX
 #if PINS_CAMERA
 
 #include <libv4l2.h>
@@ -1180,4 +1181,5 @@ const pinsCameraInterface pins_usb_camera_iface
     usb_cam_finalize_photo
 };
 
+#endif
 #endif
