@@ -423,7 +423,7 @@ osalStatus pca9685_gen_req(struct PinsBusDevice *device)
   @return  OSAL_COMPLETED indicates that this was last I2C transaction needed for this device
            so that all data has been transferred from device. Value OSAL_SUCCESS to indicates
            that there is more to read. Other values indicate that I2C reply was not
-           recieved or was errornous.
+           received or was errornous.
 
 ****************************************************************************************************
 */

@@ -342,7 +342,7 @@ static void esp32_cam_set_parameter(
   @brief Check that image dimensions are valid for camera and select frame size.
   @anchor esp32_cam_check_dims_and_set_frame_size
 
-  The esp32_cam_check_dims_and_set_frame_size() makes sure that image width is legimate and
+  The esp32_cam_check_dims_and_set_frame_size() makes sure that image width is legitimate and
   selects closest supported image width. Then image height is forced to match the image width.
   If multiple image heights are supported for given image with, one matching closest to current
   height setting is selected.
@@ -737,7 +737,7 @@ static void esp32_cam_set_parameters(
 
   The esp32_cam_global_interrupt_control() function is callback function from
   global interrupt control. The purpose of global control is to disable interrupts
-  when writing to flash. Heare disabling interrupts means stopping the camera
+  when writing to flash. Here disabling interrupts means stopping the camera
  (is that good enough?)
 
   @param   enable OS_TRUE to mark that interrupts are enabled globally, or OS_FALSE

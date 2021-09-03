@@ -294,7 +294,7 @@ static void usb_cam_set_parameter(
   @brief Check that image dimensions are valid for camera.
   @anchor usb_cam_check_image_dims
 
-  The usb_cam_check_image_dims() makes sure that image width is legimate and selects closest
+  The usb_cam_check_image_dims() makes sure that image width is legitimate and selects closest
   supported image width. Then image height is forced to match the image width. If multiple image
   heights are supported for given image with, one matching closest to current height setting
   is selected.
