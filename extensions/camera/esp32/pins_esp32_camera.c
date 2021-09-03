@@ -26,7 +26,6 @@
 
 #ifdef ESP_PLATFORM
 #include "esp_camera.h"
-#include "Arduino.h"
 #endif
 #include "extensions/camera/esp32/pins_esp32_camera_pins.h"
 

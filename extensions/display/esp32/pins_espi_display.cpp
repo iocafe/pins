@@ -16,7 +16,6 @@
 #include "pinsx.h"
 #ifdef OSAL_ESP32
 #if PINS_DISPLAY == PINS_TFT_ESPI
-#include "Arduino.h"
 
 #include <SPI.h>
 #include <TFT_eSPI.h>       // Hardware-specific library
