@@ -577,7 +577,7 @@ static void esp32_cam_task(
                 if (CAM_PIN_PWDN != -1) {
                     pinMode(CAM_PIN_PWDN, OUTPUT);
                     digitalWrite(CAM_PIN_PWDN, LOW);
-                    os_sleep(100);
+                    osal_sleep(100);
                 }
 
                 err = esp_camera_init(&camera_config);
@@ -602,12 +602,12 @@ static void esp32_cam_task(
                 initialized = OS_TRUE;
             }
             else {
-                os_sleep(300);
+                osal_sleep(300);
             }
         }
         else
         {
-            os_sleep(20);
+            osal_sleep(20);
 
             if (camext.jpeg_quality != camext.prev_jpeg_quality)
             {

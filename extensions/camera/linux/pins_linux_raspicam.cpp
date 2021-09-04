@@ -502,7 +502,7 @@ static void raspi_cam_task(
          */
         if (c->ext->camera_open_failed) {
             if (!os_has_elapsed(&c->ext->open_fail_timer, 5000)) {
-                os_sleep(100);
+                osal_sleep(100);
                 continue;
             }
         }
@@ -536,10 +536,10 @@ static void raspi_cam_task(
             w = TCAM->getWidth();
             h = TCAM->getHeight();
             sz = TCAM->getImageBufferSize();
-            if (w < 10 || h < 10 || sz < 100) {os_sleep(50); continue;}
+            if (w < 10 || h < 10 || sz < 100) {osal_sleep(50); continue;}
             bytes_per_line = (sz+h-1) / h;
             bytes_per_pix = bytes_per_line / w;
-            if (bytes_per_pix < 1 || bytes_per_pix > 4) {os_sleep(50); continue;}
+            if (bytes_per_pix < 1 || bytes_per_pix > 4) {osal_sleep(50); continue;}
             w = bytes_per_line / bytes_per_pix;
 
             c->ext->w = w;
@@ -560,14 +560,14 @@ static void raspi_cam_task(
                     raspi_cam_set_parameters(c, camera_nr);
                 }
             }
-            os_sleep(20);
+            osal_sleep(20);
         }
 
 tryagain:
         if (TCAM) {
             TCAM->release(); delete TCAM; TCAM = OS_NULL;
         }
-        os_sleep(100);
+        osal_sleep(100);
     }
 
     if (TCAM) {

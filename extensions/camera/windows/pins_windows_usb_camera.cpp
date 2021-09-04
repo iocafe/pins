@@ -416,7 +416,7 @@ static osalStatus usb_cam_photo_complete(
         }
 
         if (i > TESTSUM_N/2) {
-            os_sleep(100);
+            osal_sleep(100);
         }
 
         if (i >= TESTSUM_N && !c->ext->prm_changed) {
@@ -622,7 +622,7 @@ static void usb_cam_task(
         }
 
 tryagain:
-        os_sleep(100);
+        osal_sleep(100);
     }
 
 getout:;

@@ -663,7 +663,7 @@ void pins_stop_multithread_devicebus(
 {
     pins_devicebus.terminate = OS_TRUE;
     while (pins_devicebus.thread_count) {
-        os_sleep(50);
+        osal_sleep(50);
     }
 }
 

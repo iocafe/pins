@@ -966,7 +966,7 @@ static void stop_capturing_video(
     if (-1 == ioctl (ext->fd, VIDIOC_STREAMOFF, &type)) {
         osal_debug_error("VIDIOC_STREAMOFF");
     }
-    os_sleep(100);
+    osal_sleep(100);
 }
 
 
@@ -1132,7 +1132,7 @@ close_it:
         /* Close camera device
          */
         release_usb_camera_buffers_and_close_fd(ext);
-        os_sleep(300);
+        osal_sleep(300);
     }
 }
 
