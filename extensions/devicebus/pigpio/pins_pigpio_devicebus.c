@@ -695,7 +695,7 @@ static osalStatus pins_spi_transfer(
 
     bus = device->bus;
 
-    /* If SPI device has not been succesfully opened, print error and return OSAL_COMPLETED.
+    /* If SPI device has not been successfully opened, print error and return OSAL_COMPLETED.
      */
     if (device->spec.spi.handle < 0) {
         if (!device->spec.spi.error_reported) {
@@ -825,7 +825,7 @@ static osalStatus pins_i2c_transfer(
 
     bus = device->bus;
 
-    /* If I2C device has not been succesfully opened, print error and return OSAL_COMPLETED.
+    /* If I2C device has not been successfully opened, print error and return OSAL_COMPLETED.
      */
     if (device->spec.i2c.handle < 0) {
         if (!device->spec.i2c.error_reported) {
