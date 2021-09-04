@@ -170,7 +170,9 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
             break;
 
     case PIN_ANALOG_OUTPUT:
+#ifndef OSAL_ESPIDF_FRAMEWORK
             dacWrite(pin->bank, x);
+#endif            
             break;
 
         case PIN_INPUT:
@@ -209,18 +211,30 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             if (pin->prm) {
                 if (pin_get_prm(pin, PIN_TOUCH)) {
                     *state_bits = OSAL_STATE_CONNECTED;
+#ifndef OSAL_ESPIDF_FRAMEWORK
                     return touchRead(pin->addr);
+#else
+                    return 0;
+#endif                            
                 }
             }
 
             /* Normal digital input
              */
             *state_bits = OSAL_STATE_CONNECTED;
+#ifndef OSAL_ESPIDF_FRAMEWORK
             return digitalRead(pin->addr);
+#else
+            return 0;
+#endif                            
 
         case PIN_ANALOG_INPUT:
             *state_bits = OSAL_STATE_CONNECTED;
+#ifndef OSAL_ESPIDF_FRAMEWORK
             return analogRead(pin->addr);
+#else
+            return 0;
+#endif                            
 
         case PIN_OUTPUT:
         case PIN_PWM:
