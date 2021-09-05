@@ -17,10 +17,11 @@
 #ifndef PINS_HW_DEFS_H_
 #define PINS_HW_DEFS_H_
 #include "pins.h"
+#ifdef E_OSVER_pi
 
 /* Use PIGPIO code, this can be checked by #ifdef PINS_PIGPIO
  */
-#define PINS_PIGPIO 1
+#define PINS_PIGPIO
 
 /* Interrupt handler (actually callback for raspberry) function type.
  */
@@ -40,4 +41,5 @@ typedef void pin_interrupt_handler(void *arg);
 #define PINS_SIMULATION 0
 #define PINS_SIMULATED_INTERRUPTS 0
 
+#endif
 #endif

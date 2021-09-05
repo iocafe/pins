@@ -1,19 +1,20 @@
 {
   "name": "pins",
-  "version": "1.0.0",
-  "keywords": "IO, GPIO, hardware abstraction, pins",
   "description": "hardware IO abstraction",
   "repository":
   {
     "type": "git",
     "url": "https://github.com/iocafe/pins.git"
   },
-  "frameworks": "arduino",
-  "platforms": [
-    "teensy", 
-    "stm32",
-    "esp32"
-  ],
+  "frameworks": [
+    "arduino", 
+    "espidf"
+ ],
+ "platforms": [
+   "teensy", 
+   "stm32",
+   "espressif32"
+ ],
   
   "build": {
     "srcFilter": [
