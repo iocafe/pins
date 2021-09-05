@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/esp32/pins_esp32_camera.h
+  @file    camera/esp32/pins_esp32_camera.h
   @brief   ESP32 specific camera defines.
   @author  Pekka Lehtikoski
   @version 1.0

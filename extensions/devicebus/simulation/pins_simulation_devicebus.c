@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/spi/simulation/pins_simulation_devicebus.c
+  @file    spi/simulation/pins_simulation_devicebus.c
   @brief   SPI and I2C
   @author  Pekka Lehtikoski
   @version 1.0

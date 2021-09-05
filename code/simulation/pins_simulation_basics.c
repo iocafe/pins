@@ -1,6 +1,6 @@
 /**
 
-  @file    simulation/pins_basics.c
+  @file    simulation/pins_simulation_basics.c
   @brief   Pins library basic functionality.
   @author  Pekka Lehtikoski
   @version 1.0

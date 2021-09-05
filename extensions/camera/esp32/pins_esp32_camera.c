@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/esp32/pins_esp32_camera.c
+  @file    camera/esp32/pins_esp32_camera.c
   @brief   ESP32-CAM wrapper.
   @author  Pekka Lehtikoski
   @version 1.0

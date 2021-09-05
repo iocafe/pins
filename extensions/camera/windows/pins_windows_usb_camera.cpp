@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/windows/pins_windows_usb_camera.cpp
+  @file    camera/windows/pins_windows_usb_camera.cpp
   @brief   Windows USB camera wrapper.
   @author  Pekka Lehtikoski
   @version 1.0

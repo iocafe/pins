@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/linux/pins_linux_camera.h
+  @file    camera/linux/pins_linux_camera.h
   @brief   Linux specific camera defines.
   @author  Pekka Lehtikoski
   @version 1.0

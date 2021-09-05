@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/display/esp32/pins_espi_display.c
+  @file    display/esp32/pins_esp32_espi_display.c
   @brief   SPI TFT display wrapper for ESP/Arduino platform.
   @author  Pekka Lehtikoski
   @version 1.0

@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/esp32/pins_esp32_tdc_line_camera.c
+  @file    camera/esp32/pins_esp32_tdc_line_camera.c
   @brief   TCD1304, etc, line camera driver implementation.
   @author  Pekka Lehtikoski
   @version 1.0

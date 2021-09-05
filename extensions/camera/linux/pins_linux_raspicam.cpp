@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/linux/pins_linux_raspicam.cpp
+  @file    camera/linux/pins_linux_raspicam.cpp
   @brief   Raspberry PI camera wrapper.
   @author  Pekka Lehtikoski
   @version 1.0

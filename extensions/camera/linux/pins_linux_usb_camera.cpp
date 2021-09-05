@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/linux/pins_linux_usb_camera.cpp
+  @file    camera/linux/pins_linux_usb_camera.cpp
   @brief   Linux USB camera wrapper.
   @author  Pekka Lehtikoski
   @version 1.0

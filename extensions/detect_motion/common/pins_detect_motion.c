@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/detect_motion/common/pins_detect_motion.c
+  @file    detect_motion/common/pins_detect_motion.c
   @brief   Pins library extension for motion detection from camera image.
   @author  Pekka Lehtikoski
   @version 1.0

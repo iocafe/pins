@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/esp32/pins_esp32_camera_pins.h
+  @file    camera/esp32/pins_esp32_camera_pins.h
   @brief   ESP32-CAM hardware pin definitions.
   @author  Pekka Lehtikoski
   @version 1.0

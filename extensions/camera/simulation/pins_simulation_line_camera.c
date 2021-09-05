@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/simulation/pins_sim_line_camera.c
+  @file    camera/simulation/pins_simulation_line_camera.c
   @brief   Camera hardware API.
   @author  Pekka Lehtikoski
   @version 1.0

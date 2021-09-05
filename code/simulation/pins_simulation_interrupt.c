@@ -1,6 +1,6 @@
 /**
 
-  @file    simulation/pins_interrupt.c
+  @file    simulation/pins_simulation_interrupt.c
   @brief   Interrups and handlers.
   @author  Pekka Lehtikoski
   @version 1.0

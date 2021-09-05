@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/spi/pigpio/pins_pigpio_devicebus.c
+  @file    spi/pigpio/pins_pigpio_devicebus.c
   @brief   SPI and I2C for Raspberry PI using pigpio library.
   @author  Pekka Lehtikoski
   @version 1.0

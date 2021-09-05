@@ -1,6 +1,6 @@
 /**
 
-  @file    extensions/camera/windows/pins_windows_camera.h
+  @file    camera/windows/pins_windows_camera.h
   @brief   Windows specific camera defines.
   @author  Pekka Lehtikoski
   @version 1.0

@@ -1,6 +1,6 @@
 /**
 
-  @file    arduino/pins_esp32_timer.c
+  @file    simulation/pins_simulation_timer.c
   @brief   Hardware timer interrupts.
   @author  Pekka Lehtikoski
   @version 1.0
