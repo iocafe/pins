@@ -19,7 +19,7 @@
 
 #include <malloc.h> // IS THIS NEEDED ?
 
-#include "extensions\camera\windows\ep_usbcamera\videoInput.h"
+#include "dependencies\windows\ep_usbcamera\videoInput.h"
 
 
 #define TESTSUM_N 20

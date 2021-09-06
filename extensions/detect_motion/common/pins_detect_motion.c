@@ -184,7 +184,7 @@ osalStatus detect_motion(
 
     /* Store new photo data as motion detection state.
      */
-    os_memcpy(dm->q_prev, dm->q_new, dm->q_w * dm->q_h);
+    os_memcpy(dm->q_prev, dm->q_new, dm->q_w * (os_memsz)dm->q_h);
     dm->q_prev_sum = dm->q_new_sum;
     dm->motion_trigger = OS_FALSE;
 
@@ -261,7 +261,7 @@ static osalStatus dm_allocate_all_buffers(
 {
     os_memsz sz;
 
-    sz = dm->h_w * dm->h_h;
+    sz = dm->h_w * (os_memsz)dm->h_h;
     if (dm_allocate_buffer(&dm->h_buf1, sz, &dm->h_buf1_alloc)) {
         return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
     }
@@ -269,7 +269,7 @@ static osalStatus dm_allocate_all_buffers(
         return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
     }
 
-    sz = dm->q_w * dm->q_h;
+    sz = dm->q_w * (os_memsz)dm->q_h;
     if (dm_allocate_buffer(&dm->q_new, sz, &dm->q_new_alloc)) {
         return OSAL_STATUS_MEMORY_ALLOCATION_FAILED;
     }
@@ -326,15 +326,15 @@ static osalStatus dm_scale_original_image(
 
     for (y = 0; y < h_h; y++)
     {
-        s2 = photo->data + 4 * y * byte_w;
-        d = dm->h_buf1 + y * h_w;
+        s2 = photo->data + 4 * (os_memsz)y * byte_w;
+        d = dm->h_buf1 + y * (os_memsz)h_w;
         count = h_w;
         while (count--) {
             sum = 0;
 
             for (i = 0; i<ver_bytes_for_pix; i++)
             {
-                s = s2 + i * byte_w;
+                s = s2 + i * (os_memsz)byte_w;
                 count2 = 12;
                 while (count2--) {
                     sum += *(s++);
@@ -382,8 +382,8 @@ static os_ulong dm_scale_down(
 
     for (y = 0; y < q_h; y++)
     {
-        s = h_buf + 2 * y * h_w;
-        d = q_buf + y * q_w;
+        s = h_buf + 2 * (os_memsz)y * h_w;
+        d = q_buf + y * (os_memsz)q_w;
         count = q_w;
         while (count--) {
             sum = (os_uint)s[0] + (os_uint)s[1] + (os_uint)s[h_w] + (os_uint)s[h_w+1];
@@ -423,10 +423,10 @@ static os_int dm_calc_movement(
     count = dm->q_w * dm->q_h;
     total_sum = dm->q_new_sum;
     if (total_sum <= 0) total_sum = 1;
-    new_coeff = (os_uint)(16535 * count / total_sum);
+    new_coeff = (os_uint)(16535 * (os_ulong)count / total_sum);
     total_sum = dm->q_prev_sum;
     if (total_sum <= 0) total_sum = 1;
-    prev_coeff = (os_uint)(16535 * count / total_sum);
+    prev_coeff = (os_uint)(16535 * (os_ulong)count / total_sum);
 
     /* Do not alert in darkness all the time.
      */
@@ -449,7 +449,7 @@ static os_int dm_calc_movement(
         }
     }
 
-    total_sum /= dm->q_w * dm->q_h * 64 * 64;
+    total_sum /= dm->q_w * (os_ulong)dm->q_h * 64 * 64;
     return (os_int)total_sum;
 }
 
@@ -487,8 +487,8 @@ static void dm_blur(
     }
 
     for (y = 1; y < h-1; y++) {
-        s = src + y * w;
-        d = dst + y * w;
+        s = src + y * (os_memsz)w;
+        d = dst + y * (os_memsz)w;
 
         d[0] = ((os_uint)s[0] + (os_uint)s[1] + (os_uint)s[-w] + (os_uint)s[w]) / 4;
         d[w-1] = ((os_uint)s[w-2] + (os_uint)s[w-1] + (os_uint)s[-1] + (os_uint)s[2*w-1]) / 4;
@@ -498,8 +498,8 @@ static void dm_blur(
         }
     }
 
-    s = src + (h-1) * w;
-    d = dst + (h-1) * w;
+    s = src + ((os_memsz)h - 1) * w;
+    d = dst + ((os_memsz)h - 1) * w;
 
     d[0] = ((os_uint)s[0] + (os_uint)s[1] + (os_uint)s[-w]) / 3;
     d[w-1] = ((os_uint)s[w-2] + (os_uint)s[w-1] + (os_uint)s[-1]) / 3;
@@ -550,8 +550,8 @@ static void dm_show_debug_image(
 
     for (y = 0; y < h; y++)
     {
-        s = src + y * w;
-        d = photo->data + y * byte_w;
+        s = src + y * (os_memsz)w;
+        d = photo->data + y * (os_memsz)byte_w;
         count = w;
         while (count--) {
             v = *(s++);

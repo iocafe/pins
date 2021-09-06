@@ -38,16 +38,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\code\common\pins_parameters.c" />
     <ClCompile Include="..\..\code\common\pins_state.c" />
-    <ClCompile Include="..\..\code\simulation\pins_basics.c" />
-    <ClCompile Include="..\..\code\simulation\pins_interrupt.c" />
-    <ClCompile Include="..\..\code\simulation\pins_timer.c" />
+    <ClCompile Include="..\..\code\simulation\pins_simulation_basics.c" />
+    <ClCompile Include="..\..\code\simulation\pins_simulation_interrupt.c" />
+    <ClCompile Include="..\..\code\simulation\pins_simulation_timer.c" />
     <ClCompile Include="..\..\extensions\bus_drivers\common\pins_adc_mcp3208.c" />
     <ClCompile Include="..\..\extensions\bus_drivers\common\pins_pwm_pca9685.c" />
     <ClCompile Include="..\..\extensions\camera\common\pins_camera.c" />
-    <ClCompile Include="..\..\extensions\camera\simulation\pins_sim_line_camera.c" />
     <ClCompile Include="..\..\extensions\camera\windows\pins_windows_usb_camera.cpp" />
     <ClCompile Include="..\..\extensions\detect_motion\common\pins_detect_motion.c" />
-    <ClCompile Include="..\..\extensions\devicebus\common\pins_devicebus.c" />
     <ClCompile Include="..\..\extensions\devicebus\simulation\pins_simulation_devicebus.c" />
     <ClCompile Include="..\..\extensions\display\common\pins_display.c" />
     <ClCompile Include="..\..\extensions\iocom\common\pins_default_iocom_callback.c" />
