@@ -3,20 +3,28 @@ cmake_minimum_required(VERSION 3.5)
 
 # Set project name (= project root folder name).
 set(E_PROJECT "pins")
+set(E_UP "../eosal/osbuild/cmakedefs")
+
+# Set build root environment variable E_ROOT
+include("${E_UP}/eosal-root-path.txt")
 
 if("${IDF_TARGET}" STREQUAL "esp32")
   # ESP-IFD only: Include IDF project setup and declare the project.
   include($ENV{IDF_PATH}/tools/cmake/project.cmake)
   project(${E_PROJECT})
 
-  # include build information common to all projects.
-  include(../eosal/osbuild/cmakedefs/eosal-defs-espidf.txt)
+  # include build information common to ESP-IDF projects.
+  include("${E_UP}/eosal-defs-espidf.txt")
+
+  # Add include paths.
+  include_directories("$ENV{E_ROOT}/iocom")
+  include_directories("$ENV{E_ROOT}/iocom/extensions/${E_PROJECT}")
 
 else()
   project(${E_PROJECT})
 
   # include build information common to all projects.
-  include(../eosal/osbuild/cmakedefs/eosal-defs.txt)
+  include("${E_UP}/eosal-defs.txt")
 
   # Set path to where to keep libraries.
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $ENV{E_LIBOUT})
