@@ -5,7 +5,7 @@
 # The component CMakeLists.txt file lists source files and registers the component to the build 
 # system using idf_component_register.
 #
-cmake_minimum_required(VERSION 3.16.0)
+cmake_minimum_required(VERSION 3.5)
 
 # Project name, development root folder, and operatig system as used in eosal.
 set(E_PROJECT "pins")
