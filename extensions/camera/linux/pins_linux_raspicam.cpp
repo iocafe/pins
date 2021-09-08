@@ -608,8 +608,7 @@ static void raspi_cam_set_parameters(
      */
     // TCAM->setShutterSpeed(t->exposure_time * 1000.0);
 
-    /* Set color format: RGB or grayscale. (note we use BGR byte order
-     * internally within oecore)
+    /* Set color format: RGB or grayscale.
      */
     // TCAM->setFormat(t->colorformat==2
     //        ? raspicam::RASPICAM_FORMAT_BGR
