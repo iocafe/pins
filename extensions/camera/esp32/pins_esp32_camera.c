@@ -575,8 +575,18 @@ static void esp32_cam_task(
                 os_get_timer(&error_retry_timer);
 
                 if (CAM_PIN_PWDN != -1) {
+#if 1                    
+                    gpio_config_t io_conf;
+                    os_memclear(&io_conf, sizeof(io_conf));
+                    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+                    io_conf.mode = GPIO_MODE_OUTPUT;
+                    io_conf.pin_bit_mask = 1ULL << CAM_PIN_PWDN;
+                    gpio_config(&io_conf);
+                    gpio_set_level(CAM_PIN_PWDN, 1);
+#else
                     pinMode(CAM_PIN_PWDN, OUTPUT);
                     digitalWrite(CAM_PIN_PWDN, LOW);
+#endif
                     osal_sleep(100);
                 }
 
@@ -584,8 +594,18 @@ static void esp32_cam_task(
 
                 if (err != ESP_OK) {
                     if (CAM_PIN_PWDN != -1) {
-                        pinMode(CAM_PIN_PWDN, OUTPUT);
-                        digitalWrite(CAM_PIN_PWDN, LOW);
+                        #if 1                    
+                            gpio_config_t io_conf;
+                            os_memclear(&io_conf, sizeof(io_conf));
+                            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+                            io_conf.mode = GPIO_MODE_OUTPUT;
+                            io_conf.pin_bit_mask = 1ULL << CAM_PIN_PWDN;
+                            gpio_config(&io_conf);
+                            gpio_set_level(CAM_PIN_PWDN, 0);
+                        #else
+                            pinMode(CAM_PIN_PWDN, OUTPUT);
+                            digitalWrite(CAM_PIN_PWDN, LOW);
+                        #endif                            
                     }
 
                     osal_set_network_state_int(OSAL_NS_DEVICE_INIT_INCOMPLETE, 0, OS_TRUE);
