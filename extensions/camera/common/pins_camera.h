@@ -54,6 +54,17 @@ struct iocBrickBuffer;
   #define PINS_CAMERA PINS_NO_CAMERA
 #endif
 
+/* Decide if we need inbuilt ESP32-CAMERA (included in /coderoot/pins/extensions/camera/esp32 directory),
+   and cannot use one from library (as it should be used)
+ */
+#ifdef OSAL_ESP32
+#ifdef OSAL_ESPIDF_FRAMEWORK
+#if PINS_CAMERA!=PINS_NO_CAMERA
+  #define PINS_INCLUDED_ESP_CAM_CODE_NEEDED
+#endif
+#endif
+#endif
+
 /* If we got a camera
  */
 #if PINS_CAMERA
