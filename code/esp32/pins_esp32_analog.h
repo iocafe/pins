@@ -19,13 +19,19 @@
 void pin_setup_analog_input(
     const Pin *pin);
 
-/* Configure a pin as analog output.
- */
-void pin_setup_analog_output(
-    const Pin *pin);
-
 /* Read analog input.
  */
 os_int pin_read_analog_input(
     const Pin *pin,
     os_char *state_bits);
+
+/* Configure a pin as analog output.
+ */
+void pin_setup_analog_output(
+    const Pin *pin);
+
+/* Set analog output.
+ */
+void pin_write_analog_output(
+    const Pin *pin,
+    os_int x);

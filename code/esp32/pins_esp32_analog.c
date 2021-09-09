@@ -13,7 +13,7 @@
         8 channels: GPIO32 - GPIO39
 
   ADC2:
-        10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GOIO25 - GPIO27
+        10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GPIO25 - GPIO27
 
   Without attenuation, ESP analog input range is from 0 to 800 mV. Setting attenuation 
   increases signal range. For example 11db attenuation will result signal range from 0 to 2.84V 
@@ -23,6 +23,8 @@
     ADC_ATTEN_DB_6      Extends the range about 6 dB (2 x)
     ADC_ATTEN_DB_11     Extends the range about 11 dB (3.55 x)
 
+  ESP32-S2 has two 8-bit DAC (digital to analog converter) channels, connected to GPIO17 
+  (Channel 1) and GPIO18 (Channel 2).
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -88,8 +90,20 @@ static os_uchar pin_adc_map[] =
 #define PIN_ADC_MAP_LEN (sizeof(pin_adc_map)/sizeof(os_uchar))
 
 
-/* Configure a pin as analog input.
- */
+/**
+****************************************************************************************************
+
+  @brief  Configure a pin as analog input.
+  @anchor pin_setup_analog_input
+
+  Configures a GPIO pin as analog input.
+  - ADC1, 8 channels: GPIO32 - GPIO39
+  - ADC2, 10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GPIO25 - GPIO27
+
+  @param   pin Pointer to pin structure.
+
+****************************************************************************************************
+*/
 void pin_setup_analog_input(
     const Pin *pin)
 {
@@ -114,6 +128,23 @@ void pin_setup_analog_input(
     osal_debug_error_int("pin cannot be used as analog input, gpio=", addr);
 }
 
+
+/**
+****************************************************************************************************
+
+  @brief Read analog input.
+  @anchor pin_read_analog_input
+
+  Reads single value from analog inputs. ESP32 analog inputs are 12 bit, thus range from 0 to 4095.
+  
+  @param   pin Pointer to pin structure.
+  @param   state_bits Pointer to byte where to store state bits like OSAL_STATE_CONNECTED,
+           OSAL_STATE_ORANGE, OSAL_STATE_YELLOW... Value OSAL_STATE_UNCONNECTED indicates not
+           connected (= unknown value).
+  @return  Pin value, for example 0 or 1 for digital input.
+
+****************************************************************************************************
+*/
 os_int OS_ISR_FUNC_ATTR pin_read_analog_input(
     const Pin *pin,
     os_char *state_bits)
@@ -140,26 +171,77 @@ os_int OS_ISR_FUNC_ATTR pin_read_analog_input(
                 *state_bits = OSAL_STATE_CONNECTED;
                 return read_raw;
             }
-/* THIS WILL NOT WORK FROM ISR, SO COMMENTED
-#if OSAL_DEBUG
             if (rval == ESP_ERR_TIMEOUT ) {
-                osal_debug_error_int("ADC2 used by Wi-Fi, gpio=", addr);
+                /* ADC2 used by Wi-Fi */
+                *state_bits = OSAL_STATE_CONNECTED|OSAL_STATE_ORANGE;
+                return 0;
             }
-#endif            
-*/
         }
     }
 
-    *state_bits = OSAL_STATE_CONNECTED|OSAL_STATE_RED;
+    *state_bits = OSAL_STATE_UNCONNECTED|OSAL_STATE_RED;
     return 0;
 }
 
-/* Configure a pin as analog output.
- */
+
+/**
+****************************************************************************************************
+
+  @brief Configure a pin as analog output.
+  @anchor pin_setup_analog_output
+
+  Configures a GPIO pin as analog output. On ESP32 pins 17 and 18 are GPIO pins which can be 
+  used as analog outputs. 
+
+  @param   pin Pointer to pin structure.
+
+****************************************************************************************************
+*/
 void pin_setup_analog_output(
     const Pin *pin)
 {
-    // dac_output_enable( DAC_EXAMPLE_CHANNEL );
+    int c;
+
+    switch (pin->addr)
+    {
+        case 17: c = DAC_CHANNEL_1; break;
+        case 18: c = DAC_CHANNEL_2; break;
+        default: 
+            osal_debug_error_int("pin cannot be used as analog output, gpio=", pin->addr);
+            return;
+    }
+
+    dac_output_enable(c);
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Set analog output.
+  @anchor pin_write_analog_output
+
+  Write value 0 - 255 to analog output pin. On ESP32 pins 17 and 18 are GPIO pins which can be 
+  used as analog outputs. 
+
+  @param   pin Pointer to pin structure.
+  @param   x Value from 0 to 255 to set (8 bit DAC).
+
+****************************************************************************************************
+*/
+void OS_ISR_FUNC_ATTR pin_write_analog_output(
+    const Pin *pin,
+    os_int x)
+{
+    int c;
+
+    switch (pin->addr)
+    {
+        case 17: c = DAC_CHANNEL_1; break;
+        case 18: c = DAC_CHANNEL_2; break;
+        default: return;
+    }
+    dac_output_voltage(c, x);
 }
 
 #endif

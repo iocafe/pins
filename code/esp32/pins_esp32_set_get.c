@@ -36,7 +36,6 @@
 
   @param   pin Pointer to pin structure.
   @param   x Value to set, for example 0 or 1 for digital output.
-  @return  None.
 
 ****************************************************************************************************
 */
@@ -54,12 +53,8 @@ void OS_ISR_FUNC_ATTR pin_ll_set(
             pin_pwm_set(pin, x);
             break;
 
-    case PIN_ANALOG_OUTPUT:
-#ifdef OSAL_ESPIDF_FRAMEWORK
-            dac_output_voltage(pin->bank, x);
-#else            
-            dacWrite(pin->bank, x);
-#endif            
+        case PIN_ANALOG_OUTPUT:
+            pin_write_analog_output(pin, x);
             break;
 
         case PIN_INPUT:
