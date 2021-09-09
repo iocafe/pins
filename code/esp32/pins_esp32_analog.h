@@ -1,7 +1,7 @@
 /**
 
-  @file    esp32/pins_esp32_pwm.h
-  @brief   ESP32 pulse width modulation.
+  @file    esp32/pins_esp32_analog.h
+  @brief   ADC & DAC.
   @author  Pekka Lehtikoski
   @version 1.0
   @date    21.4.2020
@@ -14,13 +14,18 @@
 ****************************************************************************************************
 */
 
-/* Configure a pin as PWM.
+/* Configure a pin as analog input.
  */
-void pin_pwm_setup(
+void pin_setup_analog_input(
     const Pin *pin);
 
-/* Set PWM duty cycle.
+/* Configure a pin as analog output.
  */
-void pin_pwm_set(
+void pin_setup_analog_output(
+    const Pin *pin);
+
+/* Read analog input.
+ */
+os_int pin_read_analog_input(
     const Pin *pin,
-    os_int x);
+    os_char *state_bits);

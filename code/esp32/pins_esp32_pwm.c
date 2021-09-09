@@ -16,6 +16,7 @@
 #include "pins.h"
 #ifdef OSAL_ESP32
 #include "driver/ledc.h"
+#include "code/esp32/pins_esp32_pwm.h"
 
 /**
 ****************************************************************************************************
@@ -71,9 +72,7 @@ void pin_pwm_setup(
     ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
     ledc_timer.timer_num = timer_nr;  // 0 = LEDC_TIMER_0, ...
 
-
     /* I think needed for new esp-idf software ?
-    ledc_timer.clk_cfg = LEDC_USE_APB_CLK;
      */
     ledc_timer_config(&ledc_timer); // Set up GPIO PIN
 
@@ -84,7 +83,33 @@ void pin_pwm_setup(
     channel_config.speed_mode = LEDC_HIGH_SPEED_MODE;
     channel_config.timer_sel  = timer_nr; // LEDC_TIMER_0
     channel_config.hpoint = hpoint;
+    #if IDF_VERSION_MAJOR >= 4
+       ledc_timer.clk_cfg = LEDC_USE_APB_CLK;
+     #endif
     ledc_channel_config(&channel_config);
+}
+
+
+/**
+****************************************************************************************************
+
+  @brief Set PWM duty cycle.
+  @anchor pin_pwm_set
+
+  Note, not thread safe: PWM channel duty must be modified only from one thread at a time. 
+  If multiple threads modify PWM simultaneously, resulting duty cycle can be unexpected.
+
+  @param   pin Pointer to pin structure.
+  @param   x Value to set, for example 0 or 1 for digital output.
+
+****************************************************************************************************
+*/
+void OS_ISR_FUNC_ATTR pin_pwm_set(
+    const Pin *pin,
+    os_int x)
+{
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pin->bank, (uint32_t)x);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pin->bank);
 }
 
 #endif

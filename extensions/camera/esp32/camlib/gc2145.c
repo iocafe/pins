@@ -190,10 +190,10 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
     sensor->status.framesize = framesize;
     uint16_t w = resolution[framesize].width;
     uint16_t h = resolution[framesize].height;
+#if CONFIG_GC_SENSOR_SUBSAMPLE_MODE
     uint16_t row_s = (resolution[FRAMESIZE_UXGA].height - h) / 2;
     uint16_t col_s = (resolution[FRAMESIZE_UXGA].width - w) / 2;
 
-#if CONFIG_GC_SENSOR_SUBSAMPLE_MODE
     struct subsample_cfg {
         uint16_t ratio_numerator;
         uint16_t ratio_denominator;

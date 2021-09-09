@@ -17,6 +17,7 @@
 #ifdef OSAL_ESP32
 
 #include "driver/gpio.h"
+#include "code/esp32/pins_esp32_gpio.h"
 
 /* Forward referred static functions.
  */
