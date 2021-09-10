@@ -4,7 +4,7 @@
   @brief   Display hardware API.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    21.4.2020
+  @date    26.4.2021
 
   Code shared by different display hardwares to connect to eosal network state, etc.
 

@@ -4,7 +4,7 @@
   @brief   ADC & DAC.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    21.4.2020
+  @date    26.4.2021
 
   The ESP32 integrates two 12-bit SAR (Successive Approximation Register) ADCs, supporting a 
   total of 18 measurement channels (analog enabled pins).

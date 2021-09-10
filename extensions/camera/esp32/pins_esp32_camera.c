@@ -237,7 +237,6 @@ static osalStatus esp32_cam_open(
 static void esp32_cam_close(
     pinsCamera *c)
 {
-
     esp32_cam_stop(c);
 }
 

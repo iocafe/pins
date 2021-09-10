@@ -4,7 +4,7 @@
   @brief   ESP32-CAM hardware pin definitions.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    21.4.2020
+  @date    26.4.2021
 
   Copyright 2020 Espressif, Apace 2 license.
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,

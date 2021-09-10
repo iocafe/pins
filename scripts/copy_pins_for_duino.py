@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# copy_pins_for_duino.py 21.4.2020/pekka
+# copy_pins_for_duino.py 26.4.2021/pekka
 # Copies pins library files needed for PlatformIO Arduino build
 # into /coderoot/lib/arduino-platformio/pins directory.
 # To make this look like Arduino library all .c and .cpp
