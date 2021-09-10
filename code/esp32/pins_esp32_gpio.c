@@ -21,9 +21,11 @@
 
 /* Forward referred static functions.
  */
+#if OSAL_INTERRUPT_LIST_SUPPORT
 static void pin_gpio_global_interrupt_control(
     os_boolean enable,
     void *context);
+#endif
 
 static void pin_gpio_set_interrupt_enable_flag(
     const struct Pin *pin,
@@ -115,7 +117,9 @@ void pin_gpio_attach_interrupt(
 {
     gpio_int_type_t itype;
     gpio_num_t addr;
+#if OSAL_INTERRUPT_LIST_SUPPORT
     os_boolean enable;
+#endif
     addr = (gpio_num_t)pin->addr;
 
     /* gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL); */
@@ -134,8 +138,10 @@ void pin_gpio_attach_interrupt(
        It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
      */
     pin_set_prm(pin, PIN_INTERRUPT_ENABLED, 0);
+#if OSAL_INTERRUPT_LIST_SUPPORT
     enable = osal_add_interrupt_to_list(pin_gpio_global_interrupt_control, (void*)pin);
     pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
+#endif
     pin_gpio_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
 
     pin_gpio_control_interrupt(pin);
@@ -167,6 +173,7 @@ void pin_gpio_detach_interrupt(
 }
 
 
+#if OSAL_INTERRUPT_LIST_SUPPORT
 /**
 ****************************************************************************************************
 
@@ -194,6 +201,7 @@ static void pin_gpio_global_interrupt_control(
     pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
     pin_gpio_control_interrupt(pin);
 }
+#endif
 
 
 /**
@@ -252,6 +260,7 @@ static void pin_gpio_set_interrupt_enable_flag(
 static void pin_gpio_control_interrupt(
     const struct Pin *pin)
 {
+#if OSAL_INTERRUPT_LIST_SUPPORT
     os_int x;
     x = pin_get_prm(pin, PIN_INTERRUPT_ENABLED);
     if ((x & (PIN_GLOBAL_INTERRUPTS_ENABLED|PIN_INTERRUPTS_ENABLED_FOR_PIN))
@@ -273,6 +282,29 @@ static void pin_gpio_control_interrupt(
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
         }
     }
+#else
+    os_int x;
+    x = pin_get_prm(pin, PIN_INTERRUPT_ENABLED);
+    if (x & PIN_INTERRUPTS_ENABLED_FOR_PIN)
+    {
+        if ((x & PIN_GPIO_PIN_INTERRUPTS_ENABLED) == 0)
+        {
+            gpio_intr_enable((gpio_num_t)(pin->addr));
+            x |= PIN_GPIO_PIN_INTERRUPTS_ENABLED;
+            pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
+        }
+    }
+    else
+    {
+        if (x & PIN_GPIO_PIN_INTERRUPTS_ENABLED)
+        {
+            gpio_intr_disable((gpio_num_t)(pin->addr));
+            x &= ~PIN_GPIO_PIN_INTERRUPTS_ENABLED;
+            pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
+        }
+    }
+#endif
+
 }
 
 

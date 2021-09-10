@@ -93,8 +93,10 @@ typedef struct PinsCameraExt
     os_int prm[PINS_NRO_CAMERA_PARAMS];
     os_timer prm_timer;
     volatile os_boolean prm_changed;
+#if OSAL_INTERRUPT_LIST_SUPPORT
     volatile os_boolean enable_interrupts;
     volatile os_boolean camera_paused;
+#endif
 
     /* JPEG compression quality 1 - 100. and previous value for change checking.
      */
@@ -123,9 +125,11 @@ static void esp32_cam_task(
 static void esp32_cam_set_parameters(
     void);
 
+#if OSAL_INTERRUPT_LIST_SUPPORT
 static void esp32_cam_global_interrupt_control(
     os_boolean enable,
     void *context);
+#endif
 
 
 /**
@@ -208,7 +212,9 @@ static osalStatus esp32_cam_open(
         camext.prm[i] = -1;
     }
 
+#if OSAL_INTERRUPT_LIST_SUPPORT
     camext.enable_interrupts = osal_add_interrupt_to_list(esp32_cam_global_interrupt_control, c);
+#endif
 
     return OSAL_SUCCESS;
 }
@@ -557,6 +563,7 @@ static void esp32_cam_task(
 
     while (!c->stop_thread && osal_go())
     {
+#if OSAL_INTERRUPT_LIST_SUPPORT
         if (!camext.enable_interrupts)
         {
             camext.camera_paused = OS_TRUE;
@@ -568,7 +575,9 @@ static void esp32_cam_task(
             }
             camext.camera_paused = OS_FALSE;
         }
-        else if (!initialized)
+        else
+#endif
+        if (!initialized)
         {
             if (os_has_elapsed(&error_retry_timer, 1200))
             {
@@ -748,7 +757,7 @@ static void esp32_cam_set_parameters(
     }
 }
 
-
+#if OSAL_INTERRUPT_LIST_SUPPORT
 /**
 ****************************************************************************************************
 
@@ -786,6 +795,7 @@ static void esp32_cam_global_interrupt_control(
         }
     }
 }
+#endif
 
 
 /* Camera interface (structure with function pointers, polymorphism)

@@ -106,34 +106,6 @@ void pin_gpio_attach_interrupt(
     // OR gpioSetAlertFuncEx(unsigned user_gpio, gpioAlertFuncEx_t f, void *userdata)
     // OR nt gpioSetISRFuncEx(unsigned gpio, unsigned edge, int timeout, gpioISRFuncEx_t f, void *userdata)
 
-#if 0
-    gpio_int_type_t itype;
-    gpio_num_t addr;
-    os_boolean enable;
-    addr = (gpio_num_t)pin->addr;
-
-    /* gpio_isr_handler_add(addr,  (gpio_isr_t)(prm->int_handler_func), NULL); */
-    gpio_isr_handler_add(addr, prm->int_handler_func, NULL);
-
-    switch (prm->flags & PINS_INT_CHANGE)
-    {
-        case PINS_INT_FALLING: itype = GPIO_INTR_NEGEDGE; break;
-        case PINS_INT_RISING:  itype = GPIO_INTR_POSEDGE; break;
-        default:
-        case PINS_INT_CHANGE: itype = GPIO_INTR_ANYEDGE; break;
-    }
-    gpio_set_intr_type(addr, itype);
-
-    /* Start listening for global interrupt enable functions.
-       It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
-     */
-    pin_set_prm(pin, PIN_INTERRUPT_ENABLED, 0);
-    enable = osal_add_interrupt_to_list(pin_gpio_global_interrupt_control, (void*)pin);
-    pin_gpio_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
-    pin_gpio_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-
-    pin_gpio_control_interrupt(pin);
-#endif
 }
 
 
@@ -154,11 +126,6 @@ void pin_gpio_attach_interrupt(
 void pin_gpio_detach_interrupt(
     const struct Pin *pin)
 {
-    // pin_gpio_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
-    // pin_gpio_control_interrupt(pin);
-
-    // gpio_intr_disable(addr);
-    // gpio_isr_handler_remove(addr);
 }
 
 #endif

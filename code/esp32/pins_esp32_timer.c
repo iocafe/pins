@@ -20,9 +20,11 @@
 
 /* Forward referred static functions.
  */
+#if OSAL_INTERRUPT_LIST_SUPPORT
 static void pin_timer_global_interrupt_control(
     os_boolean enable,
     void *context);
+#endif
 
 static void pin_timer_set_interrupt_enable_flag(
    const struct Pin *pin,
@@ -59,7 +61,9 @@ void pin_timer_attach_interrupt(
     timer_config_t config;
     os_int timer_nr, timer_group, frequency_hz, divisor, target_count, count;
     const os_int hw_clock_frequency = 80000000; // 80 MHz
+#if OSAL_INTERRUPT_LIST_SUPPORT
     os_boolean enable;
+#endif
 
     intr_handle_t s_timer_handle;
 
@@ -100,8 +104,10 @@ void pin_timer_attach_interrupt(
        It is important to clear PIN_INTERRUPT_ENABLED for soft reboot.
      */
     pin_set_prm(pin, PIN_INTERRUPT_ENABLED, 0);
+#if OSAL_INTERRUPT_LIST_SUPPORT
     enable = osal_add_interrupt_to_list(pin_timer_global_interrupt_control, (void*)pin);
     pin_timer_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
+#endif
     pin_timer_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
 
     pin_timer_control_interrupt(pin);
@@ -114,7 +120,7 @@ void pin_timer_attach_interrupt(
   @brief Detach interrupt from timer.
   @anchor pin_timer_detach_interrupt
 
-  The pin_timer_detach_interrupt() function detaches inperrupt, at minimum it disables
+  The pin_timer_detach_interrupt() function detaches interrupt, at minimum it disables
   the timer interrupt.
 
   @param   pin Pointer to the pin structure.
@@ -130,6 +136,7 @@ void pin_timer_detach_interrupt(
 }
 
 
+#if OSAL_INTERRUPT_LIST_SUPPORT
 /**
 ****************************************************************************************************
 
@@ -157,6 +164,7 @@ static void pin_timer_global_interrupt_control(
     pin_timer_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
     pin_timer_control_interrupt(pin);
 }
+#endif
 
 
 /**
@@ -215,6 +223,7 @@ static void pin_timer_set_interrupt_enable_flag(
 static void pin_timer_control_interrupt(
     const struct Pin *pin)
 {
+#if OSAL_INTERRUPT_LIST_SUPPORT
     os_int x, timer_group, timer_nr;
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
     timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
@@ -240,6 +249,32 @@ static void pin_timer_control_interrupt(
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
         }
     }
+#else
+    os_int x, timer_group, timer_nr;
+    timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
+    timer_group = pin_get_prm(pin, PIN_TIMER_GROUP_SELECT);
+    x = pin_get_prm(pin, PIN_INTERRUPT_ENABLED);
+    if (x & PIN_INTERRUPTS_ENABLED_FOR_PIN)
+    {
+        if ((x & PIN_GPIO_PIN_INTERRUPTS_ENABLED) == 0)
+        {
+            timer_enable_intr(timer_group, timer_nr);
+            x |= PIN_GPIO_PIN_INTERRUPTS_ENABLED;
+            pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
+            timer_start(timer_group, timer_nr);
+        }
+    }
+    else
+    {
+        if (x & PIN_GPIO_PIN_INTERRUPTS_ENABLED)
+        {
+            timer_pause(timer_group, timer_nr);
+            timer_disable_intr(timer_group, timer_nr);
+            x &= ~PIN_GPIO_PIN_INTERRUPTS_ENABLED;
+            pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
+        }
+    }
+#endif
 }
 
 #endif

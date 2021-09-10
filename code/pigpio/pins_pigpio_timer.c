@@ -20,10 +20,6 @@
 
 /* Forward referred static functions.
  */
-//static void pin_timer_global_interrupt_control(
-//    os_boolean enable,
-//    void *context);
-
 static void pin_timer_set_interrupt_enable_flag(
    const struct Pin *pin,
    os_boolean enable,
@@ -68,7 +64,7 @@ void pin_timer_attach_interrupt(
   @brief Detach interrupt from timer.
   @anchor pin_timer_detach_interrupt
 
-  The pin_timer_detach_interrupt() function detaches inperrupt, at minimum it disables
+  The pin_timer_detach_interrupt() function detaches interrupt, at minimum it disables
   the timer interrupt.
 
   @param   pin Pointer to the pin structure.
@@ -82,35 +78,6 @@ void pin_timer_detach_interrupt(
     pin_timer_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
     pin_timer_control_interrupt(pin);
 }
-
-
-/**
-****************************************************************************************************
-
-  @brief Global enable/disable interrupts callback for flash writes.
-  @anchor pin_timer_global_interrupt_control
-
-  The pin_timer_global_interrupt_control() function is callback function from
-  global interrupt control. The purpose of global control is to disable interrupts
-  when writing to flash.
-
-  @param   enable OS_TRUE to mark that interrupts are enabled globally, or OS_FALSE
-           to mark that interrupts are disabled.
-  @param   context Pointer to the pin structure, callback context.
-  @return  None.
-
-****************************************************************************************************
-*/
-/* static void pin_timer_global_interrupt_control(
-    os_boolean enable,
-    void *context)
-{
-    const struct Pin *pin;
-    pin = (const struct Pin*)context;
-
-    pin_timer_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
-    pin_timer_control_interrupt(pin);
-} */
 
 
 /**
