@@ -44,7 +44,7 @@ void pin_set_prm(
     count = pin->prm_n - PINS_N_RESERVED;
     while (count-- > 0)
     {
-        if (p->ix == prm) {
+        if (p->ix == (os_short)prm) {
             p->value = (os_short)value;
             return;
         }
@@ -83,7 +83,7 @@ os_int pin_get_prm(
     count = pin->prm_n - PINS_N_RESERVED;
     while (count-- > 0)
     {
-        if (p->ix == prm) {
+        if (p->ix == (os_short)prm) {
             return p->value;
         }
         p++;
