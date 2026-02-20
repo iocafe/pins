@@ -6,5 +6,5 @@ To run this you need some work to install and set up the opencv, and modify path
 files and libraries.
 
 I placed opencv in c:\coderoot\opencv directory simply copied files listed below to I run 64 bit build:
-- opencv_world430.lib and opencv_world430d.lib to C:\coderoot\lib\win64_vs2019
+- opencv_world430.lib and opencv_world430d.lib to C:\coderoot\lib\win64_vs
 - opencv_world430.dll and opencv_world430d.dll to C:\coderoot\bin\win64

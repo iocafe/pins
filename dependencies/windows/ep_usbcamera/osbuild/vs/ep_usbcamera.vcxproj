@@ -19,43 +19,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\code\common\pins_basics.h" />
-    <ClInclude Include="..\..\code\common\pins_gpio.h" />
-    <ClInclude Include="..\..\code\common\pins_parameters.h" />
-    <ClInclude Include="..\..\code\common\pins_state.h" />
-    <ClInclude Include="..\..\code\common\pins_timer.h" />
-    <ClInclude Include="..\..\code\simulation\pins_hw_defs.h" />
-    <ClInclude Include="..\..\extensions\camera\common\pins_camera.h" />
-    <ClInclude Include="..\..\extensions\camera\windows\pins_windows_camera.h" />
-    <ClInclude Include="..\..\extensions\detect_motion\common\pins_detect_motion.h" />
-    <ClInclude Include="..\..\extensions\devicebus\common\pins_devicebus.h" />
-    <ClInclude Include="..\..\extensions\display\common\pins_display.h" />
-    <ClInclude Include="..\..\extensions\iocom\common\pins_to_iocom.h" />
-    <ClInclude Include="..\..\extensions\morse\common\pins_morse_code.h" />
-    <ClInclude Include="..\..\pins.h" />
-    <ClInclude Include="..\..\pinsx.h" />
+    <ClInclude Include="..\..\code\Common.h" />
+    <ClInclude Include="..\..\code\DebugPrintOut.h" />
+    <ClInclude Include="..\..\code\FormatReader.h" />
+    <ClInclude Include="..\..\code\ImageGrabber.h" />
+    <ClInclude Include="..\..\code\ImageGrabberThread.h" />
+    <ClInclude Include="..\..\code\Media_Foundation.h" />
+    <ClInclude Include="..\..\code\RawImage.h" />
+    <ClInclude Include="..\..\code\videoDevice.h" />
+    <ClInclude Include="..\..\code\videoDevices.h" />
+    <ClInclude Include="..\..\videoInput.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\code\common\pins_parameters.c" />
-    <ClCompile Include="..\..\code\common\pins_state.c" />
-    <ClCompile Include="..\..\code\simulation\pins_simulation_basics.c" />
-    <ClCompile Include="..\..\code\simulation\pins_simulation_interrupt.c" />
-    <ClCompile Include="..\..\code\simulation\pins_simulation_timer.c" />
-    <ClCompile Include="..\..\extensions\bus_drivers\common\pins_adc_mcp3208.c" />
-    <ClCompile Include="..\..\extensions\bus_drivers\common\pins_pwm_pca9685.c" />
-    <ClCompile Include="..\..\extensions\camera\common\pins_camera.c" />
-    <ClCompile Include="..\..\extensions\camera\windows\pins_windows_usb_camera.cpp" />
-    <ClCompile Include="..\..\extensions\detect_motion\common\pins_detect_motion.c" />
-    <ClCompile Include="..\..\extensions\devicebus\simulation\pins_simulation_devicebus.c" />
-    <ClCompile Include="..\..\extensions\display\common\pins_display.c" />
-    <ClCompile Include="..\..\extensions\iocom\common\pins_default_iocom_callback.c" />
-    <ClCompile Include="..\..\extensions\iocom\common\pins_to_iocom.c" />
-    <ClCompile Include="..\..\extensions\morse\common\pins_morse_code.c" />
-    <ClCompile Include="..\..\extensions\morse\common\pins_morse_texts.c" />
+    <ClCompile Include="..\..\code\DebugPrintOut.cpp" />
+    <ClCompile Include="..\..\code\FormatReader.cpp" />
+    <ClCompile Include="..\..\code\ImageGrabber.cpp" />
+    <ClCompile Include="..\..\code\ImageGrabberThread.cpp" />
+    <ClCompile Include="..\..\code\Media_Foundation.cpp" />
+    <ClCompile Include="..\..\code\RawImage.cpp" />
+    <ClCompile Include="..\..\code\videoDevice.cpp" />
+    <ClCompile Include="..\..\code\videoDevices.cpp" />
+    <ClCompile Include="..\..\code\videoInput.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}</ProjectGuid>
+    <ProjectGuid>{E4F73609-AFA2-464A-ADAF-DB0B7486973D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>iocom</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -64,26 +52,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -94,23 +82,23 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\static-win32-library.props" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\debug-vs2019.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\static-win32-library.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\debug-vs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\static-win32-library.props" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\release-vs2019.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\static-win32-library.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\release-vs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\static-win64-library.props" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\debug-vs2019.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\static-win64-library.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\debug-vs.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\static-win64-library.props" />
-    <Import Project="..\..\..\eosal\osbuild\vs2019\release-vs2019.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\static-win64-library.props" />
+    <Import Project="..\..\..\..\..\..\eosal\osbuild\vs\release-vs.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
