@@ -4,8 +4,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 18.3.11512.155 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jane", "jane.vcxproj", "{723B258A-51C6-4B40-9CB9-B1D122AE157E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F} = {E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pins", "..\..\..\..\osbuild\vs\pins.vcxproj", "{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eosal", "..\..\..\..\..\eosal\osbuild\vs\eosal.vcxproj", "{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +36,14 @@ Global
 		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x64.Build.0 = Release|x64
 		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x86.ActiveCfg = Release|Win32
 		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}.Release|x86.Build.0 = Release|Win32
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Debug|x64.ActiveCfg = Debug|x64
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Debug|x64.Build.0 = Debug|x64
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Debug|x86.ActiveCfg = Debug|Win32
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Debug|x86.Build.0 = Debug|Win32
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Release|x64.ActiveCfg = Release|x64
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Release|x64.Build.0 = Release|x64
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Release|x86.ActiveCfg = Release|Win32
+		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
