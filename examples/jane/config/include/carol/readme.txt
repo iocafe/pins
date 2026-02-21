@@ -1,3 +1,1 @@
-automatically generated C files are here
-26.4.2021/pekka
-
+These .c and .h files are generated automatically by is generated automatically by scripts/config_to_c_code.py.
