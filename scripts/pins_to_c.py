@@ -82,7 +82,7 @@ def write_pin_to_c_header(pin_name):
     hcontent += "    Pin " + pin_name + ";\n"
 
 def write_pin_to_c_source(pin_type, pin_name, pin_attr):
-    global hcontent, ccontent
+    global hcontent, ccontent, savedcontent
     global known_groups, prefix, ccontent, c_prm_comment_written
     global nro_pins, pin_nr, define_list, device_list, driver_list, bus_list, bus_pin_list
 
@@ -127,31 +127,31 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
     full_pin_name = prefix + '.' + pin_type + '.' + pin_name
 
     # Write pin type
-    ccontent += '    {' + pin_types[pin_type] + ", "
+    savedcontent += '    {' + pin_types[pin_type] + ", "
 
     # Write pin address, merge addr and bank
     bank = pin_attr.get("bank", "0")
-    ccontent += str(bank) + ", "
+    savedcontent += str(bank) + ", "
     addr = pin_attr.get("addr", "0")
-    ccontent += str(addr) + ", "
+    savedcontent += str(addr) + ", "
 
     # Write pointer to parameter array, if any
-    ccontent += c_prm_array_name + ", "
+    savedcontent += c_prm_array_name + ", "
     if c_prm_array_name == "OS_NULL":
-        ccontent += "0, "
+        savedcontent += "0, "
     else:
-        ccontent += "sizeof(" + c_prm_array_name + ")/sizeof(PinPrmValue), "
+        savedcontent += "sizeof(" + c_prm_array_name + ")/sizeof(PinPrmValue), "
 
     # Write flags, like PIN_SCALING_SET
     if c_prm_list_has_scaling:
-        ccontent += "PIN_SCALING_SET, "
+        savedcontent += "PIN_SCALING_SET, "
     else:
-        ccontent += "0, "
+        savedcontent += "0, "
 
     # If IO pin belongs to group, setup linked list
     group = pin_attr.get("group", None)
     if group is None:
-        ccontent += "OS_NULL"
+        savedcontent += "OS_NULL"
     else:
         g = known_groups.get(group, None)
         if g is None:
@@ -164,24 +164,24 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
             known_groups[group] = full_pin_name
             g = "&" + g
 
-        ccontent += g
+        savedcontent += g
 
     if pin_name in signallist:
-        ccontent += ', ' + signallist[pin_name]
+        savedcontent += ', ' + signallist[pin_name]
     else:
-        ccontent += ', OS_NULL'
+        savedcontent += ', OS_NULL'
 
     # If IO pin is on SPI or I2C device
     bus_device = pin_attr.get("device", None)
     if bus_device != None:
-        ccontent += ' PINS_DEVCONF_PTR('
-        ccontent += 'pins_device_' + bus_device.replace('.',  '_')
-        ccontent += ')'
+        savedcontent += ' PINS_DEVCONF_PTR('
+        savedcontent += 'pins_device_' + bus_device.replace('.',  '_')
+        savedcontent += ')'
         tmp = bus_device.split('.')
         bus_pin_list.append( (tmp[1], full_pin_name) )
 
     else:
-        ccontent += ' PINS_DEVCONF_NULL'
+        savedcontent += ' PINS_DEVCONF_NULL'
 
     # If IO pin is a SPI or I2C device
     driver = pin_attr.get("driver", None)
@@ -201,17 +201,17 @@ def write_pin_to_c_source(pin_type, pin_name, pin_attr):
         ccontent += "PINS_INTCONF_STRUCT("
         ccontent += intconf_struct_name
         ccontent += ")\n"
-        ccontent += ' PINS_INTCONF_PTR('
-        ccontent += intconf_struct_name
-        ccontent += ')'
+        savedcontent += ' PINS_INTCONF_PTR('
+        savedcontent += intconf_struct_name
+        savedcontent += ')'
     else:
-        ccontent += ' PINS_INTCONF_NULL'
+        savedcontent += ' PINS_INTCONF_NULL'
 
-    ccontent += "}"
+    savedcontent += "}"
     if pin_nr <= nro_pins:
-        ccontent += ","
+        savedcontent += ","
 
-    ccontent += ' /* ' + pin_name + ' */\n'
+    savedcontent += ' /* ' + pin_name + ' */\n'
 
 def write_device_list(device_list, driver_list, bus_list):
     global hcontent, ccontent
@@ -302,7 +302,7 @@ def write_linked_list_heads():
         hcontent += "extern OS_CONST_H Pin *" + varname + ";\n"
 
 def process_pin(pin_type, pin_attr):
-    global device_name, ccontent
+    global device_name, ccontent, savedcontent
     global pin_nr
 
     pin_name = pin_attr.get("name", None)
@@ -311,7 +311,7 @@ def process_pin(pin_type, pin_attr):
         exit()
 
     if pin_nr == 1:
-        ccontent += ', &' + prefix + '.' + pin_type + '.' + pin_name + '}, /* ' + pin_type + ' */\n'
+        savedcontent += ', &' + prefix + '.' + pin_type + '.' + pin_name + '}, /* ' + pin_type + ' */\n'
     pin_nr = pin_nr + 1
 
     write_pin_to_c_header(pin_name)
@@ -325,7 +325,7 @@ def count_pins(pins):
 
 def process_group_block(group):
     global hcontent, ccontent
-    global nro_groups, group_nr, ccontent, c_prm_comment_written
+    global nro_groups, group_nr, ccontent, savedcontent, c_prm_comment_written
     global nro_pins, pin_nr, pin_group_list
 
     pin_type = group.get("name", None)
@@ -353,15 +353,15 @@ def process_group_block(group):
     pin_nr = 1
     c_prm_comment_written = False
 
-    ccontent += '\n  {{' + str(nro_pins)
+    savedcontent += '\n  {{' + str(nro_pins)
 
     for pin in pins:
         process_pin(pin_type, pin)
 
-    ccontent += '  }'
+    savedcontent += '  }'
     if group_nr <= nro_groups:
-        ccontent += ','
-    ccontent += '\n'
+        savedcontent += ','
+    savedcontent += '\n'
 
     hcontent += '  }\n  ' + pin_type + ';\n'
 
@@ -404,7 +404,7 @@ def list_signals_in_file(path):
         printf ("pins_to_c.py: Opening file " + path + " failed")
 
 def process_io_device(io):
-    global hcontent, ccontent
+    global hcontent, ccontent, savedcontent
     global device_name, known_groups, prefix, signallist, device_list, driver_list, bus_list, bus_pin_list
     global nro_groups, group_nr, ccontent, pin_group_list, define_list
 
@@ -433,16 +433,16 @@ def process_io_device(io):
     nro_groups = count_groups(groups)
     group_nr = 1;
 
-    ccontent = "\n/* " + device_name.upper() + " IO configuration structure */\n"
-    ccontent += 'OS_CONST ' + prefix + '_t ' + prefix + ' =\n{'
+    savedcontent = "\n/* " + device_name.upper() + " IO configuration structure */\n"
+    savedcontent += 'OS_CONST ' + prefix + '_t ' + prefix + ' =\n{'
 
     known_groups = {}
 
     for group in groups:
         process_group_block(group)
 
-    ccontent += '};\n\n'
-    ccontent += ccontent
+    savedcontent += '};\n\n'
+    ccontent += savedcontent
 
     list_name = prefix + "_group_list"
     ccontent += '/* List of pin type groups */\n'
