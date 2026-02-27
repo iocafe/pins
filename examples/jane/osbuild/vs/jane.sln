@@ -1,10 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11512.155 d18.3
+VisualStudioVersion = 18.3.11512.155
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jane", "jane.vcxproj", "{723B258A-51C6-4B40-9CB9-B1D122AE157E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{03B1F6E1-ED61-48BD-916F-E97AD81FDA3D} = {03B1F6E1-ED61-48BD-916F-E97AD81FDA3D}
 		{E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F} = {E4A3C5EC-5D37-4EEF-8DE1-E2D597A0E31F}
 	EndProjectSection
 EndProject
