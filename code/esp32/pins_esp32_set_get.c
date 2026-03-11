@@ -93,22 +93,24 @@ os_int OS_ISR_FUNC_ATTR pin_ll_get(
             if (pin->prm) {
                 if (pin_get_prm(pin, PIN_TOUCH)) {
                     *state_bits = OSAL_STATE_CONNECTED;
+/*
 #ifndef OSAL_ESPIDF_FRAMEWORK
                     return touchRead(pin->addr);
-#else
-                    return 0;
 #endif                            
+*/
+                    return 0;
                 }
             }
 
             /* Normal digital input
              */
             *state_bits = OSAL_STATE_CONNECTED;
-#ifndef OSAL_ESPIDF_FRAMEWORK
+/*
+ * #ifndef OSAL_ESPIDF_FRAMEWORK
             return digitalRead(pin->addr);
-#else
+#endif
+*/
             return 0;
-#endif                            
 
         case PIN_ANALOG_INPUT:
             return pin_read_analog_input(pin, state_bits);
