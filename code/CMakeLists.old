@@ -55,5 +55,5 @@ list(APPEND srcs ${EX_CM_SOURCES})
 # The pins library depends on: 
 set(requires, "idf::iocom")
 
-# Register pins as ESP-IDEF component.
+# Register pins as ESP-IDF component.
 idf_component_register(SRCS "${srcs}" INCLUDE_DIRS "." REQUIRES "${requires}" )
