@@ -21,7 +21,7 @@
 #include "code/esp32/pins_esp32_analog.h"
 
 // #include "driver/ledc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/adc.h"
 #include "driver/dac.h"
 

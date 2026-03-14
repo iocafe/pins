@@ -42,7 +42,13 @@ file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPLX_DIR}/*.c" "${EXTENSIONS}/*
 set(srcs ${BB_CM_SOURCES} ${BB_OS_SOURCES} ${EX_CM_SOURCES} ${EX_OS_SOURCES})
 
 # The pins library depends on: 
-set(requires, "idf::eosal_esp32")
+set(requires "eosal_esp32")
+list(APPEND requires "iocom_esp32")
+list(APPEND requires "driver")
+list(APPEND requires "esp_timer")
+list(APPEND requires "esp_adc")
+list(APPEND requires "esp_driver_gpio")
+list(APPEND requires "esp_driver_ledc")
 
 # Set include paths
 set(includes $ENV{E_ROOT}/eosal)

@@ -17,6 +17,7 @@
 #ifdef OSAL_ESP32
 
 #include "driver/gpio.h"
+//#include "hal/gpio_types.h"
 #include "code/esp32/pins_esp32_gpio.h"
 
 /* Forward referred static functions.
@@ -55,7 +56,7 @@ void pin_gpio_setup_input(
     gpio_config_t io_conf;
     os_memclear(&io_conf, sizeof(io_conf));
 
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = 1ULL << pin->addr;
@@ -84,7 +85,7 @@ void pin_gpio_setup_output(
     gpio_config_t io_conf;
     os_memclear(&io_conf, sizeof(io_conf));
 
-    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = 1ULL << pin->addr;

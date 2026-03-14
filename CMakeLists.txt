@@ -10,6 +10,7 @@ include("../eosal/osbuild/cmakedefs/eosal-root-path.txt")
 if (DEFINED ESP_PLATFORM)
   # Include ESP-IDF build specific eosal settings for the top level cmake. 
   include("$ENV{E_ROOT}/eosal/osbuild/cmakedefs/eosal-top-level-espidf-setup.txt")
+  list(APPEND EXTRA_COMPONENT_DIRS $ENV{E_ROOT}/iocom/iocom_esp32)
 
   # Add project's code component directory
   list(APPEND EXTRA_COMPONENT_DIRS $ENV{E_ROOT}/${E_PROJECT}/pins_esp32)

@@ -22,7 +22,7 @@
  */
 #ifdef PINS_OS_INT_HANDLER_HDRS
     #include "esp_attr.h"
-    #include "driver/periph_ctrl.h"
+    #include "esp_private/periph_ctrl.h"
     #include "driver/timer.h"
 #endif
 
