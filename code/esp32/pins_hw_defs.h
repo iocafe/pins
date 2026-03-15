@@ -23,7 +23,7 @@
 #ifdef PINS_OS_INT_HANDLER_HDRS
     #include "esp_attr.h"
     #include "esp_private/periph_ctrl.h"
-    #include "driver/timer.h"
+    #include "esp_timer.h"
 #endif
 
 /* Interrupt handler function type.

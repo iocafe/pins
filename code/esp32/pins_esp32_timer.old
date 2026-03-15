@@ -6,8 +6,6 @@
   @version 1.0
   @date    26.4.2021
 
-  Enable CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
@@ -18,7 +16,7 @@
 #include "pins.h"
 #ifdef OSAL_ESP32
 
-#include "esp_timer.h"
+#include "driver/timer.h"
 
 /* Forward referred static functions.
  */
@@ -60,7 +58,6 @@ void pin_timer_attach_interrupt(
     const struct Pin *pin,
     pinTimerParams *prm)
 {
- #if 0
     timer_config_t config;
     os_int timer_nr, timer_group, frequency_hz, divisor, target_count, count;
     const os_int hw_clock_frequency = 80000000; // 80 MHz
@@ -114,7 +111,6 @@ void pin_timer_attach_interrupt(
     pin_timer_set_interrupt_enable_flag(pin, OS_TRUE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
 
     pin_timer_control_interrupt(pin);
-#endif
 }
 
 
@@ -135,10 +131,8 @@ void pin_timer_attach_interrupt(
 void pin_timer_detach_interrupt(
     const struct Pin *pin)
 {
-#if 0
     pin_timer_set_interrupt_enable_flag(pin, OS_FALSE, PIN_INTERRUPTS_ENABLED_FOR_PIN);
     pin_timer_control_interrupt(pin);
-#endif
 }
 
 
@@ -164,13 +158,11 @@ static void pin_timer_global_interrupt_control(
     os_boolean enable,
     void *context)
 {
-#if 0
     const struct Pin *pin;
     pin = (const struct Pin*)context;
 
     pin_timer_set_interrupt_enable_flag(pin, enable, PIN_GLOBAL_INTERRUPTS_ENABLED);
     pin_timer_control_interrupt(pin);
-#endif
 }
 #endif
 
@@ -201,7 +193,6 @@ static void pin_timer_set_interrupt_enable_flag(
    os_boolean enable,
    os_int flag)
 {
- #if 0
    os_int x;
 
    x = pin_get_prm(pin, PIN_INTERRUPT_ENABLED);
@@ -212,8 +203,6 @@ static void pin_timer_set_interrupt_enable_flag(
        x &= ~flag;
    }
    pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
-
-#endif   
 }
 
 
@@ -234,7 +223,6 @@ static void pin_timer_set_interrupt_enable_flag(
 static void pin_timer_control_interrupt(
     const struct Pin *pin)
 {
-#if 0
 #if OSAL_INTERRUPT_LIST_SUPPORT
     os_int x, timer_group, timer_nr;
     timer_nr = pin_get_prm(pin, PIN_TIMER_SELECT);
@@ -286,7 +274,6 @@ static void pin_timer_control_interrupt(
             pin_set_prm(pin, PIN_INTERRUPT_ENABLED, x);
         }
     }
-#endif
 #endif
 }
 

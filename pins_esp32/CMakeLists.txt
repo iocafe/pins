@@ -42,23 +42,23 @@ file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPLX_DIR}/*.c" "${EXTENSIONS}/*
 set(srcs ${BB_CM_SOURCES} ${BB_OS_SOURCES} ${EX_CM_SOURCES} ${EX_OS_SOURCES})
 
 # The pins library depends on: 
-set(requires "eosal_esp32")
-list(APPEND requires "iocom_esp32")
-list(APPEND requires "driver")
+set(requires "driver")
 list(APPEND requires "esp_timer")
 list(APPEND requires "esp_adc")
 list(APPEND requires "esp_driver_gpio")
 list(APPEND requires "esp_driver_ledc")
+list(APPEND requires "eosal_esp32")
+list(APPEND requires "iocom_esp32")
 
 # Set include paths
 set(includes $ENV{E_ROOT}/eosal)
 list(APPEND includes $ENV{E_ROOT}/iocom)
 list(APPEND includes $ENV{E_ROOT}/${E_PROJECT})
 
-# component_compile_definitions("OSAL_DUMMY_ESP32_APP_MAIN=1")
-# component_compile_options("-fexceptions")
-
 # Register eosal as ESP-IDF component.
 idf_component_register(SRCS "${srcs}" 
     INCLUDE_DIRS "${includes}" 
     REQUIRES "${requires}" )
+
+    # This results correct link order. 
+idf_component_optional_requires(PRIVATE iocom_esp32)
