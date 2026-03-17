@@ -49,6 +49,7 @@ list(APPEND requires "esp_driver_gpio")
 list(APPEND requires "esp_driver_ledc")
 list(APPEND requires "eosal_esp32")
 list(APPEND requires "iocom_esp32")
+list(APPEND requires "esp32-camera")
 
 # Set include paths
 set(includes $ENV{E_ROOT}/eosal)

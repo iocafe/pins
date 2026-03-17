@@ -50,36 +50,18 @@ typedef void pin_interrupt_handler(void *arg);
     #define TIMER_INTERRUPT_HANDLER_PROTO(name) \
         void IRAM_ATTR name(void *arg)
 
-    #if IDF_VERSION_MAJOR >= 4
-        /* esp-idf version 4
-         */
-        #define BEGIN_TIMER_INTERRUPT_HANDLER(name) \
-            void IRAM_ATTR name(void *arg) { \
-            int group_nr = 0xF & (int)arg; \
-            int timer_nr = ((int)arg) >> 4; \
-            timer_spinlock_take(group_nr); \
-            uint32_t timer_intr = timer_group_get_intr_status_in_isr(group_nr); \
-            uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(group_nr, timer_nr); \
-            timer_group_clr_intr_status_in_isr(group_nr, timer_nr); \
-            timer_group_enable_alarm_in_isr(group_nr, timer_nr);
+    #define BEGIN_TIMER_INTERRUPT_HANDLER(name) \
+        void IRAM_ATTR name(void *arg) { \
+        int group_nr = 0xF & (int)arg; \
+        int timer_nr = ((int)arg) >> 4; \
+        timer_spinlock_take(group_nr); \
+        uint32_t timer_intr = timer_group_get_intr_status_in_isr(group_nr); \
+        uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(group_nr, timer_nr); \
+        timer_group_clr_intr_status_in_isr(group_nr, timer_nr); \
+        timer_group_enable_alarm_in_isr(group_nr, timer_nr);
 
-        #define END_TIMER_INTERRUPT_HANDLER(name) \
-            timer_spinlock_give(group_nr); }
-
-    #else
-        /* esp-idf version 3
-           only works for timer group TIMERG0, should work for both TIMER_0 and TIMER_1
-         */
-        #define BEGIN_TIMER_INTERRUPT_HANDLER(name) \
-            void IRAM_ATTR name(void *arg) { \
-            int timer_nr = ((int)arg) >> 4; \
-            if (timer_nr == 0) TIMERG0.int_clr_timers.t0 = 1; \
-            else TIMERG0.int_clr_timers.t1 = 1; \
-            TIMERG0.hw_timer[timer_nr].config.alarm_en = 1;
-
-        #define END_TIMER_INTERRUPT_HANDLER(name) }
-
-    #endif
+    #define END_TIMER_INTERRUPT_HANDLER(name) \
+        timer_spinlock_give(group_nr); }
 #endif
 
 /* No simulated interrupts, we got real ones.

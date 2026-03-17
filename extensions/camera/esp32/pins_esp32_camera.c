@@ -24,9 +24,7 @@
 #ifdef OSAL_ESP32
 #if PINS_IS_ESP32_CAMERA
 
-#ifdef ESP_PLATFORM
 #include "esp_camera.h"
-#endif
 #include "extensions/camera/esp32/pins_esp32_camera_pins.h"
 
 /* Alternate pin names to match either example code.
@@ -586,7 +584,7 @@ static void esp32_cam_task(
 #if 1                    
                     gpio_config_t io_conf;
                     os_memclear(&io_conf, sizeof(io_conf));
-                    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+                    io_conf.intr_type = GPIO_INTR_DISABLE;
                     io_conf.mode = GPIO_MODE_OUTPUT;
                     io_conf.pin_bit_mask = 1ULL << CAM_PIN_PWDN;
                     gpio_config(&io_conf);
@@ -605,7 +603,7 @@ static void esp32_cam_task(
                         #if 1                    
                             gpio_config_t io_conf;
                             os_memclear(&io_conf, sizeof(io_conf));
-                            io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+                            io_conf.intr_type = GPIO_INTR_DISABLE;
                             io_conf.mode = GPIO_MODE_OUTPUT;
                             io_conf.pin_bit_mask = 1ULL << CAM_PIN_PWDN;
                             gpio_config(&io_conf);
