@@ -5,27 +5,51 @@ cmake_minimum_required(VERSION 3.12)
 set(E_PROJECT "pins")
 
 # Set build root environment variable E_ROOT
-include("${CMAKE_CURRENT_SOURCE_DIR}/../eosal/osbuild/cmakedefs/eosal-root-path.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/../eosal/osbuild/cmakedefs/eosal-root-path.txt")
 
 if (DEFINED ESP_PLATFORM)
-  # Include ESP-IDF build specific eosal settings for the top level cmake. 
-  include("$ENV{E_ROOT}/eosal/osbuild/cmakedefs/eosal-top-level-espidf-setup.txt")
+  # Include ESP32 specific setting for build.
+  include("$ENV{E_ROOT}/eosal/osbuild/cmakedefs/eosal-defs-espidf.txt")
 
-  # Add necessary ESP32 component directories to the build system. This is needed
-  # for ESP-IDF build, so it can find the components and their CMakeLists.txt files.
-  set(EXTRA_COMPONENT_DIRS ${E_MINIMAL_COMPONENT_DIRS})
-  list(APPEND EXTRA_COMPONENT_DIRS "$ENV{E_ROOT}/iocom/iocom_esp32")
-  list(APPEND EXTRA_COMPONENT_DIRS "$ENV{E_ROOT}/pins/dependencies/esp32")
-  list(APPEND EXTRA_COMPONENT_DIRS "$ENV{E_ROOT}/${E_PROJECT}/${E_PROJECT}_esp32")
+  # Set path to source files.
+  set(BACKBONE "$ENV{E_ROOT}/${E_PROJECT}/code")
+  set(EXTENSIONS "$ENV{E_ROOT}/${E_PROJECT}/extensions")
 
-  # Enable dummy app_main for ESP-IDF build, so we can build eosal as executable ESP32 component. 
-  add_definitions(-DOSAL_DUMMY_ESP32_APP_MAIN)
+  # Add source files common to all operating systems.
+  file(GLOB BB_CM_SOURCES "${BACKBONE}/common/*.c")
+  file(GLOB EX_CM_SOURCES "${EXTENSIONS}/*/common/*.c")
 
-  # Include ESP-IDFbuild stuff. This will call the project() command and start the build process.
-  include($ENV{IDF_PATH}/tools/cmake/project.cmake)
- 
-  # Name the project.
-  project(${E_PROJECT})
+  # Add ESP32 specific files. 
+  set(ENV{E_IMPL_DIR} $ENV{E_OS})
+  set(ENV{E_IMPLX_DIR} $ENV{E_OS})
+  file(GLOB BB_OS_SOURCES "${BACKBONE}/$ENV{E_IMPL_DIR}/*.c" "${BACKBONE}/$ENV{E_IMPL_DIR}/*.cpp")
+  file(GLOB EX_OS_SOURCES "${EXTENSIONS}/*/$ENV{E_IMPLX_DIR}/*.c" "${EXTENSIONS}/*/$ENV{E_IMPLX_DIR}/*.cpp")
+
+  # Merge the .c files as one list.
+  set(srcs ${BB_CM_SOURCES} ${BB_OS_SOURCES} ${EX_CM_SOURCES} ${EX_OS_SOURCES})
+
+  # The pins library depends on: 
+  set(requires "driver")
+  list(APPEND requires "esp_timer")
+  list(APPEND requires "esp_adc")
+  list(APPEND requires "esp_driver_gpio")
+  list(APPEND requires "esp_driver_ledc")
+  list(APPEND requires "eosal")
+  list(APPEND requires "iocom")
+  list(APPEND requires "esp32-camera")
+
+  # Set include paths
+  set(includes $ENV{E_ROOT}/eosal)
+  list(APPEND includes $ENV{E_ROOT}/iocom)
+  list(APPEND includes $ENV{E_ROOT}/${E_PROJECT})
+
+  # Register eosal as ESP-IDF component.
+  idf_component_register(SRCS "${srcs}" 
+      INCLUDE_DIRS "${includes}" 
+      REQUIRES "${requires}" )
+
+      # This results correct link order. 
+  idf_component_optional_requires(PRIVATE iocom)
 
 else()
   project(${E_PROJECT})
