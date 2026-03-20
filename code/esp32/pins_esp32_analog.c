@@ -35,21 +35,42 @@
 */
 #include "pins.h"
 #ifdef OSAL_ESP32
-#include "driver/adc.h"
-#include "driver/dac.h"
+#include "esp_adc/adc_oneshot.h"
+#include "driver/dac_oneshot.h"
+#include "hal/adc_types.h"
+
 #include "code/esp32/pins_esp32_analog.h"
 
-#define PIN_ADC1 0x40
-#define PIN_ADC2 0x80
-#define PIN_ADC_CH_MASK 0x3F
+#define PIN_ADC1 0x40                       /* Bit for ADC unit 1 in pin_adc_map value  */
+#define PIN_ADC2 0x80                       /* Bit for ADC unit 2 in pin_adc_map value  */
+#define PIN_ADC_CH_MASK 0x3F                /* Bit mask to get ADC channel number without unit number */
+#define PIN_NRO_ADC_UNITS 2                 /* Xtensa has 2 ADC units */
+#define PIN_ADC_UNIT_IX(x) (((x) >> 6) - 1) /* Get ADC unit index 0 or 1 , by pin_adc_map value x */ 
 
-static os_uchar pin_adc_map[] =
+/* Handles for the two ADC units. NULL if not initialized 
+ */
+static adc_oneshot_unit_handle_t pin_adc_unit_handle[PIN_NRO_ADC_UNITS] = {OS_NULL, OS_NULL};
+
+/* Static initialization structure for the two ADC units.
+ */
+OS_CONST adc_oneshot_unit_init_cfg_t pin_adc_unit_cfg[PIN_NRO_ADC_UNITS] = {
+    {.unit_id = ADC_UNIT_1, .ulp_mode = ADC_ULP_MODE_DISABLE}, 
+    {.unit_id = ADC_UNIT_2, .ulp_mode = ADC_ULP_MODE_DISABLE}};
+
+OS_CONST adc_oneshot_chan_cfg_t pin_adc_channel_config = {
+    .atten = ADC_ATTEN_DB_6,
+    .bitwidth = ADC_BITWIDTH_DEFAULT
+};
+
+/* Map of Xtensa chip's GRIO pin numer to ADC unit number and ADC channel.
+ */
+OS_CONST os_uchar pin_adc_map[] =
 {
-    ADC2_CHANNEL_0 | PIN_ADC2,  /* GPIO 0 */
+    ADC_CHANNEL_0 | PIN_ADC2,   /* GPIO 0 */
     0,                          /* 1 */
-    ADC2_CHANNEL_1 | PIN_ADC2,  /* GPIO 2 */
+    ADC_CHANNEL_1 | PIN_ADC2,   /* GPIO 2 */
     0,                          /* 3 */
-    ADC2_CHANNEL_2 | PIN_ADC2,  /* GPIO 4 */
+    ADC_CHANNEL_2 | PIN_ADC2,   /* GPIO 4 */
     0,                          /* 5 */
     0,                          /* 6 */
     0,                          /* 7 */
@@ -57,10 +78,10 @@ static os_uchar pin_adc_map[] =
     0,                          /* 9 */
     0,                          /* 10 */
     0,                          /* 11 */
-    ADC2_CHANNEL_3 | PIN_ADC2,  /* GPIO 12 */
-    ADC2_CHANNEL_4 | PIN_ADC2,  /* GPIO 13 */
-    ADC2_CHANNEL_5 | PIN_ADC2,  /* GPIO 14 */
-    ADC2_CHANNEL_6 | PIN_ADC2,  /* GPIO 15 */
+    ADC_CHANNEL_3 | PIN_ADC2,   /* GPIO 12 */
+    ADC_CHANNEL_4 | PIN_ADC2,   /* GPIO 13 */
+    ADC_CHANNEL_5 | PIN_ADC2,   /* GPIO 14 */
+    ADC_CHANNEL_6 | PIN_ADC2,   /* GPIO 15 */
     0,                          /* 16 */
     0,                          /* 17 */
     0,                          /* 18 */
@@ -70,21 +91,21 @@ static os_uchar pin_adc_map[] =
     0,                          /* 22 */
     0,                          /* 23 */
     0,                          /* 24 */
-    ADC2_CHANNEL_7 | PIN_ADC2,  /* GPIO 25 */
-    ADC2_CHANNEL_8 | PIN_ADC2,  /* GPIO 26 */
-    ADC2_CHANNEL_9 | PIN_ADC2,  /* GPIO 27 */
+    ADC_CHANNEL_7 | PIN_ADC2,   /* GPIO 25 */
+    ADC_CHANNEL_8 | PIN_ADC2,   /* GPIO 26 */
+    ADC_CHANNEL_9 | PIN_ADC2,   /* GPIO 27 */
     0,                          /* 28 */
     0,                          /* 29 */
     0,                          /* 30 */
     0,                          /* 31 */
-    ADC1_CHANNEL_0 | PIN_ADC1,  /* GPIO 32 */
-    ADC1_CHANNEL_1 | PIN_ADC1,  /* GPIO 33 */
-    ADC1_CHANNEL_2 | PIN_ADC1,  /* GPIO 34 */
-    ADC1_CHANNEL_3 | PIN_ADC1,  /* GPIO 35 */
-    ADC1_CHANNEL_4 | PIN_ADC1,  /* GPIO 36 */
-    ADC1_CHANNEL_5 | PIN_ADC1,  /* GPIO 37 */
-    ADC1_CHANNEL_6 | PIN_ADC1,  /* GPIO 38 */
-    ADC1_CHANNEL_7 | PIN_ADC1,  /* GPIO 39 */
+    ADC_CHANNEL_0 | PIN_ADC1,   /* GPIO 32 */
+    ADC_CHANNEL_1 | PIN_ADC1,   /* GPIO 33 */
+    ADC_CHANNEL_2 | PIN_ADC1,   /* GPIO 34 */
+    ADC_CHANNEL_3 | PIN_ADC1,   /* GPIO 35 */
+    ADC_CHANNEL_4 | PIN_ADC1,   /* GPIO 36 */
+    ADC_CHANNEL_5 | PIN_ADC1,   /* GPIO 37 */
+    ADC_CHANNEL_6 | PIN_ADC1,   /* GPIO 38 */
+    ADC_CHANNEL_7 | PIN_ADC1    /* GPIO 39 */
 };
 
 #define PIN_ADC_MAP_LEN (sizeof(pin_adc_map)/sizeof(os_uchar))
@@ -108,19 +129,34 @@ void pin_setup_analog_input(
     const Pin *pin)
 {
     os_int addr;
-    os_uchar c;
+    os_ushort unit_ix, c;
+    esp_err_t rval;
 
     addr = pin->addr;
     if (addr >= 0 && addr < PIN_ADC_MAP_LEN) 
     {
+        /* Get ACH unit and ACH channnl for this pin.
+         */
         c = pin_adc_map[addr];
-        if (c & PIN_ADC1) {
-            adc1_config_width(ADC_WIDTH_BIT_12);
-            adc1_config_channel_atten(c & PIN_ADC_CH_MASK, ADC_ATTEN_DB_11);    
-            return;
-        }
-        if (c & PIN_ADC2) {
-            adc2_config_channel_atten(c & PIN_ADC_CH_MASK, ADC_ATTEN_DB_11);
+
+        if (c) {
+            unit_ix = PIN_ADC_UNIT_IX(c);
+
+            /* Initialixe ADC unit, either ADC_UNIT_1 or ADC_UNIT_2, if not already initialized.
+             */
+            if (pin_adc_unit_handle[unit_ix] == OS_NULL) {
+                rval = adc_oneshot_new_unit(&pin_adc_unit_cfg[unit_ix], 
+                    &pin_adc_unit_handle[unit_ix]);
+            
+                ESP_ERROR_CHECK(rval);
+            }
+
+            /* Configure the pin/channel as analog input.
+             */
+            rval = adc_oneshot_config_channel(pin_adc_unit_handle[unit_ix],
+                c & PIN_ADC_CH_MASK, &pin_adc_channel_config);
+            ESP_ERROR_CHECK(rval);
+        
             return;
         }
     }
@@ -150,23 +186,23 @@ os_int OS_ISR_FUNC_ATTR pin_read_analog_input(
     os_char *state_bits)
 {
     os_int addr;
-    os_uchar c;
     int read_raw;
     esp_err_t rval;
-
+    os_ushort unit_ix, c;
+    
     addr = pin->addr;
     if (addr >= 0 && addr < PIN_ADC_MAP_LEN) 
     {
+        /* Get ACH unit and ACH channnl for this pin.
+         */
         c = pin_adc_map[addr];
-        if (c & PIN_ADC1) 
-        {
-            *state_bits = OSAL_STATE_CONNECTED;
-            return adc1_get_raw(c & PIN_ADC_CH_MASK);
-        }
 
-        if (c & PIN_ADC2) 
+        if (c) 
         {
-            rval = adc2_get_raw(c & PIN_ADC_CH_MASK, ADC_WIDTH_BIT_12, &read_raw);
+            unit_ix = PIN_ADC_UNIT_IX(c);
+
+            rval = adc_oneshot_read(pin_adc_unit_handle[unit_ix], c & PIN_ADC_CH_MASK, &read_raw);
+            ESP_ERROR_CHECK(rval);
             if (rval == ESP_OK) {
                 *state_bits = OSAL_STATE_CONNECTED;
                 return read_raw;
@@ -211,7 +247,7 @@ void pin_setup_analog_output(
             return;
     }
 
-    dac_output_enable(c);
+   // dac_output_enable(c);
 }
 
 
@@ -241,7 +277,7 @@ void OS_ISR_FUNC_ATTR pin_write_analog_output(
         case 18: c = DAC_CHANNEL_2; break;
         default: return;
     }
-    dac_output_voltage(c, x);
+   // dac_output_voltage(c, x);
 }
 
 #endif
