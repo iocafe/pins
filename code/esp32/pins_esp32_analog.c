@@ -3,8 +3,8 @@
   @file    esp32/pins_esp32_analog.c
   @brief   ADC & DAC.
   @author  Pekka Lehtikoski
-  @version 1.0
-  @date    26.4.2021
+  @version 1.1
+  @date    21.3.2026
 
   The ESP32 integrates two 12-bit SAR (Successive Approximation Register) ADCs, supporting a 
   total of 18 measurement channels (analog enabled pins).
@@ -29,7 +29,7 @@
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
   or distribute this file you indicate that you have read the license and understand and accept
-  it fully.
+  it fully (MIT license).
 
 ****************************************************************************************************
 */
@@ -41,6 +41,7 @@
 
 #include "code/esp32/pins_esp32_analog.h"
 
+/* ********** ADC ********** */
 #define PIN_ADC1 0x40                       /* Bit for ADC unit 1 in pin_adc_map value  */
 #define PIN_ADC2 0x80                       /* Bit for ADC unit 2 in pin_adc_map value  */
 #define PIN_ADC_CH_MASK 0x3F                /* Bit mask to get ADC channel number without unit number */
@@ -57,6 +58,8 @@ OS_CONST adc_oneshot_unit_init_cfg_t pin_adc_unit_cfg[PIN_NRO_ADC_UNITS] = {
     {.unit_id = ADC_UNIT_1, .ulp_mode = ADC_ULP_MODE_DISABLE}, 
     {.unit_id = ADC_UNIT_2, .ulp_mode = ADC_ULP_MODE_DISABLE}};
 
+/* ADC channel configuration. For now we use same attentuation and bit width for all channels.
+ */
 OS_CONST adc_oneshot_chan_cfg_t pin_adc_channel_config = {
     .atten = ADC_ATTEN_DB_6,
     .bitwidth = ADC_BITWIDTH_DEFAULT
@@ -109,6 +112,31 @@ OS_CONST os_uchar pin_adc_map[] =
 };
 
 #define PIN_ADC_MAP_LEN (sizeof(pin_adc_map)/sizeof(os_uchar))
+
+
+/* ********** DAC ********** */
+#define PIN_NRO_DAC_CHANNELS 2              /* Xtensa has 2 DAC channels */
+#define PIN_DAC_CH1_IX 0                    /* DAC channels 1 index */
+#define PIN_DAC_CH2_IX 1                    /* DAC channels 2 index */
+
+OS_CONST dac_oneshot_config_t pin_dac_channel_cfg[PIN_NRO_DAC_CHANNELS] 
+    = {{.chan_id = DAC_CHAN_0}, {.chan_id = DAC_CHAN_1}};
+
+static dac_oneshot_handle_t pin_dac_channel_handle[PIN_NRO_DAC_CHANNELS];
+
+/* Define pinN number for DAC channel 1. This depends on ESP32 variant.
+  A specific IO pin is used for each of the two DAC channels. This pin number depends on ESP32
+  variant. DAC channel 1 is GPIO25 (ESP32) / GPIO17 (ESP32S2), DAC channel 2 is GPIO26 (ESP32)
+  / GPIO18 (ESP32S2)
+ */
+#ifdef E_OSVER_esp32s2
+#define PIN_NUMBER_DAC_CHANNEL_1 17
+#define PIN_NUMBER_DAC_CHANNEL_2 18
+#endif
+#ifndef PIN_NUMBER_DAC_CHANNEL_1
+#define PIN_NUMBER_DAC_CHANNEL_1 25
+#define PIN_NUMBER_DAC_CHANNEL_2 26
+#endif
 
 
 /**
@@ -236,18 +264,20 @@ os_int OS_ISR_FUNC_ATTR pin_read_analog_input(
 void pin_setup_analog_output(
     const Pin *pin)
 {
-    int c;
+    esp_err_t rval;
+    os_ushort ch_ix;
 
     switch (pin->addr)
     {
-        case 17: c = DAC_CHANNEL_1; break;
-        case 18: c = DAC_CHANNEL_2; break;
+        case PIN_NUMBER_DAC_CHANNEL_1: ch_ix = 0; break;
+        case PIN_NUMBER_DAC_CHANNEL_2: ch_ix = 1; break;
         default: 
             osal_debug_error_int("pin cannot be used as analog output, gpio=", pin->addr);
             return;
     }
 
-   // dac_output_enable(c);
+    rval = dac_oneshot_new_channel(&pin_dac_channel_cfg[ch_ix], &pin_dac_channel_handle[ch_ix]);
+    ESP_ERROR_CHECK(rval);
 }
 
 
@@ -257,8 +287,7 @@ void pin_setup_analog_output(
   @brief Set analog output.
   @anchor pin_write_analog_output
 
-  Write value 0 - 255 to analog output pin. On ESP32 pins 17 and 18 are GPIO pins which can be 
-  used as analog outputs. 
+  Write value x to analog output pin. 
 
   @param   pin Pointer to pin structure.
   @param   x Value from 0 to 255 to set (8 bit DAC).
@@ -269,15 +298,18 @@ void OS_ISR_FUNC_ATTR pin_write_analog_output(
     const Pin *pin,
     os_int x)
 {
-    int c;
+    esp_err_t rval;
+    os_ushort ch_ix;
 
     switch (pin->addr)
     {
-        case 17: c = DAC_CHANNEL_1; break;
-        case 18: c = DAC_CHANNEL_2; break;
+        case PIN_NUMBER_DAC_CHANNEL_1: ch_ix = 0; break;
+        case PIN_NUMBER_DAC_CHANNEL_2: ch_ix = 1; break;
         default: return;
     }
-   // dac_output_voltage(c, x);
+
+   rval = dac_oneshot_output_voltage(pin_dac_channel_handle[ch_ix], (uint8_t)x);
+   ESP_ERROR_CHECK(rval);
 }
 
 #endif
