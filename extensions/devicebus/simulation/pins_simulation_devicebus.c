@@ -318,11 +318,12 @@ void pins_close_device(
   Single threaded mode. Call from main loop to run device bus.
 
   @param   flags Reserved for future, set zero for now.
-  @return  None.
+  @return  OSAL_COMPLETED and OSAL_SUCCESS indicate that all is fine, other
+           return values indicate an error.
 
 ****************************************************************************************************
 */
-void pins_run_devicebus(
+osalStatus pins_run_devicebus(
     os_int flags)
 {
     PinsBus *bus;
@@ -348,6 +349,8 @@ void pins_run_devicebus(
         }
         pins_devicebus.current_bus = bus;
     }
+
+    return s;
 }
 
 #if OSAL_MULTITHREAD_SUPPORT
