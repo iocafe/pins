@@ -597,9 +597,9 @@ void pins_stop_multithread_devicebus(
    @brief Send data to SPI or I2C bus and receive reply.
    @anchor pins_spi_transfer
 
-   The pins_spi_transfer() function sends a message to current SPI or I2C device and
-   gets a reply. If multiple messages are used with the device, gen_req_func() and
-   proc_resp_func() functions process one of these at the time.
+   The pins_spi_transfer() function sends a message to current SPI and  gets a reply. 
+   This function calls back SPI device specific application driver. The gen_req_func() callback
+   is expected to generate a SPI request proc_resp_func() callback to process it.
 
    @param   device Pointer to SPI/I2C device structure.
    @return  OSAL_COMPLETED if this was the last IO message to this device. OSAL_SUCCESS otherwise.
@@ -609,64 +609,52 @@ void pins_stop_multithread_devicebus(
 static osalStatus pins_spi_transfer(
     PinsBusDevice *device)
 {
-#if 0
     PinsBus *bus;
-    os_int rval;
+    esp_err_t rval;
     osalStatus s;
+    spi_transaction_t ta;
 
     bus = device->bus;
 
     /* If SPI device has not been successfully opened, print error and return OSAL_COMPLETED.
      */
-    if (device->spec.spi.handle < 0) {
+    if (device->spec.spi.handle.p == OS_NULL) {
         if (!device->spec.spi.error_reported) {
-            osal_debug_error_int("SPI device is not open, bus=", bus->spec.i2c.bus_nr);
+            osal_debug_error_int("SPI device is not open, bus=", bus->spec.spi.bus_nr);
             device->spec.spi.error_reported = OS_TRUE;
         }
         return OSAL_COMPLETED;
     }
 
+    /* Callback to SPI device specific to generate a request.
+     */
     device->gen_req_func(device);
 
-    if (bus->spec.spi.bus_nr >= 10)
-    {
-        rval = bbSPIXfer((unsigned)device->spec.spi.cs, (char*)bus->outbuf,
-            (char*)bus->inbuf, (unsigned)bus->outbuf_n);
-        if (rval < 0)
-        {
-            if (!device->spec.spi.error_reported) {
-                osal_debug_error_int("bbSPIXfer failed, rval=", rval);
-                device->spec.spi.error_reported = OS_TRUE;
-            }
-            bus->inbuf_n = 0;
-            return OSAL_COMPLETED;
-        }
-        else {
-            bus->inbuf_n = (os_short)rval;
-        }
-    }
-    else
-    {
-        rval = spiXfer((unsigned)device->spec.spi.handle, (char*)bus->outbuf,
-            (char*)bus->inbuf, (unsigned)bus->outbuf_n);
-        if (rval < 0)
-        {
-            if (!device->spec.spi.error_reported) {
-                osal_debug_error_int("bbSPIXfer failed, rval=", rval);
-                device->spec.spi.error_reported = OS_TRUE;
-            }
-            bus->inbuf_n = 0;
-            return OSAL_COMPLETED;
-        }
-        else {
-            bus->inbuf_n = (os_short)rval;
-        }
-    }
+    /* Setup transaction 
+     */
+    os_memclear(&ta, sizeof(ta));
+    ta.tx_buffer = bus->outbuf;
+    ta.length = bus->outbuf_n;
+    ta.rx_buffer = bus->inbuf;
+    /* ta.rxlength: Total data length received, should be not greater
+       than length in full - duplex mode(0 defaults this 
+       to the value of length). */
 
+    /* SPI data transfer.
+     */
+    rval = spi_device_polling_transmit(device->spec.spi.handle.p, &ta);
+    if (rval != !device->spec.spi.error_reported) {
+        osal_debug_error_int("SPI device is not open, bus=", bus->spec.spi.bus_nr);
+        device->spec.spi.error_reported = OS_TRUE;
+        bus->inbuf_n = 0;
+        return OSAL_COMPLETED;
+    }
+    bus->inbuf_n = ta.rxlength;
+
+    /* Callback to SPI device specific application driver to process the responce.
+     */
     s = device->proc_resp_func(device);
     return s;
-#endif
-    return OSAL_SUCCESS;
 }
 
 
@@ -689,7 +677,6 @@ static osalStatus pins_spi_transfer(
 static osalStatus pins_bus_run_spi(
     PinsBus *bus)
 {
-#if 0
     PinsBusDevice *current_device;
     osalStatus s, final_s = OSAL_SUCCESS;
 
@@ -716,8 +703,6 @@ static osalStatus pins_bus_run_spi(
     }
 
     return final_s;
-#endif
-    return OSAL_SUCCESS;
 }
 
 /* PINS_SPI */
