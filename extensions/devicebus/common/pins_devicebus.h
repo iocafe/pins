@@ -84,10 +84,6 @@ typedef os_int pinsBusGet(
 
 typedef struct PinsSpiDeviceVariables
 {
-    /** Chip select pin. Typically active LOW.
-     */
-    os_short cs;
-
     /** SPI device number or "addr". This can be zero if not needed.
      */
     os_short device_nr;
@@ -98,11 +94,19 @@ typedef struct PinsSpiDeviceVariables
 
     /** SPI device handle
      */
-    os_int handle;
+    union {
+        os_int i;
+        void *p;    
+    }
+    handle;
 
     /** Bus speed (baud) for this device.
      */
     os_uint bus_frequency;
+
+    /** Chip select pin. Typically active LOW.
+     */
+    os_short cs;
 
     /** Repeating transer error reported, to not repeat.
      */
@@ -122,7 +126,11 @@ typedef struct PinsI2cDeviceVariables
 
     /** I2C device handle
      */
-    os_int handle;
+    union {
+        os_int i;
+        void *p;    
+    }
+    handle;
 
     /** Repeating transer error reported, to not repeat.
      */

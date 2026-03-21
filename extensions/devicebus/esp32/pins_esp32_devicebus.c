@@ -1,10 +1,10 @@
 /**
 
-  @file    spi/esp32/pins_esp32_devicebus.c
+  @file    devicebus/esp32/pins_esp32_devicebus.c
   @brief   SPI and I2C for ESP32.
   @author  Pekka Lehtikoski
   @version 1.0
-  @date    17.3.2026
+  @date    21.3.2026
 
   Copyright 2020 Pekka Lehtikoski. This file is part of the eosal and shall only be used,
   modified, and distributed under the terms of the project licensing. By continuing to use, modify,
@@ -15,22 +15,31 @@
 */
 #include "pinsx.h"
 #ifdef OSAL_ESP32
+
+#if PINS_SPI 
+  #include "driver/spi_common.h"
+  #include "driver/spi_master.h"
+  // #include "hal/spi_types.h"
+
+  /* Forward referred static functions.
+   */
+  static osalStatus pins_spi_transfer(
+      PinsBusDevice *device);
+
+  static osalStatus pins_bus_run_spi(
+      PinsBus *bus);
+#endif
+
+#if PINS_I2C
+
+  static osalStatus pins_i2c_transfer(
+      PinsBusDevice *device);
+
+  static osalStatus pins_bus_run_i2c(
+      PinsBus *bus);
+#endif
+
 #if PINS_SPI || PINS_I2C
-
-/* Forward referred static functions.
- */
-static osalStatus pins_spi_transfer(
-    PinsBusDevice *device);
-
-static osalStatus pins_bus_run_spi(
-    PinsBus *bus);
-
-static osalStatus pins_i2c_transfer(
-    PinsBusDevice *device);
-
-static osalStatus pins_bus_run_i2c(
-    PinsBus *bus);
-
 
 /**
 ****************************************************************************************************
@@ -49,11 +58,12 @@ static osalStatus pins_bus_run_i2c(
 void pins_init_bus(
     PinsBus *bus)
 {
-    #if 0   
     PinsBusDevice *device;
 #if OSAL_DEBUG
     os_char buf[96], nbuf[OSAL_NBUF_SZ];
 #endif
+    esp_err_t rval;
+    spi_bus_config_t busconf;
 
     /* Clear sub type specific data and start from the first device.
      */
@@ -72,13 +82,16 @@ void pins_init_bus(
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        /* Get GPIO pin numbers and optional bus number.
+        /* Get GPIO pin numbers and bus number. Notice that SPI0 and SPI1 are
+           reserved, we can use only SPI2 and SPI3.
          */
         bus->spec.spi.miso = (os_short)pin_get_prm(device->device_pin, PIN_MISO);
         bus->spec.spi.mosi = (os_short)pin_get_prm(device->device_pin, PIN_MOSI);
         bus->spec.spi.sclk = (os_short)pin_get_prm(device->device_pin, PIN_SCLK);
-        bus->spec.spi.bus_nr = device->device_pin->bank;
+        bus->spec.spi.bus_nr = device->device_pin->bank ? SPI3_HOST : SPI2_HOST;
 
+        /* Bus configuration debug printout.
+         */
 #if OSAL_DEBUG
         os_strncpy(buf, "SPI bus init: ", sizeof(buf));
 
@@ -100,10 +113,26 @@ void pins_init_bus(
 
         osal_info("pins", OSAL_SUCCESS, buf);
 #endif
+        /* Initialize the SPI bus .
+         */
+        os_memclear(&busconf, sizeof(busconf));
+        busconf.mosi_io_num = bus->spec.spi.mosi;
+        busconf.miso_io_num = bus->spec.spi.miso;
+        busconf.sclk_io_num = bus->spec.spi.sclk;
+        busconf.data0_io_num = busconf.data1_io_num = busconf.data2_io_num = busconf.data3_io_num = -1; 
+        busconf.data4_io_num = busconf.data5_io_num = busconf.data6_io_num = busconf.data7_io_num = -1; 
+        busconf.quadwp_io_num = busconf.quadhd_io_num = -1;
+        busconf.max_transfer_sz = 32;
+        
+        rval = spi_bus_initialize((spi_host_device_t)bus->spec.spi.bus_nr,
+            &busconf, SPI_DMA_DISABLED);
+        ESP_ERROR_CHECK(rval);
+
     }
 #endif
 
-#if PINS_I2C
+//#if PINS_I2C
+#if 0
     if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Get GPIO pin numbers and bus number.
@@ -131,7 +160,6 @@ void pins_init_bus(
 #endif
     }
 #endif
-#endif
 }
 
 
@@ -143,11 +171,6 @@ void pins_init_bus(
 
   The pins_init_device() function initializes a SPI/I2C device for platform.
 
-  esp32 example:
-
-    bbSPIOpen(10, MISO, MOSI, SCLK, 10000, 0); // device 1
-    bbSPIOpen(11, MISO, MOSI, SCLK, 20000, 3); // device 2
-
   @param   device Pointer to device structure.
   @param   prm Device parameters.
   @return  None.
@@ -158,12 +181,13 @@ void pins_init_device(
     struct PinsBusDevice *device,
     struct PinsBusDeviceParams *prm)
 {
-#if 0
     PinsBus *bus;
-    os_int rval;
+    spi_device_interface_config_t devcfg;
+    spi_device_handle_t handle;
 #if OSAL_DEBUG
     os_char buf[128], nbuf[OSAL_NBUF_SZ];
 #endif
+    esp_err_t rval;
     OSAL_UNUSED(prm);
 
     bus = device->bus;
@@ -177,7 +201,7 @@ void pins_init_device(
     {
         /* Get GPIO chip select pin number, baud, flags and optional device number.
          */
-        device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, PIN_CS);
+        device->spec.spi.cs = (os_short)pin_get_prm(device->device_pin, -1);
         device->spec.spi.bus_frequency = (os_uint)pin_get_frequency(device->device_pin, 20000);
         device->spec.spi.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
         device->spec.spi.device_nr = device->device_pin->addr;
@@ -218,73 +242,35 @@ void pins_init_device(
         os_strncat(buf, nbuf, sizeof(buf));
 
         osal_info("pins", OSAL_SUCCESS, buf);
-#endif
-        /* If re are using normal raspberry spi or bit banged version.
-         */
-        if (bus->spec.spi.bus_nr >= 10)
+
+        if (device->spec.spi.bus_frequency < 32000 ||
+            device->spec.spi.bus_frequency > 30000000)
         {
-            rval = bbSPIOpen((unsigned)device->spec.spi.cs, (unsigned)bus->spec.spi.miso,
-                (unsigned)bus->spec.spi.mosi, (unsigned)bus->spec.spi.sclk,
-                device->spec.spi.bus_frequency, device->spec.spi.flags);
-            if (!rval) {
-                device->spec.spi.handle = 1;
-            }
-            else {
-                device->spec.spi.handle = -1;
-                osal_debug_error_int("bbSPIOpen failed, rval=", rval);
-            }
+            osal_debug_error_int("SPI baud rate is outside 32k - 30M, setting",
+                device->spec.spi.bus_frequency);
         }
-
-        /* Normal Raspberry SPI.
-         */
-        else {
-#if OSAL_DEBUG
-            if (device->spec.spi.bus_frequency < 32000 ||
-                device->spec.spi.bus_frequency > 30000000)
-            {
-                osal_debug_error_int("SPI baud rate is outside 32k - 30M, setting",
-                    device->spec.spi.bus_frequency);
-            }
-            if (bus->spec.spi.bus_nr) {
-                if (bus->spec.spi.miso != 19 ||
-                    bus->spec.spi.mosi != 20 ||
-                    bus->spec.spi.sclk != 21 ||
-                    (device->spec.spi.cs != 18 && device->spec.spi.cs != 17 && device->spec.spi.cs != 16))
-                {
-                    osal_debug_error("Wrong auxliary SPI channel pins.");
-                    osal_debug_error("Must be: miso=19, mosi=20, sclk=21, cs=18,17 or 16.");
-                }
-            }
-            else {
-                if (bus->spec.spi.miso != 9 ||
-                    bus->spec.spi.mosi != 10 ||
-                    bus->spec.spi.sclk != 11 ||
-                    (device->spec.spi.cs != 8 && device->spec.spi.cs != 7))
-                {
-                    osal_debug_error("Wrong main SPI channel pins.");
-                    osal_debug_error("Must be: miso=9, mosi=10, sclk=11, cs=8 or 7.");
-                }
-            }
 #endif
-            /* If auxiliary SPI bus
-             */
-            if (bus->spec.spi.bus_nr) {
-                device->spec.spi.flags |= 256;
-            }
 
-            rval = spiOpen((unsigned)device->spec.spi.device_nr,
-                device->spec.spi.bus_frequency, device->spec.spi.flags);
-            device->spec.spi.handle = rval;
-            if (rval < 0)
-            {
-                osal_debug_error_int("spiOpen failed, rval=", rval);
-            }
-        }
+        /* Add slave device 
+         */
+        os_memclear(&devcfg, sizeof(devcfg));
+        devcfg.clock_speed_hz = device->spec.spi.bus_frequency;
+        // devcfg.mode = 0,     //SPI mode 0 
+        devcfg.spics_io_num = device->spec.spi.cs; // CS Pin 
+        devcfg.queue_size = 1;
+        devcfg.flags = SPI_DEVICE_HALFDUPLEX;
+        // devcfg.pre_cb = NULL;
+        // devcfg.post_cb = NULL;
+
+        rval = spi_bus_add_device((spi_host_device_t)bus->spec.spi.bus_nr, &devcfg, &handle);
+        ESP_ERROR_CHECK(rval);
+        device->spec.spi.handle.p = (void*)handle;
     }
 #endif
 
-#if PINS_I2C
-    if (bus->bus_type == PINS_I2C_BUS)
+//#if PINS_I2C
+#if 0
+            if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Get flags and device number.
          */
@@ -345,7 +331,6 @@ void pins_init_device(
             osal_debug_error_int("i2cOpen failed, rval=", rval);
         }
     }
-#endif
 #endif
 }
 
@@ -439,7 +424,6 @@ void pins_close_device(
 void pins_run_devicebus(
     os_int flags)
 {
-#if 0
     PinsBus *bus;
     osalStatus s = OSAL_COMPLETED;
     OSAL_UNUSED(flags);
@@ -451,7 +435,9 @@ void pins_run_devicebus(
         s = pins_bus_run_spi(bus);
     }
 #endif
-#if PINS_I2C
+
+#if 0
+//#if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS) {
         s = pins_bus_run_i2c(bus);
     }
@@ -464,7 +450,6 @@ void pins_run_devicebus(
         }
         pins_devicebus.current_bus = bus;
     }
-#endif
 }
 
 
@@ -490,7 +475,6 @@ static void ioc_devicebus_thread(
     void *prm,
     osalEvent done)
 {
-#if 0
     PinsBus *bus;
     osalStatus s;
 
@@ -520,13 +504,14 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
-// static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
+ static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo SPI\n"); ulledoo = 0;}
 
         }
     }
 #endif
 
-#if PINS_I2C
+#if 0
+// #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Run the the device bus, until program or I2C communication is
@@ -538,7 +523,7 @@ static void ioc_devicebus_thread(
             if (s == OSAL_COMPLETED) {
                 os_timeslice();
             }
-// static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
+ static long ulledoo; if (++ulledoo > 10009) {osal_debug_error("ulledoo I2C\n"); ulledoo = 0;}
         }
     }
 #endif
@@ -546,7 +531,6 @@ static void ioc_devicebus_thread(
     /* This thread will be no longer running, decrement thread count.
      */
     pins_devicebus.thread_count-- ;
-#endif
 }
 
 
@@ -566,7 +550,6 @@ static void ioc_devicebus_thread(
 void pins_start_multithread_devicebus(
     os_int flags)
 {
-#if 0
     PinsBus *bus;
     OSAL_UNUSED(flags);
 
@@ -579,7 +562,6 @@ void pins_start_multithread_devicebus(
     {
         osal_thread_create(ioc_devicebus_thread, bus, OS_NULL, OSAL_THREAD_DETACHED);
     }
-#endif
 }
 
 
@@ -599,12 +581,10 @@ void pins_start_multithread_devicebus(
 void pins_stop_multithread_devicebus(
     void)
 {
-#if 0
     pins_devicebus.terminate = OS_TRUE;
     while (pins_devicebus.thread_count) {
         osal_sleep(50);
     }
-#endif
 }
 
 #endif
