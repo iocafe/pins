@@ -145,7 +145,9 @@ void pins_init_bus(
         /* Get GPIO pin numbers and bus number.
          */
         bus->spec.i2c.sda = (os_short)pin_get_prm(device->device_pin, PIN_SDA);
+        if (!bus->spec.i2c.sda) bus->spec.i2c.sda = 21;
         bus->spec.i2c.scl = (os_short)pin_get_prm(device->device_pin, PIN_SCL);
+        if (!bus->spec.i2c.scl) bus->spec.i2c.scl = 22;
         bus->spec.i2c.bus_nr = device->device_pin->bank;
 
 #if OSAL_DEBUG
@@ -168,11 +170,12 @@ void pins_init_bus(
         /* Setup i2c bus.
          */
         os_memclear(&ic2bus_conf, sizeof(ic2bus_conf));
-        ic2bus_conf.i2c_port = -1;
+        ic2bus_conf.i2c_port = -1; // -1 for auto-select, 0 is seen in examples
         ic2bus_conf.sda_io_num = bus->spec.i2c.sda;
         ic2bus_conf.scl_io_num = bus->spec.i2c.scl;
         ic2bus_conf.clk_source = I2C_CLK_SRC_DEFAULT;
-        // ic2bus_conf.enable_internal_pullup = 1;
+        ic2bus_conf.glitch_ignore_cnt = 7; // 7 is typical
+        ic2bus_conf.flags.enable_internal_pullup = true;
 
         rval = i2c_new_master_bus(&ic2bus_conf, &ic2bus_handle);
         if (rval != ESP_OK) {
@@ -746,22 +749,30 @@ static osalStatus pins_bus_run_spi(
 static osalStatus pins_i2c_transfer(
     PinsBusDevice *device)
 {
-#if 0
     PinsBus *bus;
     os_uchar *buf, *inbuf;
     osalStatus s;
-    os_short n, i;
-    int rval = -1;
+    os_short n, i, j, n_transfer_ops;
+    esp_err_t rval;
+    const os_short max_i2c_ops = 10;
+    const os_short start_and_stop_n = 2;
+    union {
+        i2c_operation_job_t ops[max_i2c_ops];
+        os_uchar flat[16];
+    } 
+    i2c_cmddata;
 
     bus = device->bus;
 
     /* If I2C device has not been successfully opened, print error and return OSAL_COMPLETED.
      */
-    if (device->spec.i2c.handle < 0) {
+    if (device->spec.i2c.handle.p == OS_NULL) {
+        #if OSAL_DEBUG
         if (!device->spec.i2c.error_reported) {
-            osal_debug_error_int("i2c device is not open, bus=", bus->spec.i2c.bus_nr);
+            osal_debug_error_int("i2c device is not open, device=", device->device_pin->addr);
             device->spec.i2c.error_reported = OS_TRUE;
         }
+        #endif
         return OSAL_COMPLETED;
     }
 
@@ -771,38 +782,80 @@ static osalStatus pins_i2c_transfer(
     {
         case PINS_I2C_WRITE_BYTE_DATA:
             n = bus->outbuf_n;
-            buf = bus->outbuf;
-            for (i = 0; i < n; i+=2) {
-                rval = i2cWriteByteData((unsigned)device->spec.i2c.handle, buf[i], buf[i+1]);
-                if (rval) break;
-            }
-
-            if (rval) {
+            n_transfer_ops = n/2;
+            if (n_transfer_ops + start_and_stop_n > max_i2c_ops) {
+#if OSAL_DEBUG
                 if (!device->spec.i2c.error_reported) {
-                    osal_debug_error_int("i2cWriteByteData failed on bus ", bus->spec.i2c.bus_nr);
+                    osal_debug_error_int("too many i2c write ops, device=", device->device_pin->addr);
                     device->spec.i2c.error_reported = OS_TRUE;
                 }
+#endif
+                return OSAL_COMPLETED;
+            }
+
+            buf = bus->outbuf;
+            os_memclear(i2c_cmddata.ops, (n_transfer_ops + start_and_stop_n) * sizeof(i2c_operation_job_t));
+            i2c_cmddata.ops[0].command = I2C_MASTER_CMD_START;
+            i2c_cmddata.ops[n_transfer_ops + 1].command = I2C_MASTER_CMD_STOP;
+
+            for (i = 0, j = 1; i < n; i+=2, j++) {
+                i2c_cmddata.ops[j].command = I2C_MASTER_CMD_WRITE;
+                i2c_cmddata.ops[j].write.data = buf + i;
+                i2c_cmddata.ops[j].write.total_bytes = 2;
+                i2c_cmddata.ops[j].write.ack_check = false;
+            }
+
+            rval = i2c_master_execute_defined_operations(
+                (i2c_master_dev_handle_t)device->spec.i2c.handle.p, 
+                i2c_cmddata.ops, n_transfer_ops + start_and_stop_n, -1);
+
+            if (rval != ESP_OK) {
+#if OSAL_DEBUG
+                if (!device->spec.i2c.error_reported) {
+                    osal_debug_error_int("i2c_master_execute_defined_operations failed, device=", device->device_pin->addr);
+                    device->spec.i2c.error_reported = OS_TRUE;
+                }
+#endif                
                 return OSAL_COMPLETED;
             }
             break;
 
         case PINS_I2C_READ_BYTE_DATA:
             n = bus->outbuf_n;
-            buf = bus->outbuf;
-            inbuf = bus->inbuf;
-
-            for (i = 0; i < n; i++) {
-                rval = i2cReadByteData((unsigned)device->spec.i2c.handle, buf[i]);
-                if (rval < 0) break;
-                inbuf[i] = (os_uchar)rval;
-            }
-            bus->inbuf_n = i;
-
-            if (rval < 0) {
+            n_transfer_ops = n;
+            if (n_transfer_ops + start_and_stop_n > max_i2c_ops) {
+#if OSAL_DEBUG
                 if (!device->spec.i2c.error_reported) {
-                    osal_debug_error_int("i2cReadByteData failed on bus ", bus->spec.i2c.bus_nr);
+                    osal_debug_error_int("too many i2c read ops, device=", device->device_pin->addr);
                     device->spec.i2c.error_reported = OS_TRUE;
                 }
+#endif
+                return OSAL_COMPLETED;
+            }
+
+            buf = bus->outbuf;
+            os_memclear(i2c_cmddata.ops, (n_transfer_ops + start_and_stop_n) * sizeof(i2c_operation_job_t));
+            i2c_cmddata.ops[0].command = I2C_MASTER_CMD_START;
+            i2c_cmddata.ops[n_transfer_ops + 1].command = I2C_MASTER_CMD_STOP;
+
+            for (i = 0, j = 1; i < n; i+=2, j++) {
+                i2c_cmddata.ops[j].command = I2C_MASTER_CMD_READ;
+                i2c_cmddata.ops[j].read.data = buf + i;
+                i2c_cmddata.ops[j].read.total_bytes = 2;
+                i2c_cmddata.ops[j].read.ack_value = I2C_ACK_VAL;
+            }
+
+            rval = i2c_master_execute_defined_operations(
+                (i2c_master_dev_handle_t)device->spec.i2c.handle.p, 
+                i2c_cmddata.ops, n_transfer_ops + start_and_stop_n, -1);
+
+            if (rval != ESP_OK) {
+#if OSAL_DEBUG
+                if (!device->spec.i2c.error_reported) {
+                    osal_debug_error_int("i2c_master_execute_defined_operations failed, device=", device->device_pin->addr);
+                    device->spec.i2c.error_reported = OS_TRUE;
+                }
+#endif                
                 return OSAL_COMPLETED;
             }
 
@@ -810,8 +863,6 @@ static osalStatus pins_i2c_transfer(
             break;
     }
     return s;
-#endif
-    return OSAL_SUCCESS;
 }
 
 
