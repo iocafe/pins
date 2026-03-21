@@ -17,26 +17,26 @@
 #ifdef OSAL_ESP32
 
 #if PINS_SPI 
-  #include "driver/spi_common.h"
-  #include "driver/spi_master.h"
-  // #include "hal/spi_types.h"
+    #include "driver/spi_common.h"
+    #include "driver/spi_master.h"
 
-  /* Forward referred static functions.
-   */
-  static osalStatus pins_spi_transfer(
-      PinsBusDevice *device);
+    /* Forward referred static functions.
+     */
+    static osalStatus pins_spi_transfer(
+        PinsBusDevice *device);
 
-  static osalStatus pins_bus_run_spi(
-      PinsBus *bus);
+    static osalStatus pins_bus_run_spi(
+        PinsBus *bus);
 #endif
 
 #if PINS_I2C
+    #include "driver/i2c_master.h"
 
-  static osalStatus pins_i2c_transfer(
-      PinsBusDevice *device);
+    static osalStatus pins_i2c_transfer(
+        PinsBusDevice *device);
 
-  static osalStatus pins_bus_run_i2c(
-      PinsBus *bus);
+    static osalStatus pins_bus_run_i2c(
+        PinsBus *bus);
 #endif
 
 #if PINS_SPI || PINS_I2C
@@ -63,7 +63,15 @@ void pins_init_bus(
     os_char buf[96], nbuf[OSAL_NBUF_SZ];
 #endif
     esp_err_t rval;
+
+#if PINS_SPI
     spi_bus_config_t busconf;
+#endif
+
+#if PINS_I2C
+    i2c_master_bus_config_t ic2bus_conf;
+    i2c_master_bus_handle_t ic2bus_handle;
+#endif
 
     /* Clear sub type specific data and start from the first device.
      */
@@ -127,12 +135,11 @@ void pins_init_bus(
         rval = spi_bus_initialize((spi_host_device_t)bus->spec.spi.bus_nr,
             &busconf, SPI_DMA_DISABLED);
         ESP_ERROR_CHECK(rval);
-
+        return;
     }
 #endif
 
-//#if PINS_I2C
-#if 0
+#if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Get GPIO pin numbers and bus number.
@@ -158,7 +165,24 @@ void pins_init_bus(
 
         osal_info("pins", OSAL_SUCCESS, buf);
 #endif
-    }
+        /* Setup i2c bus.
+         */
+        os_memclear(&ic2bus_conf, sizeof(ic2bus_conf));
+        ic2bus_conf.i2c_port = -1;
+        ic2bus_conf.sda_io_num = bus->spec.i2c.sda;
+        ic2bus_conf.scl_io_num = bus->spec.i2c.scl;
+        ic2bus_conf.clk_source = I2C_CLK_SRC_DEFAULT;
+        // ic2bus_conf.enable_internal_pullup = 1;
+
+        rval = i2c_new_master_bus(&ic2bus_conf, &ic2bus_handle);
+        if (rval != ESP_OK) {
+            osal_debug_error_int("i2c_new_master_bus() failed, rval=", rval);
+            return;
+        }
+
+        bus->spec.i2c.handle.p = (void *)ic2bus_handle;
+        return;
+     }
 #endif
 }
 
@@ -182,8 +206,17 @@ void pins_init_device(
     struct PinsBusDeviceParams *prm)
 {
     PinsBus *bus;
+
+#if PINS_SPI
     spi_device_interface_config_t devcfg;
     spi_device_handle_t handle;
+#endif
+
+#if PINS_I2C
+    i2c_device_config_t i2c_config;
+    i2c_master_dev_handle_t i2c_handle;
+#endif
+
 #if OSAL_DEBUG
     os_char buf[128], nbuf[OSAL_NBUF_SZ];
 #endif
@@ -263,18 +296,22 @@ void pins_init_device(
         // devcfg.post_cb = NULL;
 
         rval = spi_bus_add_device((spi_host_device_t)bus->spec.spi.bus_nr, &devcfg, &handle);
-        ESP_ERROR_CHECK(rval);
+        if (rval != ESP_OK) {
+            osal_debug_error_int("spi_bus_add_device() failed, rval=", rval);
+            return;
+        }            
         device->spec.spi.handle.p = (void*)handle;
+        return;
     }
 #endif
 
-//#if PINS_I2C
-#if 0
-            if (bus->bus_type == PINS_I2C_BUS)
+#if PINS_I2C
+    if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Get flags and device number.
          */
         device->spec.i2c.flags = (os_ushort)pin_get_prm(device->device_pin, PIN_FLAGS);
+        device->spec.i2c.bus_frequency = (os_uint)pin_get_frequency(device->device_pin, 20000);
         device->spec.i2c.device_nr = device->device_pin->addr;
 
 #if OSAL_DEBUG
@@ -300,6 +337,10 @@ void pins_init_device(
         osal_int_to_str(nbuf, sizeof(nbuf), device->spec.i2c.flags);
         os_strncat(buf, nbuf, sizeof(buf));
 
+        os_strncat(buf, ", frequency=", sizeof(buf));
+        osal_int_to_str(nbuf, sizeof(nbuf), device->spec.i2c.bus_frequency);
+        os_strncat(buf, nbuf, sizeof(buf));
+
         osal_info("pins", OSAL_SUCCESS, buf);
 
         if (bus->spec.i2c.bus_nr != 1) {
@@ -323,13 +364,19 @@ void pins_init_device(
             }
         }
 #endif
+        os_memclear(&i2c_config, sizeof(i2c_config));
+        i2c_config.device_address = device->spec.i2c.device_nr;
+        i2c_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+        i2c_config.scl_speed_hz = device->spec.i2c.bus_frequency;
 
-        rval = i2cOpen((unsigned)bus->spec.i2c.bus_nr,
-            (unsigned)device->spec.i2c.device_nr, (unsigned)device->spec.i2c.flags);
-        device->spec.i2c.handle = rval;
-        if (rval < 0) {
-            osal_debug_error_int("i2cOpen failed, rval=", rval);
-        }
+        rval = i2c_master_bus_add_device((i2c_master_bus_handle_t)bus->spec.i2c.handle.p,&i2c_config, &i2c_handle);
+        if (rval != ESP_OK) {
+            osal_debug_error_int("i2c_master_bus_add_device() failed, rval=", rval);
+            return;
+        }            
+
+        device->spec.i2c.handle.p = (void*)i2c_handle;
+        return;
     }
 #endif
 }
@@ -351,59 +398,29 @@ void pins_init_device(
 void pins_close_device(
     struct PinsBusDevice *device)
 {
-#if 0
     PinsBus *bus;
-#if OSAL_DEBUG
-    os_int rval;
-#endif
 
     bus = device->bus;
 
 #if PINS_SPI
     if (bus->bus_type == PINS_SPI_BUS)
     {
-        if (device->spec.spi.handle >= 0) { /* Was successfully opened? */
-            if (bus->spec.spi.bus_nr >= 10)
-            {
-#if OSAL_DEBUG
-                rval = bbSPIClose((unsigned)device->spec.spi.cs);
-                if (rval) {
-                    osal_debug_error_int("bbSPIClose failed, rval=", rval);
-                }
-#else
-                bbSPIClose((unsigned)device->spec.spi.cs);
-#endif
-            }
-            else {
-#if OSAL_DEBUG
-                rval = spiClose((unsigned)device->spec.spi.handle);
-                if (rval) {
-                    osal_debug_error_int("spiClose failed, rval=", rval);
-                }
-#else
-                spiClose((unsigned)device->spec.spi.handle);
-#endif
-            }
+        if (device->spec.spi.handle.p != OS_NULL) { /* Was successfully opened? */
+            ESP_ERROR_CHECK(spi_bus_remove_device((spi_device_handle_t)device->spec.spi.handle.p));
+            device->spec.spi.handle.p = OS_NULL;
         }
+        return;
     }
 #endif
 
 #if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
-        if (device->spec.i2c.handle >= 0) {
-#if OSAL_DEBUG
-            rval = i2cClose((unsigned)device->spec.i2c.handle);
-            if (rval)
-            {
-                osal_debug_error_int("spiClose failed, rval=", rval);
-            }
-#else
-            i2ciClose((unsigned)device->spec.i2c.handle);
-#endif
+        if (device->spec.i2c.handle.p != OS_NULL) {
+            ESP_ERROR_CHECK(i2c_master_bus_rm_device(device->spec.i2c.handle.p));
         }
+        return;
     }
-#endif
 #endif
 }
 
@@ -421,7 +438,7 @@ void pins_close_device(
 
 ****************************************************************************************************
 */
-void pins_run_devicebus(
+osalStatus pins_run_devicebus(
     os_int flags)
 {
     PinsBus *bus;
@@ -436,8 +453,7 @@ void pins_run_devicebus(
     }
 #endif
 
-#if 0
-//#if PINS_I2C
+#if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS) {
         s = pins_bus_run_i2c(bus);
     }
@@ -450,6 +466,8 @@ void pins_run_devicebus(
         }
         pins_devicebus.current_bus = bus;
     }
+
+    return s;
 }
 
 
@@ -510,8 +528,7 @@ static void ioc_devicebus_thread(
     }
 #endif
 
-#if 0
-// #if PINS_I2C
+#if PINS_I2C
     if (bus->bus_type == PINS_I2C_BUS)
     {
         /* Run the the device bus, until program or I2C communication is
@@ -816,7 +833,6 @@ static osalStatus pins_i2c_transfer(
 static osalStatus pins_bus_run_i2c(
     PinsBus *bus)
 {
-#if 0
     PinsBusDevice *current_device;
     osalStatus s, final_s = OSAL_SUCCESS;
 
@@ -843,9 +859,6 @@ static osalStatus pins_bus_run_i2c(
     }
 
     return final_s;
-
-#endif
-    return OSAL_SUCCESS;
 }
 
 /* PINS_I2C */

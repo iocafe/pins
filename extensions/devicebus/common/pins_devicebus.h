@@ -100,7 +100,7 @@ typedef struct PinsSpiDeviceVariables
     }
     handle;
 
-    /** Bus speed (baud) for this device.
+    /** Bus speed for this device.
      */
     os_uint bus_frequency;
 
@@ -123,6 +123,10 @@ typedef struct PinsI2cDeviceVariables
     /** I2C bus flags.
      */
     os_ushort flags;
+
+    /** Bus speed for this device.
+     */
+    os_uint bus_frequency;
 
     /** I2C device handle
      */
@@ -222,7 +226,15 @@ typedef struct PinsI2cBusVariables
      */
     os_short bus_nr;
 
-    /* I2C bus operation, like write, read
+    /** i2C bus handle/
+     */
+    union {
+        os_int i;
+        void* p;
+    }
+    handle;
+
+    /* I2C bus operation, like write, read...
      */
     PinsI2cBusOperation bus_operation;
 }
@@ -324,7 +336,7 @@ void pins_close_device(
 
 /* Single threaded use. Call from main loop to run device bus.
  */
-void pins_run_devicebus(
+osalStatus pins_run_devicebus(
     os_int flags);
 
 #if OSAL_MULTITHREAD_SUPPORT
